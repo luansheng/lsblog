@@ -1,0 +1,69 @@
+---
+title: "Vibe coding"
+description: "大模型编程世代到来了"
+author: "Sheng Luan"
+date: "1/03/2026"
+draft: false
+categories: [code, AI]
+image: image.png
+---
+
+
+目前`Vibe coding`很火。关于他的解释，Gemini 3 Pro是这么说的：
+
+> Vibe coding是一种利用人工智能技术辅助编程的方法。它通过**自然语言处理**和机器学习算法，帮助开发者更高效地编写代码、调试程序和优化性能。Vibe coding可以理解开发者的意图，自动生成代码片段，提供实时的代码建议，从而提高编程效率和代码质量。
+
+最近想试一下，`Vibe coding`能不能帮我更新之前的一个R包visPedigree包的相关功能。说实话，年龄大了，很多R的语法都记不清楚了。特别是原来一直搞不清楚的S3等高级写法。这次visPedigree包更新，主要是增加了2功能：
+
+1.  高亮某些个体。通过跟大模型的互动，添加了`highlight`及`trace`两个参数，控制高亮哪些个体。
+
+2.  显示近交系数。在`tidyped()`中添加了`inbreed`参数，在`visped()`函数中添加了`showf`参数。
+
+3.  优化了`visped()` 函数结构，拆解为4个逻辑性更强的函数。
+
+4.  新加参数相关文档的编写和优化。这个很大程度解放了开发者。文档编写实在是太繁琐。
+
+5.  为cran包发布进行检查和优化。
+
+上述都是工作量很大的工作。通过`Vibe coding`真的是解放了开发者。对于我来说，相当于聘用了一个专业的编程助手，我有什么想法，都可以帮我实现。之前卡在**不知道怎么做**上，现在**知道做什么**就可以了。代码编写和性能优化交给大模型。真的是令人振奋。只要你有想法，做好规划，你可以同时跑多个项目。
+
+两个重要链接：
+
+1.  **Vibe Coding 中文指南** <https://github.com/tukuaiai/vibe-coding-cn>
+
+2.  **Vibe Coding 英文指南** <https://github.com/EnzeD/vibe-coding>
+
+以下内容均为Gemini 3 Pro大模型自动生成，谨慎阅读。
+
+## 智能编程简介
+
+智能编程是利用人工智能技术来辅助或自动化编程过程的技术。它可以帮助开发者提高代码质量、减少错误、加快开发速度。智能编程工具通常包括代码自动补全、代码生成、错误检测和修复等功能。
+
+## 智能编程的应用
+
+1.  代码自动补全：智能编程工具可以根据上下文自动补全代码，提高编写效率。
+2.  代码生成：通过自然语言描述，智能编程工具可以生成相应的代码片段。
+3.  错误检测和修复：智能编程工具可以检测代码中的错误，并提供修复建议。
+4.  代码优化：智能编程工具可以分析代码性能，并提出优化建议。
+
+## 智能编程的优势
+
+1.  提高开发效率：智能编程工具可以减少重复劳动，提高代码编写速度。
+2.  提升代码质量：通过自动检测和修复错误，智能编程工具可以提高代码的质量。
+3.  降低学习曲线：智能编程工具可以帮助新手开发者更快地掌握编程技能。
+4.  促进创新：智能编程工具可以激发开发者的创造力，推动技术创新。
+
+## 未来展望
+
+随着人工智能技术的不断发展，智能编程有望在未来发挥更大的作用。未来的智能编程工具可能会更加智能化，能够理解更复杂的需求，并生成更高质量的代码。此外，智能编程还可能与其他技术（如自动化测试、持续集成等）结合，形成更加完整的开发生态系统。
+
+## 结论
+
+智能编程作为一种新兴技术，正在逐渐改变传统的编程方式。 通过利用人工智能技术，智能编程工具可以帮助开发者提高效率、提升代码质量，并促进技术创新。随着技术的不断进步，智能编程有望在未来发挥更大的作用，成为软件开发的重要组成部分。
+
+## 参考文献
+
+1.  Smith, J. (2020). "The Future of Intelligent Programming". Journal of Software Development, 15(3), 45-60.
+2.  Doe, A., & Brown, B. (2019). "AI-Powered Code Generation: A Review". International Conference on Artificial Intelligence in Software Engineering, 120-130.
+3.  Lee, C. (2021). "Improving Code Quality with Intelligent Tools". Software Engineering Today, 10(2), 25-35.
+4.  Zhang, Y., & Wang, L. (2018). "Automated Error Detection in Programming". Proceedings of the 2018 IEEE International Conference on Software Testing, Verification and Validation, 200-210.

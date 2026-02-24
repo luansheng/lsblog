@@ -1,0 +1,24 @@
+project:
+  type: website
+
+website:
+  description: "A blog built with Quarto"
+  site-url: https://luansheng.github.io/lsblog 
+  title: "metabreeding"
+  navbar:
+    right:
+      - about.qmd
+      - publication.qmd
+      - icon: github
+        href: https://github.com/
+      - icon: twitter
+        href: https://twitter.com
+format:
+  html:
+    theme:
+      - simplex
+      - brand
+    css: styles.css
+
+
+
