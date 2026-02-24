@@ -204,9 +204,9 @@ visPedigree 1.0.1 源代码及文档已托管至 GitHub。
 
 -   **GitHub**: [luansheng/visPedigree](https://github.com/luansheng/visPedigree)
 
-visPedigree 1.0.1 已在cran上发布。
+visPedigree 1.0.1 已在 CRAN 上发布。
 
--   **CRAN**: \`install.packages("visPedigree")
+-   **CRAN**: `install.packages("visPedigree")`
 
 欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。
 
