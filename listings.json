@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/missing-yang/index.html",
       "/posts/visPedigree-20260124/index.html",
       "/posts/EDA-20260104/index.html",
       "/posts/vib-coding/index.html"

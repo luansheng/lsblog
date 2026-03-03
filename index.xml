@@ -10,7 +10,34 @@
 <atom:link href="https://luansheng.github.io/lsblog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A blog built with Quarto</description>
 <generator>quarto-1.8.24</generator>
-<lastBuildDate>Mon, 23 Feb 2026 16:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 02 Mar 2026 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>廿载罗虾育种路，斯人已逝，深切缅怀</title>
+  <dc:creator>Sheng Luan</dc:creator>
+  <link>https://luansheng.github.io/lsblog/posts/missing-yang/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>每年春节前后，都是罗氏沼虾配种方案制定与审核的关键节点。自2006年算起，我们在这一领域深耕已整整二十个年头。过去，配种方案大多由我跟孔所主导制定；近年来，得益于团队的成长，隋、代和强已能独当一面，承担起方案设计的主干工作，而我的角色也更多地转为了审核与把关。</p>
+<p>然而，2026年春节在审核今年的罗虾配种方案时，看着案头的数据，我心中却升腾起难以抑制的失落与怀念——因为那个每次出方案前总要与我反复探讨、交流产业现状的杨国梁研究员（因认识他时担任浙江淡水所副所长，我习惯称他为“杨所”），已经不在了。</p>
+<p>斯人已逝。2025年8月27日，刚到成都的我，在清晨惊闻杨所因病离世的噩耗，痛心万分。即便知道他深受病痛折磨，但这无情的结局依然令人难以接受。就在那年七月，我们还通过微信交流罗虾育种测试的具体问题，不曾想那竟是最后一次对话。</p>
+<p>我与杨所相识于2006年，也就是我刚涉足罗虾育种的那一年。自那时起，他便一直是我科研路上极其敬重的前辈与良师。在罗氏沼虾产业里，杨所是真正躬身入局的人。他在“育繁推”一体化体系上的实践，实实在在地打通了科研与应用的关键环节。每年年初和年底，无论工作多忙碌，他总会抽出时间与我们深入探讨罗虾下一步的育种细节。每次与他交流，我都能从他对产业现实的敏锐洞察中受益良多。</p>
+<p>杨所对罗虾事业的专注与坚持，多年来深深感染着我。正是从他那里，我更真切地感受到作为一名育种工作者，将科研成果转化为现实生产力所带来的成就感，以及自我价值的实现。他不仅是业界泰斗，更是我在这条漫长科研路上的良师益友。他的离世，无疑是整个罗氏沼虾产业的长痛，也是水产育种界的重大损失。</p>
+<p>二十载罗虾育种路，几多汗水，几多感慨。看着新一年的配种方案，仿佛还能听见杨所中肯的建议。</p>
+<p>斯人已逝，风范永存。</p>
+
+
+
+ ]]></description>
+  <category>Breeding</category>
+  <category>Memorial</category>
+  <guid>https://luansheng.github.io/lsblog/posts/missing-yang/</guid>
+  <pubDate>Mon, 02 Mar 2026 16:00:00 GMT</pubDate>
+  <media:content url="https://luansheng.github.io/lsblog/posts/missing-yang/shufengNo1.png" medium="image" type="image/png" height="109" width="144"/>
+</item>
 <item>
   <title>visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案</title>
   <dc:creator>Sheng Luan</dc:creator>
@@ -521,9 +548,9 @@ Figure&nbsp;5: Quick Start 示例输出
 <ul>
 <li><strong>GitHub</strong>: <a href="https://github.com/luansheng/visPedigree">luansheng/visPedigree</a></li>
 </ul>
-<p>visPedigree 1.0.1 已在 CRAN 上发布。</p>
+<p>visPedigree 1.0.1 已在cran上发布。</p>
 <ul>
-<li><strong>CRAN</strong>: <code>install.packages("visPedigree")</code></li>
+<li><strong>CRAN</strong>: `install.packages(“visPedigree”)</li>
 </ul>
 <p>欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。</p>
 <hr>
