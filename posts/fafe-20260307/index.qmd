@@ -13,16 +13,6 @@ draft: false
 categories: [Breeding, Pedigree Analysis, visPedigree]
 description: "在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。"
 image: pedigree.png
-
----
----
-title: "家系育种数据的探索性数据分析（EDA）"
-description: "利用 DataExplorer 和 Tidyverse 进行高效的数据清理与可视化"
-author: "Sheng Luan"
-date: "1/05/2026"
-draft: false
-categories: [R, EDA, Breeding, DataExplorer]
-image: image.png
 ---
 
 
