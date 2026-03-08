@@ -1,0 +1,11 @@
+Individual,Sire,Dam
+F1,,
+F2,,
+F3,,
+F4,,
+S1,F1,F2
+D1,F3,F4
+R1,S1,D1
+R2,S1,D1
+R3,S1,D1
+R4,S1,F4

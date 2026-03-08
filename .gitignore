@@ -1,4 +1,10 @@
 /.quarto/
-**/*.quarto_ipynb
 /_site/
+/.vscode/
+.Rproj.user
 .DS_Store
+
+# 建议保留 _freeze 以锁定本地计算结果
+# !/_freeze/
+
+**/*.quarto_ipynb
