@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Sheng Luan">
+<meta name="dcterms.date" content="2026-03-08">
+<meta name="description" content="在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。">
+
+<title>有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证 – metabreeding</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a1c87f40015067c62c82f3c4ff3d1ad4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">metabreeding</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../publication.html"> 
+<span class="menu-text">Publication</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证</h1>
+                  <div>
+        <div class="description">
+          在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Breeding</div>
+                <div class="quarto-category">Pedigree Analysis</div>
+                <div class="quarto-category">visPedigree</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Sheng Luan </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 8, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#摘要" id="toc-摘要" class="nav-link active" data-scroll-target="#摘要">摘要</a></li>
+  <li><a href="#一-核心概念与理论背景" id="toc-一-核心概念与理论背景" class="nav-link" data-scroll-target="#一-核心概念与理论背景">一、 核心概念与理论背景</a>
+  <ul class="collapse">
+  <li><a href="#有效始祖数-f_e" id="toc-有效始祖数-f_e" class="nav-link" data-scroll-target="#有效始祖数-f_e">1.1 有效始祖数 (<span class="math inline">\(f_e\)</span>)</a></li>
+  <li><a href="#有效祖先数-f_a" id="toc-有效祖先数-f_a" class="nav-link" data-scroll-target="#有效祖先数-f_a">1.2 有效祖先数 (<span class="math inline">\(f_a\)</span>)</a></li>
+  </ul></li>
+  <li><a href="#二-模拟系谱与手工数学推导" id="toc-二-模拟系谱与手工数学推导" class="nav-link" data-scroll-target="#二-模拟系谱与手工数学推导">二、 模拟系谱与手工数学推导</a>
+  <ul class="collapse">
+  <li><a href="#推导-p_i-与-f_e" id="toc-推导-p_i-与-f_e" class="nav-link" data-scroll-target="#推导-p_i-与-f_e">2.1 推导 <span class="math inline">\(p_i\)</span> 与 <span class="math inline">\(f_e\)</span></a></li>
+  <li><a href="#推导-q_i-与-f_a" id="toc-推导-q_i-与-f_a" class="nav-link" data-scroll-target="#推导-q_i-与-f_a">2.2 推导 <span class="math inline">\(q_i\)</span> 与 <span class="math inline">\(f_a\)</span></a></li>
+  </ul></li>
+  <li><a href="#三-使用-vispedigree-进行代码模拟验证" id="toc-三-使用-vispedigree-进行代码模拟验证" class="nav-link" data-scroll-target="#三-使用-vispedigree-进行代码模拟验证">三、 使用 <code>visPedigree</code> 进行代码模拟验证</a>
+  <ul class="collapse">
+  <li><a href="#对比有效数估算结果" id="toc-对比有效数估算结果" class="nav-link" data-scroll-target="#对比有效数估算结果">3.1 对比有效数估算结果</a></li>
+  <li><a href="#对比内部边际贡献比例的拆解" id="toc-对比内部边际贡献比例的拆解" class="nav-link" data-scroll-target="#对比内部边际贡献比例的拆解">3.2 对比内部边际贡献比例的拆解</a></li>
+  </ul></li>
+  <li><a href="#四-结论与讨论" id="toc-四-结论与讨论" class="nav-link" data-scroll-target="#四-结论与讨论">四、 结论与讨论</a></li>
+  <li><a href="#五-更复杂的真实场景验证small_ped" id="toc-五-更复杂的真实场景验证small_ped" class="nav-link" data-scroll-target="#五-更复杂的真实场景验证small_ped">五、 更复杂的真实场景验证：<code>small_ped</code></a>
+  <ul class="collapse">
+  <li><a href="#数据准备与初探" id="toc-数据准备与初探" class="nav-link" data-scroll-target="#数据准备与初探">5.1 数据准备与初探</a></li>
+  <li><a href="#small_ped-的手工溯源剖析" id="toc-small_ped-的手工溯源剖析" class="nav-link" data-scroll-target="#small_ped-的手工溯源剖析">5.2 <code>small_ped</code> 的手工溯源剖析</a></li>
+  </ul></li>
+  <li><a href="#六.-结语" id="toc-六.-结语" class="nav-link" data-scroll-target="#六.-结语">六. 结语</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="摘要" class="level2">
+<h2 class="anchored" data-anchor-id="摘要">摘要</h2>
+<p>在群体遗传学和系谱分析中，<strong>有效始祖数（Effective number of founders,</strong> <span class="math inline">\(f_e\)</span>）与<strong>有效祖先数（Effective number of ancestors,</strong> <span class="math inline">\(f_a\)</span>）是衡量群体遗传多样性与遗传瓶颈的两个核心指标（Boichard et al., 1997）。本文通过构建一个具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用正在开发的 <code>visPedigree::pedcontrib()</code> 函数进行自动化计算，实现理论推导与工程实现的交叉验证。 可以通过<code>devtools::install_github("luansheng/visPedigree@pedigreeAnalysis")</code>安装最新版本的 <code>visPedigree</code> 包开发版分支来复现本文的计算过程。</p>
+</section>
+<section id="一-核心概念与理论背景" class="level2">
+<h2 class="anchored" data-anchor-id="一-核心概念与理论背景">一、 核心概念与理论背景</h2>
+<section id="有效始祖数-f_e" class="level3">
+<h3 class="anchored" data-anchor-id="有效始祖数-f_e">1.1 有效始祖数 (<span class="math inline">\(f_e\)</span>)</h3>
+<p><strong>定义</strong>：在建群之初，有多少个无亲缘关系的奠基者（Founders）为当前群体提供了基因。</p>
+<p><strong>物理意义</strong>：假设当前群体中所有的基因多样性，是由贡献<strong>完全相等</strong>的、互不相关的理想始祖共同提供的，那么这个理想始祖的数量就是 <span class="math inline">\(f_e\)</span>。<span class="math inline">\(f_e\)</span> 越大，说明建群时遗传基础越宽广；<span class="math inline">\(f_e\)</span> 越小，说明当初仅依赖极少数始祖，遗传多样性先天不足。它主要评估建群<strong>初期</strong>的多样性水平（始祖效应）。</p>
+<p><strong>计算公式</strong>（Boichard 1997 Appendix A）：</p>
+<p><span class="math display">\[ f_e = \frac{1}{\sum(p_i^2)} \]</span></p>
+<p>其中 <span class="math inline">\(p_i\)</span> 代表始祖 <span class="math inline">\(i\)</span> 对参考群体的<strong>期望遗传贡献（Expected genetic contribution）</strong>。</p>
+<p><span class="math inline">\(p_i\)</span> 是什么？ 可以把它想象成一个随机抽签游戏：在参考群体的所有个体中随机挑一只，再在这只个体的所有等位基因里随机摸一个基因，然后沿着系谱一路向上追溯——这个基因最终来源于始祖 <span class="math inline">\(i\)</span> 的概率，就是 <span class="math inline">\(p_i\)</span>。换言之，<span class="math inline">\(p_i\)</span> 就是始祖 <span class="math inline">\(i\)</span> 在整个参考群体基因库中所占的”份额”。所有始祖的份额之和必然等于 1：<span class="math inline">\(\sum p_i = 1\)</span>。</p>
+<p><strong>为什么要用平方</strong> <span class="math inline">\(p_i^2\)</span> ？ 设想我们独立地从参考群体中随机摸两个等位基因，它们都来自同一个始祖 <span class="math inline">\(i\)</span> 的概率恰好是 <span class="math inline">\(p_i \times p_i = p_i^2\)</span>。对所有始祖求和，<span class="math inline">\(\sum p_i^2\)</span> 就是”任意两个基因来自同一始祖的概率”，它在群体遗传学中被称为<strong>基因同源碰撞概率</strong>，反映了群体基因来源的集中程度。<span class="math inline">\(\sum p_i^2\)</span> 越大，说明基因越集中在少数始祖身上，多样性越低。</p>
+<p><strong>为什么取倒数？</strong> 考虑一个极度理想的对照情形：<span class="math inline">\(N\)</span> 个始祖贡献完全相等，每人 <span class="math inline">\(p_i = 1/N\)</span>，此时 <span class="math inline">\(\sum p_i^2 = N \cdot (1/N)^2 = 1/N\)</span>，即 <span class="math inline">\(f_e = N\)</span>，结果恰好等于真实的始祖数。对于贡献不均衡的真实群体，<span class="math inline">\(\sum p_i^2 &gt; 1/N\)</span>（因为大贡献者的平方项远大于均摊时），取倒数后得到的 <span class="math inline">\(f_e\)</span> 就会小于真实始祖数，体现出”实际可用的遗传多样性等效于多少个贡献均等的理想始祖”的含义。</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>直觉理解</strong>：若 4 个始祖贡献完全相等（各 25%），则 <span class="math inline">\(f_e = 1/(4 \times 0.25^2) = 4\)</span>，等于真实数量。若其中一个始祖独占 97%，另外三个各占 1%，则 <span class="math inline">\(f_e \approx 1/0.97^2 \approx 1.06\)</span>，说明尽管名义上有 4 个始祖，实际遗传多样性仅相当于 1 个人贡献的水平。</p>
+</div>
+</div>
+</section>
+<section id="有效祖先数-f_a" class="level3">
+<h3 class="anchored" data-anchor-id="有效祖先数-f_a">1.2 有效祖先数 (<span class="math inline">\(f_a\)</span>)</h3>
+<p><strong>定义</strong>：覆盖当前参考群体全部基因多样性，最少需要多少个贡献<strong>完全相等、且基因互不重叠</strong>的“虚拟理想祖先”。</p>
+<p><strong>与</strong> <span class="math inline">\(f_e\)</span> 的本质区别：<span class="math inline">\(f_e\)</span> 只看建群<strong>起点</strong>——那几批奠基者（Founders）的贡献是否均衡；而 <span class="math inline">\(f_a\)</span> 审视的是整条繁育<strong>历史链路</strong>——从奠基者到当前参考群体，中间所有世代的繁育是否存在“明星父母本被反复重用”的瓶颈现象。</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 36%">
+<col style="width: 43%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>对比维度</th>
+<th><span class="math inline">\(f_e\)</span>（有效始祖数）</th>
+<th><span class="math inline">\(f_a\)</span>（有效祖先数）</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>关注时间点</td>
+<td>仅建群初期</td>
+<td>整个繁育历史</td>
+</tr>
+<tr class="even">
+<td>关注对象</td>
+<td>无父母记录的奠基者</td>
+<td>系谱中所有个体（含中间世代）</td>
+</tr>
+<tr class="odd">
+<td>能否捕捉瓶颈</td>
+<td>❌ 不能（忽略后续历史）</td>
+<td>✅ 能（穿透所有世代）</td>
+</tr>
+<tr class="even">
+<td>典型场景</td>
+<td>评估建群多样性基础</td>
+<td>评估历代繁育中的遗传瓶颈</td>
+</tr>
+</tbody>
+</table>
+<p><strong>物理意义</strong>：在对虾育种中，某个世代的高生长速率雄虾（父本）往往被大量用于配种，使其基因出现在几乎所有后代中，这就是<strong>遗传瓶颈</strong>。尽管 <span class="math inline">\(f_e\)</span> 可能不低（奠基者数量够多），但 <span class="math inline">\(f_a\)</span> 会因中间这个“漏斗”而显著降低，如实反映群体真实的遗传多样性水平。</p>
+<p><strong>计算公式</strong>：</p>
+<p><span class="math display">\[ f_a = \frac{1}{\sum(q_j^2)} \]</span></p>
+<p>其中 <span class="math inline">\(q_j\)</span> 是祖先 <span class="math inline">\(j\)</span> 对参考群体的<strong>边际遗传贡献（Marginal genetic contribution）</strong>。</p>
+<p><span class="math inline">\(q_j\)</span> 与 <span class="math inline">\(p_i\)</span> 的关键区别：<span class="math inline">\(p_i\)</span> 是奠基者的“原始份额”，直接从血统追溯得到，且只针对奠基者计算。<span class="math inline">\(q_j\)</span> 则是对<strong>系谱网络中任意一个祖先</strong>（包括中间世代的父母本）计算的“去重净贡献”——在已知其他祖先贡献的前提下，这个祖先<strong>额外、独立地</strong>解释了多少群体遗传变异。</p>
+<p><strong>为什么不能直接用</strong> <span class="math inline">\(p_i\)</span> 来计算 <span class="math inline">\(f_a\)</span>？——双重计算问题</p>
+<p>考虑这样一个场景：某批父本 <code>S1</code> 贡献了参考群体 50% 的基因，而 <code>S1</code> 的父本 <code>F1</code> 贡献了参考群体 25% 的基因（其中一半通过 <code>S1</code> 传递）。如果直接把 <code>S1</code> 的 <span class="math inline">\(p = 0.5\)</span> 和 <code>F1</code> 的 <span class="math inline">\(p = 0.25\)</span> 都放进公式里累加，<code>F1</code> 通过 <code>S1</code> 传递的那 0.25 份基因就被<strong>算了两遍</strong>！这在统计上是严重错误的。</p>
+<p><strong>边际贡献的计算——迭代剥离法（Boichard et al., 1997）</strong></p>
+<p>为了解决双重计算问题，Boichard 团队提出了一个贪心迭代算法：</p>
+<p><strong>第一轮</strong>：在所有候选祖先中，找出对参考群体贡献最大的那一个（设为 <span class="math inline">\(A_1\)</span>），将其贡献<strong>全额</strong>记为它的边际贡献：<span class="math inline">\(q_1 = p_{A_1}\)</span>。</p>
+<p><strong>第二轮及以后</strong>：将 <span class="math inline">\(A_1\)</span> 设为“黑洞”——所有穿过 <span class="math inline">\(A_1\)</span> 的血统通路都被截断，不再向更上层追溯。其余每个候选祖先 <span class="math inline">\(k\)</span> 的“剥离后净贡献”按下式计算：</p>
+<p><span class="math display">\[q_k = p_k - \sum_{j=1}^{\text{已选}} r_{jk} \cdot q_j\]</span></p>
+<p>其中 <span class="math inline">\(r_{jk}\)</span> 是候选祖先 <span class="math inline">\(k\)</span> 经由已选定祖先 <span class="math inline">\(j\)</span> 传递基因的路径比例，用于剥除重复计算的部分。在所有候选祖先的净贡献中选最大者作为 <span class="math inline">\(A_2\)</span>，记 <span class="math inline">\(q_2\)</span>，再截断，如此反复。</p>
+<p><strong>迭代终止条件</strong>：当 <span class="math inline">\(\sum q_j = 1.0\)</span>，参考群体的全部遗传变异已被无重叠地分配完毕，迭代终止。</p>
+<p><strong>为什么</strong> <span class="math inline">\(q_j\)</span> 的平方和取倒数就是 <span class="math inline">\(f_a\)</span>？</p>
+<p>逻辑与 <span class="math inline">\(f_e\)</span> 完全一致：<span class="math inline">\(q_j\)</span> 已去重、互不重叠，可安全平方求和。<span class="math inline">\(\sum q_j^2\)</span> 是等效理想祖先视角下的“基因同源碰撞概率”，取倒数即得等效祖先数：</p>
+<p><span class="math display">\[f_a = \frac{1}{\sum q_j^2}\]</span></p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>直觉对比（以对虾育种为例）</strong>：假设某对虾群体有 10 批奠基者，但某个中间世代有一批表现突出的父本被用于配了 90% 的母本。计算结果可能是 <span class="math inline">\(f_e = 8\)</span>（建群时多样性尚可），但 <span class="math inline">\(f_a = 1.2\)</span>（这批超级父本造成了极度瓶颈）。<span class="math inline">\(f_a / f_e = 0.15\)</span> 直接揭示：历代繁育中遗传多样性流失了约 85%。</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><span class="math inline">\(f_a \leq f_e\)</span> 恒成立。<span class="math inline">\(f_a / f_e\)</span> 越接近 1，说明历代繁育越均衡；比值越低，说明中间世代的父母本使用越不均衡，遗传漏斗效应越严重。</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="二-模拟系谱与手工数学推导" class="level2">
+<h2 class="anchored" data-anchor-id="二-模拟系谱与手工数学推导">二、 模拟系谱与手工数学推导</h2>
+<p>我们设计一个只有 10 个个体的小型群体，其中包含一个典型的<strong>繁育不平衡（瓶颈）</strong>现象：</p>
+<ul>
+<li><strong>第 1 代（奠基者 Founders）</strong>：<code>F1</code>, <code>F2</code>, <code>F3</code>, <code>F4</code>（这 4 个个体父母未知）。</li>
+<li><strong>第 2 代（瓶颈）</strong>：
+<ul>
+<li>个体 <code>S1</code> 是由 <code>F1</code> 和 <code>F2</code> 交配产生的（各占其一半血统）。</li>
+<li>个体 <code>D1</code> 是由 <code>F3</code> 和 <code>F4</code> 交配产生的（各占其一半血统）。</li>
+</ul></li>
+<li><strong>第 3 代（当前参考群体，被评估对象）</strong>：
+<ul>
+<li>此时由于 <code>S1</code> 表现出众（明星父本），它被过度运用。</li>
+<li>参考个体包含 4 个：<code>R1</code>、<code>R2</code>、<code>R3</code>、<code>R4</code>。</li>
+<li>其中，<code>R1</code>, <code>R2</code>, <code>R3</code> 全是 <code>S1</code> <span class="math inline">\(\times\)</span> <code>D1</code> 产生的后代。</li>
+<li>特例后代：<code>R4</code> 是 <code>S1</code> 与奠基者 <code>F4</code> 回交产生的后代。</li>
+</ul></li>
+</ul>
+<p>先给出该模拟群体的系谱图，便于直观理解后续手工推导。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(visPedigree)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>ped_sim <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">"ped_sim.csv"</span>, <span class="at">na.strings =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"NA"</span>))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>tidy_ped_sim <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(<span class="at">ped =</span> ped_sim)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>ref_inds <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"R1"</span>, <span class="st">"R2"</span>, <span class="st">"R3"</span>, <span class="st">"R4"</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> ref_inds)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/pedigree-structure-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>模拟系谱结构图（高亮参考群体 R1-R4）</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="推导-p_i-与-f_e" class="level3">
+<h3 class="anchored" data-anchor-id="推导-p_i-与-f_e">2.1 推导 <span class="math inline">\(p_i\)</span> 与 <span class="math inline">\(f_e\)</span></h3>
+<p>对于 4 个参考个体（<code>R1</code>-<code>R4</code>），向四位始祖溯源血统比例：</p>
+<ul>
+<li>R1, R2, R3 的亲本均为 <code>S1</code>（父）× <code>D1</code>（母），血统溯源如下：
+<ul>
+<li>父系（经由 S1）：<span class="math inline">\(F1 \xrightarrow{0.5} S1 \xrightarrow{0.5} R = 0.5 \times 0.5 = 1/4\)</span>；<span class="math inline">\(F2\)</span> 同理，贡献 <span class="math inline">\(= 1/4\)</span></li>
+<li>母系（经由 D1）：<span class="math inline">\(F3 \xrightarrow{0.5} D1 \xrightarrow{0.5} R = 0.5 \times 0.5 = 1/4\)</span>；<span class="math inline">\(F4\)</span> 同理，贡献 <span class="math inline">\(= 1/4\)</span></li>
+<li>因此 R1、R2、R3 各自的始祖血统构成：<span class="math inline">\(F1=1/4,\ F2=1/4,\ F3=1/4,\ F4=1/4\)</span></li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> <span class="fu">c</span>(<span class="st">"R1"</span>, <span class="st">"R2"</span>, <span class="st">"R3"</span>), <span class="at">trace =</span> <span class="st">"up"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>R4 的亲本为 <code>S1</code>（父）× <code>F4</code>（母），血统溯源如下：
+<ul>
+<li>父系（经由 S1）：<span class="math inline">\(F1 \xrightarrow{0.5} S1 \xrightarrow{0.5} R4 = 0.5 \times 0.5 = 1/4\)</span>；<span class="math inline">\(F2\)</span> 同理，贡献 <span class="math inline">\(= 1/4\)</span></li>
+<li>母系（直接来自 F4）：<code>F4</code> 本身即为奠基者，直接作为母本贡献 <span class="math inline">\(= 1/2\)</span>；<span class="math inline">\(F3\)</span> 无贡献 <span class="math inline">\(= 0\)</span></li>
+<li>因此 R4 的始祖血统构成：<span class="math inline">\(F1=1/4,\ F2=1/4,\ F3=0,\ F4=1/2\)</span></li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> <span class="st">"R4"</span>, <span class="at">trace =</span> <span class="st">"up"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>群体的平均血统需求 <span class="math inline">\(p_i\)</span>：</p>
+<ul>
+<li><span class="math inline">\(p_{F1} = (0.25 \times 3 + 0.25) / 4 = 0.25\)</span></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> <span class="st">"F1"</span>, <span class="at">trace =</span> <span class="st">"down"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><span class="math inline">\(p_{F2} = (0.25 \times 3 + 0.25) / 4 = 0.25\)</span></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> <span class="st">"F2"</span>, <span class="at">trace =</span> <span class="st">"down"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><span class="math inline">\(p_{F3} = (0.25 \times 3 + 0) / 4 = 0.1875\)</span></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> <span class="st">"F3"</span>, <span class="at">trace =</span> <span class="st">"down"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><span class="math inline">\(p_{F4} = (0.25 \times 3 + 0.5) / 4 = 0.3125\)</span></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_ped_sim, <span class="at">highlight =</span> <span class="st">"F4"</span>, <span class="at">trace =</span> <span class="st">"down"</span> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>核对守恒：<span class="math inline">\(0.25 + 0.25 + 0.1875 + 0.3125 = 1.0\)</span>。</p>
+<p>手工计算有效始祖数：</p>
+<p><span class="math inline">\(f_e = \frac{1}{0.25^2 + 0.25^2 + 0.1875^2 + 0.3125^2} = \mathbf{3.878788}\)</span></p>
+</section>
+<section id="推导-q_i-与-f_a" class="level3">
+<h3 class="anchored" data-anchor-id="推导-q_i-与-f_a">2.2 推导 <span class="math inline">\(q_i\)</span> 与 <span class="math inline">\(f_a\)</span></h3>
+<p>按照迭代法则：</p>
+<p><strong>第一步：寻找第一主节点</strong>。</p>
+<p>祖先 <code>S1</code> 是 R1~R4 中所有人的父亲，贡献度最高。<span class="math inline">\(p_{S1} = 0.5\)</span>。</p>
+<p>锁定 <span class="math inline">\(A_1 = S1\)</span>，<strong>边际贡献</strong> <span class="math inline">\(q_1 = 0.5\)</span>。从 S1 往上的路径将被截流。</p>
+<p><strong>第二步：剥离后寻找最大节点</strong>。</p>
+<p>S1 被截流后，剩余为母本那半条线。</p>
+<p><code>D1</code> 是 R1, R2, R3 的母亲，其剥离后的残余净贡献为 <span class="math inline">\(0.5 \times 3 / 4 = 0.375\)</span>。</p>
+<p>锁定 <span class="math inline">\(A_2 = D1\)</span>，<strong>边际贡献</strong> <span class="math inline">\(q_2 = 0.375\)</span>，从 D1 往上的路径（主要是 F3 和 F4的共同线）被截流。</p>
+<p><strong>第三步：处理特例残余点</strong>。</p>
+<p>R1~R3 的 <span class="math inline">\(1.0\)</span> 变异已被 S1 和 D1 解释完整。R4 的父系 0.5 被 S1 解释，仅剩其母系来源。</p>
+<p>R4 的母亲是 <code>F4</code>，其在 R4 上的残余净贡献分摊到群体为 <span class="math inline">\(0.5 / 4 = 0.125\)</span>。</p>
+<p>锁定 <span class="math inline">\(A_3 = F4\)</span>，<strong>边际贡献</strong> <span class="math inline">\(q_3 = 0.125\)</span>。</p>
+<p>核对守恒：<span class="math inline">\(q_1 + q_2 + q_3 = 0.5 + 0.375 + 0.125 = 1.0\)</span>。不重不漏！</p>
+<p><strong>手工计算有效祖先数</strong>： <span class="math inline">\(f_a = \frac{1}{0.5^2 + 0.375^2 + 0.125^2} = \mathbf{2.461538}\)</span></p>
+<hr>
+</section>
+</section>
+<section id="三-使用-vispedigree-进行代码模拟验证" class="level2">
+<h2 class="anchored" data-anchor-id="三-使用-vispedigree-进行代码模拟验证">三、 使用 <code>visPedigree</code> 进行代码模拟验证</h2>
+<p>通过以上的推演，我们接下来在 R 中运用 <code>visPedigree</code> 中的 <code>pedcontrib</code> 函数测试该拓扑图的运算特征。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 注意：visPedigree &gt;= 1.2 中已将 cand 替换为 reference，以规范化群体遗传学术语</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">pedcontrib</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ped =</span> tidy_ped_sim, </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference =</span> ref_inds, </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mode =</span> <span class="st">"both"</span>, </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">top =</span> <span class="dv">10</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="对比有效数估算结果" class="level3">
+<h3 class="anchored" data-anchor-id="对比有效数估算结果">3.1 对比有效数估算结果</h3>
+<p>我们首先对比理论推导的 <span class="math inline">\(f_e = 3.878788\)</span> 和 <span class="math inline">\(f_a = 2.461538\)</span>。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"理论 f_e = 3.878788 | visPedigree 计算 f_e = %f</span><span class="sc">\n</span><span class="st">"</span>, res<span class="sc">$</span>summary<span class="sc">$</span>f_e))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>理论 f_e = 3.878788 | visPedigree 计算 f_e = 3.878788</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"理论 f_a = 2.461538 | visPedigree 计算 f_a = %f</span><span class="sc">\n</span><span class="st">"</span>, res<span class="sc">$</span>summary<span class="sc">$</span>f_a))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>理论 f_a = 2.461538 | visPedigree 计算 f_a = 2.461538</code></pre>
+</div>
+</div>
+<p>结果丝毫不差。由于 <span class="math inline">\(f_a\)</span> (2.46) <span class="math inline">\(\ll f_e\)</span> (3.88)，程序准确评估到了该群体经历了狭窄的遗传瓶颈（即 <span class="math inline">\(S1\)</span> 被极度超量使用）。</p>
+</section>
+<section id="对比内部边际贡献比例的拆解" class="level3">
+<h3 class="anchored" data-anchor-id="对比内部边际贡献比例的拆解">3.2 对比内部边际贡献比例的拆解</h3>
+<p>我们可以更深入地把计算出来的每位祖先的份额展示出来。</p>
+<p><strong>始祖贡献验证 (</strong><span class="math inline">\(p_i\)</span>)：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(res<span class="sc">$</span>founders)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Ind Contrib CumContrib  Rank
+   &lt;char&gt;   &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+1:     F4  0.3125     0.3125     1
+2:     F1  0.2500     0.5625     2
+3:     F2  0.2500     0.8125     3
+4:     F3  0.1875     1.0000     4</code></pre>
+</div>
+</div>
+<p>可以看到 F4 因为被回交调用，占居了最高的 0.3125 初始基因份额比例。</p>
+<p><strong>瓶颈祖先边际贡献验证 (</strong><span class="math inline">\(q_i\)</span>)：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(res<span class="sc">$</span>ancestors)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Ind Contrib CumContrib  Rank
+   &lt;char&gt;   &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+1:     S1   0.500      0.500     1
+2:     D1   0.375      0.875     2
+3:     F4   0.125      1.000     3</code></pre>
+</div>
+</div>
+<p>正如我们精妙的手工推导：程序完美地利用迭代法找出了 S1 (<span class="math inline">\(q=0.500\)</span>)、D1 (<span class="math inline">\(q=0.375\)</span>) 以及回交残余截流点 F4 (<span class="math inline">\(q=0.125\)</span>)。它彻底避免了把父亲 S1 的基因和爷爷 F1 的发生任何重复相加带来的数学越界。</p>
+</section>
+</section>
+<section id="四-结论与讨论" class="level2">
+<h2 class="anchored" data-anchor-id="四-结论与讨论">四、 结论与讨论</h2>
+<p>本次验算证明：<code>visPedigree::pedcontrib</code> 对有向无环图血统阻断的识别逻辑（边际降维与屏蔽传播）严格服从经典的 Boichard 定理，实现了在 R 语言环境下的精准重构。</p>
+<p><strong>深入思考：为什么</strong> <span class="math inline">\(f_a\)</span> 能更客观地反映一个群体的真真实状态？</p>
+<p>在实际的繁育管理中，<span class="math inline">\(f_a\)</span>（有效祖先数）确实比 <span class="math inline">\(f_e\)</span>（有效始祖数）或普通的系谱规模更能反映群体的“真实家底”。这背后的核心原因在于它戳中了真实育种中不可避免的两个骨感现实：</p>
+<ol type="1">
+<li><strong>明星效应（过度使用个别父母本）</strong>：在现实中，表现优异的个体（如代码模拟中的 <code>S1</code>）往往会被留作父母本并大量繁育后代。单纯看 <span class="math inline">\(f_e\)</span> 时，所有的奠基者（Founders）都在建群时被赋予了平等的数学地位；但在真实血统传递里，那些没被选中的往往“断后”了，群体的真实基因库被极大压缩。<span class="math inline">\(f_a\)</span> 通过“贡献剥离计算”无情地剔除了这种表面繁荣的假象。</li>
+<li><strong>遗传瓶颈追踪</strong>：<span class="math inline">\(f_e\)</span> 仅刻画建群初期的状态（相当于“我们曾经有多富”），而 <span class="math inline">\(f_a\)</span> 扫视整个繁育历史网络，找出真正的基因瓶颈节点（相当于“经历重重筛选，我们现在实际上还剩多少保命钱”）。</li>
+</ol>
+<p>正因如此，在很多针对家畜或水产的保护遗传学评估里，学者们除了看两者的绝对值，更常常使用 <span class="math inline">\(f_a / f_e\)</span> 的比值来评估历代繁育过程中基因多样性的流失严重程度——比值越低，说明个别核心祖先造成的遗传瓶颈和多样性收缩越严重。</p>
+<hr>
+</section>
+<section id="五-更复杂的真实场景验证small_ped" class="level2">
+<h2 class="anchored" data-anchor-id="五-更复杂的真实场景验证small_ped">五、 更复杂的真实场景验证：<code>small_ped</code></h2>
+<p>前面的 10 个体模型主要用于直观理解。现在我们采用 <code>visPedigree</code> 包内自带的更为错综复杂的 <code>small_ped</code> 数据集（包含多世代、重叠世代和复杂的近交网络），以其中的后代个体 <code>Z1</code>, <code>Z2</code>, <code>Y</code>, <code>X</code> 作为参考群体，对其基因贡献和瓶颈进行二次无缝验证。</p>
+<section id="数据准备与初探" class="level3">
+<h3 class="anchored" data-anchor-id="数据准备与初探">5.1 数据准备与初探</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 加载包内自带测试系谱</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>tp <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(small_ped)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 可视化系谱结构</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/small-ped-simulation-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 计算指定参考群体的 fe 和 fa</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>ref_small <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Z1"</span>, <span class="st">"Z2"</span>, <span class="st">"Y"</span>, <span class="st">"X"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tp, <span class="at">highlight =</span> ref_small)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/small-ped-simulation-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>res_small <span class="ot">&lt;-</span> <span class="fu">pedcontrib</span>(tp, <span class="at">reference =</span> ref_small, <span class="at">mode =</span> <span class="st">"both"</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"小型系谱 f_e = %f</span><span class="sc">\n</span><span class="st">"</span>, res_small<span class="sc">$</span>summary<span class="sc">$</span>f_e))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>小型系谱 f_e = 6.585209</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"小型系谱 f_a = %f</span><span class="sc">\n</span><span class="st">"</span>, res_small<span class="sc">$</span>summary<span class="sc">$</span>f_a))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>小型系谱 f_a = 2.666667</code></pre>
+</div>
+</div>
+<p><em>计算结果显示：</em><span class="math inline">\(f_e = 6.585\)</span>，<span class="math inline">\(f_a = 2.667\)</span>。</p>
+</section>
+<section id="small_ped-的手工溯源剖析" class="level3">
+<h3 class="anchored" data-anchor-id="small_ped-的手工溯源剖析">5.2 <code>small_ped</code> 的手工溯源剖析</h3>
+<p>为了彻底揭开算法核心，我们从 <code>tidyped(small_ped)</code> 的真实网络中反向推导。目标参考群体是：<code>X</code>，<code>Y</code>，<code>Z1</code>，<code>Z2</code>。</p>
+<p>首先明确他们的父母来源：</p>
+<ul>
+<li><p><strong>X</strong> (Sire: U, Dam: V)</p></li>
+<li><p><strong>Y</strong> (Sire: R, Dam: W)</p></li>
+<li><p><strong>Z1</strong> (Sire: N, Dam: X)</p></li>
+<li><p><strong>Z2</strong> (Sire: N, Dam: X)</p></li>
+</ul>
+<p>这是一个极具代表性的复杂场景：<strong>参考群体中的个体 <code>X</code>，同时也是同一个群体中 <code>Z1</code> 和 <code>Z2</code> 的母亲！</strong> 也就是“存在世代重叠的母系亲属”。</p>
+<section id="第一步找出头号祖先最大期望贡献者" class="level4">
+<h4 class="anchored" data-anchor-id="第一步找出头号祖先最大期望贡献者">5.2.1 第一步：找出头号祖先（最大期望贡献者）</h4>
+<p>根据 Boichard 定理，参考群体本身的个体如果掌握巨量基因流，它们<strong>自己也可以作为有效祖先</strong>。我们可以清楚地看到 <strong><code>X</code></strong> 这个瓶颈到底有多大：</p>
+<ol type="1">
+<li><code>X</code> 本身是参考群体的一员，所以它 <span class="math inline">\(100\%\)</span> 的基因流向自己（占群体 <span class="math inline">\(1/4\)</span> 份额）。</li>
+<li><code>X</code> 是 <code>Z1</code> 的直接母亲，掌控了 <code>Z1</code> <span class="math inline">\(50\%\)</span> 的基因（占群体 <span class="math inline">\(1/4 \times 0.5\)</span> 份额）。</li>
+<li><code>X</code> 是 <code>Z2</code> 的直接母亲，掌控了 <code>Z2</code> <span class="math inline">\(50\%\)</span> 的基因（占群体 <span class="math inline">\(1/4 \times 0.5\)</span> 份额）。</li>
+</ol>
+<p>我们来计算 <code>X</code> 的总边际贡献： <span class="math display">\[ q_1(X) = \frac{1.0 (X) + 0.5 (Z1) + 0.5 (Z2)}{4} = \frac{2.0}{4} = \mathbf{0.50} \]</span></p>
+<p>这意味着仅仅 <code>X</code> 一个人，就控制了整个参考群体 50% 的血统流向！她成为无可争议的第一且最大的<strong>特异祖先</strong>。</p>
+</section>
+<section id="第二步阻断并剥离重新分配" class="level4">
+<h4 class="anchored" data-anchor-id="第二步阻断并剥离重新分配">5.2.2 第二步：阻断并剥离重新分配</h4>
+<p>当 <code>X</code> 被确立为头号祖先后，她所在的父系母系节点被设为“黑洞”。此时，<code>X</code>、<code>Z1</code> 的母系、<code>Z2</code> 的母系基因流动全部被截断解释。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tp, <span class="at">highlight =</span> <span class="fu">c</span>(<span class="st">"X"</span>), <span class="at">trace =</span> <span class="st">"all"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>我们看还剩下什么：</p>
+<ol type="1">
+<li><code>Z1</code> 体内存留的另外 <span class="math inline">\(50\%\)</span> 的未解释变异，全部来自于它的父亲 <strong><code>N</code></strong>。</li>
+<li><code>Z2</code> 体内存留的另外 <span class="math inline">\(50\%\)</span> 的未解释变异，也全部来自于它的父亲 <strong><code>N</code></strong>。</li>
+<li>（注意：<code>N</code> 原本也有一小部分可以通过网络传给 <code>X</code>，但随着 <code>X</code> 被全盘剥离，那部分基因被彻底阻断截留，不再重复计算）。</li>
+</ol>
+<p>因此，第二号祖先呼之欲出，即 <strong><code>N</code></strong>： <span class="math display">\[ q_2(N) = \frac{0.5 (Z1父系) + 0.5 (Z2父系)}{4} = \frac{1.0}{4} = \mathbf{0.25} \]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tp, <span class="at">highlight =</span> <span class="fu">c</span>(<span class="st">"N"</span>), <span class="at">trace =</span> <span class="st">"down"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>此时，<code>Z1</code>、<code>Z2</code> 和 <code>X</code> 这三个多代重叠个体的全部遗传变异（共占群体 <span class="math inline">\(75\%\)</span>）已经被完美的双节点模型 <span class="math inline">\(X-N\)</span> 分解殆尽！</p>
+</section>
+<section id="第三步残余份额清理" class="level4">
+<h4 class="anchored" data-anchor-id="第三步残余份额清理">5.2.3 第三步：残余份额清理</h4>
+<p>最后看我们的第四个参考个体 <strong><code>Y</code></strong>，它在系谱网络的一侧，且和前面的 <span class="math inline">\(X, Z1, Z2\)</span> 的阻断网完全隔离。 它 <span class="math inline">\(100\%\)</span> 的变异依然完好无损没有被剥离。因此它自己代表了自己的完全变异（在真实的候选祖先计算中，可以是 <code>Y</code> 自己，或者 <code>Y</code> 的任一远端独占始祖等效作为其等量剥离源）。 为了补齐剩余的全部变异量，程序算出剩余边际贡献： <span class="math display">\[ q_3(Y) = \frac{1.0 (Y)}{4} = \mathbf{0.25} \]</span></p>
+<p>根据 <code>visPedigree</code> 的输出：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(res_small<span class="sc">$</span>ancestors)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Ind Contrib CumContrib  Rank
+   &lt;char&gt;   &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+1:      X    0.50       0.50     1
+2:      N    0.25       0.75     2
+3:      Y    0.25       1.00     3</code></pre>
+</div>
+</div>
+<p>通过重叠个体的自融与阻断，程序巧妙找出了巨型的“直系血统瓶颈 <code>X</code>”，防止了向古老始祖做微弱连接的碎片化寻根。从而得出极其精准的 <span class="math inline">\(f_a\)</span>： <span class="math display">\[ f_a = \frac{1}{0.50^2 + 0.25^2 + 0.25^2} = \frac{1}{0.375} = \mathbf{2.6667} \]</span></p>
+<p>所有的 <span class="math inline">\(q_i\)</span> 之和完美等于 1.000，没有任何“脱靶”或双重计算！</p>
+</section>
+</section>
+</section>
+<section id="六.-结语" class="level2">
+<h2 class="anchored" data-anchor-id="六.-结语">六. 结语</h2>
+<p>使用 <code>visPedigree</code> 包对系谱信息的深度挖掘，有助于极大地方便育种团队在全基因组选择或是常规家系繁育过程中掌握群体的实际遗传动态：</p>
+<ul>
+<li><span class="math inline">\(f_e\)</span> (Effective Founders, 有效始祖数)：通过评估最上层建群亲本的影响系数，暴露起始遗传结构的不平衡和瓶颈效应；</li>
+<li><span class="math inline">\(f_a\)</span> (Effective Ancestors, 有效祖先数)：采用 Boichard 的边际贡献迭代折减，完美捕获并量化了“代际繁育过程中的漏斗效应”及超级采种亲本带来的强连锁血统锁定。</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 检查群体的大体结果：</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(res<span class="sc">$</span>summary)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>List of 7
+ $ n_ref          : int 4
+ $ n_founder      : int 4
+ $ n_founder_show : int 4
+ $ f_e            : num 3.88
+ $ n_ancestor     : int 3
+ $ n_ancestor_show: int 3
+ $ f_a            : num 2.46</code></pre>
+</div>
+</div>
+<p>对于日常分析，我们极力推荐使用集成的 <code>pediv()</code> 取代所有的单步繁琐调用：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>pediv_res <span class="ot">&lt;-</span> <span class="fu">pediv</span>(</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">ped =</span> tidy_ped_sim,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference =</span> ref_inds,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">top =</span> <span class="dv">10</span>,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">nsamples=</span><span class="dv">1000</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncores =</span> <span class="dv">4</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(pediv_res<span class="sc">$</span>summary)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    NRef NFounder       fe NAncestor       fa     fafe NeCoancestry
+   &lt;int&gt;    &lt;int&gt;    &lt;num&gt;     &lt;int&gt;    &lt;num&gt;    &lt;num&gt;        &lt;num&gt;
+1:     4        4 3.878788         3 2.461538 0.634615     4.067406
+   NeInbreeding NeDemographic
+          &lt;num&gt;         &lt;num&gt;
+1:           NA      2.666667</code></pre>
+</div>
+</div>
+<p>通过这套成熟算法，<strong><code>visPedigree</code></strong> 可以完美还原那些极难被手工计算或理论推导所捕捉的非对称繁殖体系中的深刻遗传变化趋势。</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/luansheng\.github\.io\/lsblog");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

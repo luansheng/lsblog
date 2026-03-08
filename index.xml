@@ -10,7 +10,805 @@
 <atom:link href="https://luansheng.github.io/lsblog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A blog built with Quarto</description>
 <generator>quarto-1.8.24</generator>
-<lastBuildDate>Mon, 02 Mar 2026 16:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sat, 07 Mar 2026 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证</title>
+  <dc:creator>Sheng Luan</dc:creator>
+  <link>https://luansheng.github.io/lsblog/posts/fafe-20260307/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="摘要" class="level2">
+<h2 class="anchored" data-anchor-id="摘要">摘要</h2>
+<p>在群体遗传学和系谱分析中，<strong>有效始祖数（Effective number of founders,</strong> <img src="https://latex.codecogs.com/png.latex?f_e">）与<strong>有效祖先数（Effective number of ancestors,</strong> <img src="https://latex.codecogs.com/png.latex?f_a">）是衡量群体遗传多样性与遗传瓶颈的两个核心指标（Boichard et al., 1997）。本文通过构建一个具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用正在开发的 <code>visPedigree::pedcontrib()</code> 函数进行自动化计算，实现理论推导与工程实现的交叉验证。 可以通过<code>devtools::install_github("luansheng/visPedigree@pedigreeAnalysis")</code>安装最新版本的 <code>visPedigree</code> 包开发版分支来复现本文的计算过程。</p>
+</section>
+<section id="一-核心概念与理论背景" class="level2">
+<h2 class="anchored" data-anchor-id="一-核心概念与理论背景">一、 核心概念与理论背景</h2>
+<section id="有效始祖数-f_e" class="level3">
+<h3 class="anchored" data-anchor-id="有效始祖数-f_e">1.1 有效始祖数 (<img src="https://latex.codecogs.com/png.latex?f_e">)</h3>
+<p><strong>定义</strong>：在建群之初，有多少个无亲缘关系的奠基者（Founders）为当前群体提供了基因。</p>
+<p><strong>物理意义</strong>：假设当前群体中所有的基因多样性，是由贡献<strong>完全相等</strong>的、互不相关的理想始祖共同提供的，那么这个理想始祖的数量就是 <img src="https://latex.codecogs.com/png.latex?f_e">。<img src="https://latex.codecogs.com/png.latex?f_e"> 越大，说明建群时遗传基础越宽广；<img src="https://latex.codecogs.com/png.latex?f_e"> 越小，说明当初仅依赖极少数始祖，遗传多样性先天不足。它主要评估建群<strong>初期</strong>的多样性水平（始祖效应）。</p>
+<p><strong>计算公式</strong>（Boichard 1997 Appendix A）：</p>
+<p><img src="https://latex.codecogs.com/png.latex?%20f_e%20=%20%5Cfrac%7B1%7D%7B%5Csum(p_i%5E2)%7D%20"></p>
+<p>其中 <img src="https://latex.codecogs.com/png.latex?p_i"> 代表始祖 <img src="https://latex.codecogs.com/png.latex?i"> 对参考群体的<strong>期望遗传贡献（Expected genetic contribution）</strong>。</p>
+<p><img src="https://latex.codecogs.com/png.latex?p_i"> 是什么？ 可以把它想象成一个随机抽签游戏：在参考群体的所有个体中随机挑一只，再在这只个体的所有等位基因里随机摸一个基因，然后沿着系谱一路向上追溯——这个基因最终来源于始祖 <img src="https://latex.codecogs.com/png.latex?i"> 的概率，就是 <img src="https://latex.codecogs.com/png.latex?p_i">。换言之，<img src="https://latex.codecogs.com/png.latex?p_i"> 就是始祖 <img src="https://latex.codecogs.com/png.latex?i"> 在整个参考群体基因库中所占的”份额”。所有始祖的份额之和必然等于 1：<img src="https://latex.codecogs.com/png.latex?%5Csum%20p_i%20=%201">。</p>
+<p><strong>为什么要用平方</strong> <img src="https://latex.codecogs.com/png.latex?p_i%5E2"> ？ 设想我们独立地从参考群体中随机摸两个等位基因，它们都来自同一个始祖 <img src="https://latex.codecogs.com/png.latex?i"> 的概率恰好是 <img src="https://latex.codecogs.com/png.latex?p_i%20%5Ctimes%20p_i%20=%20p_i%5E2">。对所有始祖求和，<img src="https://latex.codecogs.com/png.latex?%5Csum%20p_i%5E2"> 就是”任意两个基因来自同一始祖的概率”，它在群体遗传学中被称为<strong>基因同源碰撞概率</strong>，反映了群体基因来源的集中程度。<img src="https://latex.codecogs.com/png.latex?%5Csum%20p_i%5E2"> 越大，说明基因越集中在少数始祖身上，多样性越低。</p>
+<p><strong>为什么取倒数？</strong> 考虑一个极度理想的对照情形：<img src="https://latex.codecogs.com/png.latex?N"> 个始祖贡献完全相等，每人 <img src="https://latex.codecogs.com/png.latex?p_i%20=%201/N">，此时 <img src="https://latex.codecogs.com/png.latex?%5Csum%20p_i%5E2%20=%20N%20%5Ccdot%20(1/N)%5E2%20=%201/N">，即 <img src="https://latex.codecogs.com/png.latex?f_e%20=%20N">，结果恰好等于真实的始祖数。对于贡献不均衡的真实群体，<img src="https://latex.codecogs.com/png.latex?%5Csum%20p_i%5E2%20%3E%201/N">（因为大贡献者的平方项远大于均摊时），取倒数后得到的 <img src="https://latex.codecogs.com/png.latex?f_e"> 就会小于真实始祖数，体现出”实际可用的遗传多样性等效于多少个贡献均等的理想始祖”的含义。</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>直觉理解</strong>：若 4 个始祖贡献完全相等（各 25%），则 <img src="https://latex.codecogs.com/png.latex?f_e%20=%201/(4%20%5Ctimes%200.25%5E2)%20=%204">，等于真实数量。若其中一个始祖独占 97%，另外三个各占 1%，则 <img src="https://latex.codecogs.com/png.latex?f_e%20%5Capprox%201/0.97%5E2%20%5Capprox%201.06">，说明尽管名义上有 4 个始祖，实际遗传多样性仅相当于 1 个人贡献的水平。</p>
+</div>
+</div>
+</section>
+<section id="有效祖先数-f_a" class="level3">
+<h3 class="anchored" data-anchor-id="有效祖先数-f_a">1.2 有效祖先数 (<img src="https://latex.codecogs.com/png.latex?f_a">)</h3>
+<p><strong>定义</strong>：覆盖当前参考群体全部基因多样性，最少需要多少个贡献<strong>完全相等、且基因互不重叠</strong>的“虚拟理想祖先”。</p>
+<p><strong>与</strong> <img src="https://latex.codecogs.com/png.latex?f_e"> 的本质区别：<img src="https://latex.codecogs.com/png.latex?f_e"> 只看建群<strong>起点</strong>——那几批奠基者（Founders）的贡献是否均衡；而 <img src="https://latex.codecogs.com/png.latex?f_a"> 审视的是整条繁育<strong>历史链路</strong>——从奠基者到当前参考群体，中间所有世代的繁育是否存在“明星父母本被反复重用”的瓶颈现象。</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 36%">
+<col style="width: 43%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>对比维度</th>
+<th><img src="https://latex.codecogs.com/png.latex?f_e">（有效始祖数）</th>
+<th><img src="https://latex.codecogs.com/png.latex?f_a">（有效祖先数）</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>关注时间点</td>
+<td>仅建群初期</td>
+<td>整个繁育历史</td>
+</tr>
+<tr class="even">
+<td>关注对象</td>
+<td>无父母记录的奠基者</td>
+<td>系谱中所有个体（含中间世代）</td>
+</tr>
+<tr class="odd">
+<td>能否捕捉瓶颈</td>
+<td>❌ 不能（忽略后续历史）</td>
+<td>✅ 能（穿透所有世代）</td>
+</tr>
+<tr class="even">
+<td>典型场景</td>
+<td>评估建群多样性基础</td>
+<td>评估历代繁育中的遗传瓶颈</td>
+</tr>
+</tbody>
+</table>
+<p><strong>物理意义</strong>：在对虾育种中，某个世代的高生长速率雄虾（父本）往往被大量用于配种，使其基因出现在几乎所有后代中，这就是<strong>遗传瓶颈</strong>。尽管 <img src="https://latex.codecogs.com/png.latex?f_e"> 可能不低（奠基者数量够多），但 <img src="https://latex.codecogs.com/png.latex?f_a"> 会因中间这个“漏斗”而显著降低，如实反映群体真实的遗传多样性水平。</p>
+<p><strong>计算公式</strong>：</p>
+<p><img src="https://latex.codecogs.com/png.latex?%20f_a%20=%20%5Cfrac%7B1%7D%7B%5Csum(q_j%5E2)%7D%20"></p>
+<p>其中 <img src="https://latex.codecogs.com/png.latex?q_j"> 是祖先 <img src="https://latex.codecogs.com/png.latex?j"> 对参考群体的<strong>边际遗传贡献（Marginal genetic contribution）</strong>。</p>
+<p><img src="https://latex.codecogs.com/png.latex?q_j"> 与 <img src="https://latex.codecogs.com/png.latex?p_i"> 的关键区别：<img src="https://latex.codecogs.com/png.latex?p_i"> 是奠基者的“原始份额”，直接从血统追溯得到，且只针对奠基者计算。<img src="https://latex.codecogs.com/png.latex?q_j"> 则是对<strong>系谱网络中任意一个祖先</strong>（包括中间世代的父母本）计算的“去重净贡献”——在已知其他祖先贡献的前提下，这个祖先<strong>额外、独立地</strong>解释了多少群体遗传变异。</p>
+<p><strong>为什么不能直接用</strong> <img src="https://latex.codecogs.com/png.latex?p_i"> 来计算 <img src="https://latex.codecogs.com/png.latex?f_a">？——双重计算问题</p>
+<p>考虑这样一个场景：某批父本 <code>S1</code> 贡献了参考群体 50% 的基因，而 <code>S1</code> 的父本 <code>F1</code> 贡献了参考群体 25% 的基因（其中一半通过 <code>S1</code> 传递）。如果直接把 <code>S1</code> 的 <img src="https://latex.codecogs.com/png.latex?p%20=%200.5"> 和 <code>F1</code> 的 <img src="https://latex.codecogs.com/png.latex?p%20=%200.25"> 都放进公式里累加，<code>F1</code> 通过 <code>S1</code> 传递的那 0.25 份基因就被<strong>算了两遍</strong>！这在统计上是严重错误的。</p>
+<p><strong>边际贡献的计算——迭代剥离法（Boichard et al., 1997）</strong></p>
+<p>为了解决双重计算问题，Boichard 团队提出了一个贪心迭代算法：</p>
+<p><strong>第一轮</strong>：在所有候选祖先中，找出对参考群体贡献最大的那一个（设为 <img src="https://latex.codecogs.com/png.latex?A_1">），将其贡献<strong>全额</strong>记为它的边际贡献：<img src="https://latex.codecogs.com/png.latex?q_1%20=%20p_%7BA_1%7D">。</p>
+<p><strong>第二轮及以后</strong>：将 <img src="https://latex.codecogs.com/png.latex?A_1"> 设为“黑洞”——所有穿过 <img src="https://latex.codecogs.com/png.latex?A_1"> 的血统通路都被截断，不再向更上层追溯。其余每个候选祖先 <img src="https://latex.codecogs.com/png.latex?k"> 的“剥离后净贡献”按下式计算：</p>
+<p><img src="https://latex.codecogs.com/png.latex?q_k%20=%20p_k%20-%20%5Csum_%7Bj=1%7D%5E%7B%5Ctext%7B%E5%B7%B2%E9%80%89%7D%7D%20r_%7Bjk%7D%20%5Ccdot%20q_j"></p>
+<p>其中 <img src="https://latex.codecogs.com/png.latex?r_%7Bjk%7D"> 是候选祖先 <img src="https://latex.codecogs.com/png.latex?k"> 经由已选定祖先 <img src="https://latex.codecogs.com/png.latex?j"> 传递基因的路径比例，用于剥除重复计算的部分。在所有候选祖先的净贡献中选最大者作为 <img src="https://latex.codecogs.com/png.latex?A_2">，记 <img src="https://latex.codecogs.com/png.latex?q_2">，再截断，如此反复。</p>
+<p><strong>迭代终止条件</strong>：当 <img src="https://latex.codecogs.com/png.latex?%5Csum%20q_j%20=%201.0">，参考群体的全部遗传变异已被无重叠地分配完毕，迭代终止。</p>
+<p><strong>为什么</strong> <img src="https://latex.codecogs.com/png.latex?q_j"> 的平方和取倒数就是 <img src="https://latex.codecogs.com/png.latex?f_a">？</p>
+<p>逻辑与 <img src="https://latex.codecogs.com/png.latex?f_e"> 完全一致：<img src="https://latex.codecogs.com/png.latex?q_j"> 已去重、互不重叠，可安全平方求和。<img src="https://latex.codecogs.com/png.latex?%5Csum%20q_j%5E2"> 是等效理想祖先视角下的“基因同源碰撞概率”，取倒数即得等效祖先数：</p>
+<p><img src="https://latex.codecogs.com/png.latex?f_a%20=%20%5Cfrac%7B1%7D%7B%5Csum%20q_j%5E2%7D"></p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>直觉对比（以对虾育种为例）</strong>：假设某对虾群体有 10 批奠基者，但某个中间世代有一批表现突出的父本被用于配了 90% 的母本。计算结果可能是 <img src="https://latex.codecogs.com/png.latex?f_e%20=%208">（建群时多样性尚可），但 <img src="https://latex.codecogs.com/png.latex?f_a%20=%201.2">（这批超级父本造成了极度瓶颈）。<img src="https://latex.codecogs.com/png.latex?f_a%20/%20f_e%20=%200.15"> 直接揭示：历代繁育中遗传多样性流失了约 85%。</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><img src="https://latex.codecogs.com/png.latex?f_a%20%5Cleq%20f_e"> 恒成立。<img src="https://latex.codecogs.com/png.latex?f_a%20/%20f_e"> 越接近 1，说明历代繁育越均衡；比值越低，说明中间世代的父母本使用越不均衡，遗传漏斗效应越严重。</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="二-模拟系谱与手工数学推导" class="level2">
+<h2 class="anchored" data-anchor-id="二-模拟系谱与手工数学推导">二、 模拟系谱与手工数学推导</h2>
+<p>我们设计一个只有 10 个个体的小型群体，其中包含一个典型的<strong>繁育不平衡（瓶颈）</strong>现象：</p>
+<ul>
+<li><strong>第 1 代（奠基者 Founders）</strong>：<code>F1</code>, <code>F2</code>, <code>F3</code>, <code>F4</code>（这 4 个个体父母未知）。</li>
+<li><strong>第 2 代（瓶颈）</strong>：
+<ul>
+<li>个体 <code>S1</code> 是由 <code>F1</code> 和 <code>F2</code> 交配产生的（各占其一半血统）。</li>
+<li>个体 <code>D1</code> 是由 <code>F3</code> 和 <code>F4</code> 交配产生的（各占其一半血统）。</li>
+</ul></li>
+<li><strong>第 3 代（当前参考群体，被评估对象）</strong>：
+<ul>
+<li>此时由于 <code>S1</code> 表现出众（明星父本），它被过度运用。</li>
+<li>参考个体包含 4 个：<code>R1</code>、<code>R2</code>、<code>R3</code>、<code>R4</code>。</li>
+<li>其中，<code>R1</code>, <code>R2</code>, <code>R3</code> 全是 <code>S1</code> <img src="https://latex.codecogs.com/png.latex?%5Ctimes"> <code>D1</code> 产生的后代。</li>
+<li>特例后代：<code>R4</code> 是 <code>S1</code> 与奠基者 <code>F4</code> 回交产生的后代。</li>
+</ul></li>
+</ul>
+<p>先给出该模拟群体的系谱图，便于直观理解后续手工推导。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(visPedigree)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">ped_sim <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ped_sim.csv"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.strings =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"NA"</span>))</span>
+<span id="cb1-5">tidy_ped_sim <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ped =</span> ped_sim)</span>
+<span id="cb1-6">ref_inds <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R3"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R4"</span>)</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> ref_inds)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/pedigree-structure-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>模拟系谱结构图（高亮参考群体 R1-R4）</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="推导-p_i-与-f_e" class="level3">
+<h3 class="anchored" data-anchor-id="推导-p_i-与-f_e">2.1 推导 <img src="https://latex.codecogs.com/png.latex?p_i"> 与 <img src="https://latex.codecogs.com/png.latex?f_e"></h3>
+<p>对于 4 个参考个体（<code>R1</code>-<code>R4</code>），向四位始祖溯源血统比例：</p>
+<ul>
+<li>R1, R2, R3 的亲本均为 <code>S1</code>（父）× <code>D1</code>（母），血统溯源如下：
+<ul>
+<li>父系（经由 S1）：<img src="https://latex.codecogs.com/png.latex?F1%20%5Cxrightarrow%7B0.5%7D%20S1%20%5Cxrightarrow%7B0.5%7D%20R%20=%200.5%20%5Ctimes%200.5%20=%201/4">；<img src="https://latex.codecogs.com/png.latex?F2"> 同理，贡献 <img src="https://latex.codecogs.com/png.latex?=%201/4"></li>
+<li>母系（经由 D1）：<img src="https://latex.codecogs.com/png.latex?F3%20%5Cxrightarrow%7B0.5%7D%20D1%20%5Cxrightarrow%7B0.5%7D%20R%20=%200.5%20%5Ctimes%200.5%20=%201/4">；<img src="https://latex.codecogs.com/png.latex?F4"> 同理，贡献 <img src="https://latex.codecogs.com/png.latex?=%201/4"></li>
+<li>因此 R1、R2、R3 各自的始祖血统构成：<img src="https://latex.codecogs.com/png.latex?F1=1/4,%5C%20F2=1/4,%5C%20F3=1/4,%5C%20F4=1/4"></li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R3"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"up"</span> )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>R4 的亲本为 <code>S1</code>（父）× <code>F4</code>（母），血统溯源如下：
+<ul>
+<li>父系（经由 S1）：<img src="https://latex.codecogs.com/png.latex?F1%20%5Cxrightarrow%7B0.5%7D%20S1%20%5Cxrightarrow%7B0.5%7D%20R4%20=%200.5%20%5Ctimes%200.5%20=%201/4">；<img src="https://latex.codecogs.com/png.latex?F2"> 同理，贡献 <img src="https://latex.codecogs.com/png.latex?=%201/4"></li>
+<li>母系（直接来自 F4）：<code>F4</code> 本身即为奠基者，直接作为母本贡献 <img src="https://latex.codecogs.com/png.latex?=%201/2">；<img src="https://latex.codecogs.com/png.latex?F3"> 无贡献 <img src="https://latex.codecogs.com/png.latex?=%200"></li>
+<li>因此 R4 的始祖血统构成：<img src="https://latex.codecogs.com/png.latex?F1=1/4,%5C%20F2=1/4,%5C%20F3=0,%5C%20F4=1/2"></li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"R4"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"up"</span> )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>群体的平均血统需求 <img src="https://latex.codecogs.com/png.latex?p_i">：</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?p_%7BF1%7D%20=%20(0.25%20%5Ctimes%203%20+%200.25)%20/%204%20=%200.25"></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F1"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"down"</span> )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?p_%7BF2%7D%20=%20(0.25%20%5Ctimes%203%20+%200.25)%20/%204%20=%200.25"></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F2"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"down"</span> )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?p_%7BF3%7D%20=%20(0.25%20%5Ctimes%203%20+%200)%20/%204%20=%200.1875"></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F3"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"down"</span> )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?p_%7BF4%7D%20=%20(0.25%20%5Ctimes%203%20+%200.5)%20/%204%20=%200.3125"></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_ped_sim, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F4"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"down"</span> )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>核对守恒：<img src="https://latex.codecogs.com/png.latex?0.25%20+%200.25%20+%200.1875%20+%200.3125%20=%201.0">。</p>
+<p>手工计算有效始祖数：</p>
+<p><img src="https://latex.codecogs.com/png.latex?f_e%20=%20%5Cfrac%7B1%7D%7B0.25%5E2%20+%200.25%5E2%20+%200.1875%5E2%20+%200.3125%5E2%7D%20=%20%5Cmathbf%7B3.878788%7D"></p>
+</section>
+<section id="推导-q_i-与-f_a" class="level3">
+<h3 class="anchored" data-anchor-id="推导-q_i-与-f_a">2.2 推导 <img src="https://latex.codecogs.com/png.latex?q_i"> 与 <img src="https://latex.codecogs.com/png.latex?f_a"></h3>
+<p>按照迭代法则：</p>
+<p><strong>第一步：寻找第一主节点</strong>。</p>
+<p>祖先 <code>S1</code> 是 R1~R4 中所有人的父亲，贡献度最高。<img src="https://latex.codecogs.com/png.latex?p_%7BS1%7D%20=%200.5">。</p>
+<p>锁定 <img src="https://latex.codecogs.com/png.latex?A_1%20=%20S1">，<strong>边际贡献</strong> <img src="https://latex.codecogs.com/png.latex?q_1%20=%200.5">。从 S1 往上的路径将被截流。</p>
+<p><strong>第二步：剥离后寻找最大节点</strong>。</p>
+<p>S1 被截流后，剩余为母本那半条线。</p>
+<p><code>D1</code> 是 R1, R2, R3 的母亲，其剥离后的残余净贡献为 <img src="https://latex.codecogs.com/png.latex?0.5%20%5Ctimes%203%20/%204%20=%200.375">。</p>
+<p>锁定 <img src="https://latex.codecogs.com/png.latex?A_2%20=%20D1">，<strong>边际贡献</strong> <img src="https://latex.codecogs.com/png.latex?q_2%20=%200.375">，从 D1 往上的路径（主要是 F3 和 F4的共同线）被截流。</p>
+<p><strong>第三步：处理特例残余点</strong>。</p>
+<p>R1~R3 的 <img src="https://latex.codecogs.com/png.latex?1.0"> 变异已被 S1 和 D1 解释完整。R4 的父系 0.5 被 S1 解释，仅剩其母系来源。</p>
+<p>R4 的母亲是 <code>F4</code>，其在 R4 上的残余净贡献分摊到群体为 <img src="https://latex.codecogs.com/png.latex?0.5%20/%204%20=%200.125">。</p>
+<p>锁定 <img src="https://latex.codecogs.com/png.latex?A_3%20=%20F4">，<strong>边际贡献</strong> <img src="https://latex.codecogs.com/png.latex?q_3%20=%200.125">。</p>
+<p>核对守恒：<img src="https://latex.codecogs.com/png.latex?q_1%20+%20q_2%20+%20q_3%20=%200.5%20+%200.375%20+%200.125%20=%201.0">。不重不漏！</p>
+<p><strong>手工计算有效祖先数</strong>： <img src="https://latex.codecogs.com/png.latex?f_a%20=%20%5Cfrac%7B1%7D%7B0.5%5E2%20+%200.375%5E2%20+%200.125%5E2%7D%20=%20%5Cmathbf%7B2.461538%7D"></p>
+<hr>
+</section>
+</section>
+<section id="三-使用-vispedigree-进行代码模拟验证" class="level2">
+<h2 class="anchored" data-anchor-id="三-使用-vispedigree-进行代码模拟验证">三、 使用 <code>visPedigree</code> 进行代码模拟验证</h2>
+<p>通过以上的推演，我们接下来在 R 中运用 <code>visPedigree</code> 中的 <code>pedcontrib</code> 函数测试该拓扑图的运算特征。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 注意：visPedigree &gt;= 1.2 中已将 cand 替换为 reference，以规范化群体遗传学术语</span></span>
+<span id="cb8-2">res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedcontrib</span>(</span>
+<span id="cb8-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ped =</span> tidy_ped_sim, </span>
+<span id="cb8-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_inds, </span>
+<span id="cb8-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mode =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"both"</span>, </span>
+<span id="cb8-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span></span>
+<span id="cb8-7">)</span></code></pre></div></div>
+</div>
+<section id="对比有效数估算结果" class="level3">
+<h3 class="anchored" data-anchor-id="对比有效数估算结果">3.1 对比有效数估算结果</h3>
+<p>我们首先对比理论推导的 <img src="https://latex.codecogs.com/png.latex?f_e%20=%203.878788"> 和 <img src="https://latex.codecogs.com/png.latex?f_a%20=%202.461538">。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sprintf</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"理论 f_e = 3.878788 | visPedigree 计算 f_e = %f</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>f_e))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>理论 f_e = 3.878788 | visPedigree 计算 f_e = 3.878788</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sprintf</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"理论 f_a = 2.461538 | visPedigree 计算 f_a = %f</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>f_a))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>理论 f_a = 2.461538 | visPedigree 计算 f_a = 2.461538</code></pre>
+</div>
+</div>
+<p>结果丝毫不差。由于 <img src="https://latex.codecogs.com/png.latex?f_a"> (2.46) <img src="https://latex.codecogs.com/png.latex?%5Cll%20f_e"> (3.88)，程序准确评估到了该群体经历了狭窄的遗传瓶颈（即 <img src="https://latex.codecogs.com/png.latex?S1"> 被极度超量使用）。</p>
+</section>
+<section id="对比内部边际贡献比例的拆解" class="level3">
+<h3 class="anchored" data-anchor-id="对比内部边际贡献比例的拆解">3.2 对比内部边际贡献比例的拆解</h3>
+<p>我们可以更深入地把计算出来的每位祖先的份额展示出来。</p>
+<p><strong>始祖贡献验证 (</strong><img src="https://latex.codecogs.com/png.latex?p_i">)：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>founders)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Ind Contrib CumContrib  Rank
+   &lt;char&gt;   &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+1:     F4  0.3125     0.3125     1
+2:     F1  0.2500     0.5625     2
+3:     F2  0.2500     0.8125     3
+4:     F3  0.1875     1.0000     4</code></pre>
+</div>
+</div>
+<p>可以看到 F4 因为被回交调用，占居了最高的 0.3125 初始基因份额比例。</p>
+<p><strong>瓶颈祖先边际贡献验证 (</strong><img src="https://latex.codecogs.com/png.latex?q_i">)：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ancestors)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Ind Contrib CumContrib  Rank
+   &lt;char&gt;   &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+1:     S1   0.500      0.500     1
+2:     D1   0.375      0.875     2
+3:     F4   0.125      1.000     3</code></pre>
+</div>
+</div>
+<p>正如我们精妙的手工推导：程序完美地利用迭代法找出了 S1 (<img src="https://latex.codecogs.com/png.latex?q=0.500">)、D1 (<img src="https://latex.codecogs.com/png.latex?q=0.375">) 以及回交残余截流点 F4 (<img src="https://latex.codecogs.com/png.latex?q=0.125">)。它彻底避免了把父亲 S1 的基因和爷爷 F1 的发生任何重复相加带来的数学越界。</p>
+</section>
+</section>
+<section id="四-结论与讨论" class="level2">
+<h2 class="anchored" data-anchor-id="四-结论与讨论">四、 结论与讨论</h2>
+<p>本次验算证明：<code>visPedigree::pedcontrib</code> 对有向无环图血统阻断的识别逻辑（边际降维与屏蔽传播）严格服从经典的 Boichard 定理，实现了在 R 语言环境下的精准重构。</p>
+<p><strong>深入思考：为什么</strong> <img src="https://latex.codecogs.com/png.latex?f_a"> 能更客观地反映一个群体的真真实状态？</p>
+<p>在实际的繁育管理中，<img src="https://latex.codecogs.com/png.latex?f_a">（有效祖先数）确实比 <img src="https://latex.codecogs.com/png.latex?f_e">（有效始祖数）或普通的系谱规模更能反映群体的“真实家底”。这背后的核心原因在于它戳中了真实育种中不可避免的两个骨感现实：</p>
+<ol type="1">
+<li><strong>明星效应（过度使用个别父母本）</strong>：在现实中，表现优异的个体（如代码模拟中的 <code>S1</code>）往往会被留作父母本并大量繁育后代。单纯看 <img src="https://latex.codecogs.com/png.latex?f_e"> 时，所有的奠基者（Founders）都在建群时被赋予了平等的数学地位；但在真实血统传递里，那些没被选中的往往“断后”了，群体的真实基因库被极大压缩。<img src="https://latex.codecogs.com/png.latex?f_a"> 通过“贡献剥离计算”无情地剔除了这种表面繁荣的假象。</li>
+<li><strong>遗传瓶颈追踪</strong>：<img src="https://latex.codecogs.com/png.latex?f_e"> 仅刻画建群初期的状态（相当于“我们曾经有多富”），而 <img src="https://latex.codecogs.com/png.latex?f_a"> 扫视整个繁育历史网络，找出真正的基因瓶颈节点（相当于“经历重重筛选，我们现在实际上还剩多少保命钱”）。</li>
+</ol>
+<p>正因如此，在很多针对家畜或水产的保护遗传学评估里，学者们除了看两者的绝对值，更常常使用 <img src="https://latex.codecogs.com/png.latex?f_a%20/%20f_e"> 的比值来评估历代繁育过程中基因多样性的流失严重程度——比值越低，说明个别核心祖先造成的遗传瓶颈和多样性收缩越严重。</p>
+<hr>
+</section>
+<section id="五-更复杂的真实场景验证small_ped" class="level2">
+<h2 class="anchored" data-anchor-id="五-更复杂的真实场景验证small_ped">五、 更复杂的真实场景验证：<code>small_ped</code></h2>
+<p>前面的 10 个体模型主要用于直观理解。现在我们采用 <code>visPedigree</code> 包内自带的更为错综复杂的 <code>small_ped</code> 数据集（包含多世代、重叠世代和复杂的近交网络），以其中的后代个体 <code>Z1</code>, <code>Z2</code>, <code>Y</code>, <code>X</code> 作为参考群体，对其基因贡献和瓶颈进行二次无缝验证。</p>
+<section id="数据准备与初探" class="level3">
+<h3 class="anchored" data-anchor-id="数据准备与初探">5.1 数据准备与初探</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 加载包内自带测试系谱</span></span>
+<span id="cb17-2">tp <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(small_ped)</span>
+<span id="cb17-3"></span>
+<span id="cb17-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 可视化系谱结构</span></span>
+<span id="cb17-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tp)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/small-ped-simulation-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 计算指定参考群体的 fe 和 fa</span></span>
+<span id="cb18-2">ref_small <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Z1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Z2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"X"</span>)</span>
+<span id="cb18-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> ref_small)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/small-ped-simulation-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1">res_small <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedcontrib</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_small, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mode =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"both"</span>)</span>
+<span id="cb19-2"></span>
+<span id="cb19-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sprintf</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"小型系谱 f_e = %f</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, res_small<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>f_e))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>小型系谱 f_e = 6.585209</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sprintf</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"小型系谱 f_a = %f</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, res_small<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>f_a))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>小型系谱 f_a = 2.666667</code></pre>
+</div>
+</div>
+<p><em>计算结果显示：</em><img src="https://latex.codecogs.com/png.latex?f_e%20=%206.585">，<img src="https://latex.codecogs.com/png.latex?f_a%20=%202.667">。</p>
+</section>
+<section id="small_ped-的手工溯源剖析" class="level3">
+<h3 class="anchored" data-anchor-id="small_ped-的手工溯源剖析">5.2 <code>small_ped</code> 的手工溯源剖析</h3>
+<p>为了彻底揭开算法核心，我们从 <code>tidyped(small_ped)</code> 的真实网络中反向推导。目标参考群体是：<code>X</code>，<code>Y</code>，<code>Z1</code>，<code>Z2</code>。</p>
+<p>首先明确他们的父母来源：</p>
+<ul>
+<li><p><strong>X</strong> (Sire: U, Dam: V)</p></li>
+<li><p><strong>Y</strong> (Sire: R, Dam: W)</p></li>
+<li><p><strong>Z1</strong> (Sire: N, Dam: X)</p></li>
+<li><p><strong>Z2</strong> (Sire: N, Dam: X)</p></li>
+</ul>
+<p>这是一个极具代表性的复杂场景：<strong>参考群体中的个体 <code>X</code>，同时也是同一个群体中 <code>Z1</code> 和 <code>Z2</code> 的母亲！</strong> 也就是“存在世代重叠的母系亲属”。</p>
+<section id="第一步找出头号祖先最大期望贡献者" class="level4">
+<h4 class="anchored" data-anchor-id="第一步找出头号祖先最大期望贡献者">5.2.1 第一步：找出头号祖先（最大期望贡献者）</h4>
+<p>根据 Boichard 定理，参考群体本身的个体如果掌握巨量基因流，它们<strong>自己也可以作为有效祖先</strong>。我们可以清楚地看到 <strong><code>X</code></strong> 这个瓶颈到底有多大：</p>
+<ol type="1">
+<li><code>X</code> 本身是参考群体的一员，所以它 <img src="https://latex.codecogs.com/png.latex?100%5C%25"> 的基因流向自己（占群体 <img src="https://latex.codecogs.com/png.latex?1/4"> 份额）。</li>
+<li><code>X</code> 是 <code>Z1</code> 的直接母亲，掌控了 <code>Z1</code> <img src="https://latex.codecogs.com/png.latex?50%5C%25"> 的基因（占群体 <img src="https://latex.codecogs.com/png.latex?1/4%20%5Ctimes%200.5"> 份额）。</li>
+<li><code>X</code> 是 <code>Z2</code> 的直接母亲，掌控了 <code>Z2</code> <img src="https://latex.codecogs.com/png.latex?50%5C%25"> 的基因（占群体 <img src="https://latex.codecogs.com/png.latex?1/4%20%5Ctimes%200.5"> 份额）。</li>
+</ol>
+<p>我们来计算 <code>X</code> 的总边际贡献： <img src="https://latex.codecogs.com/png.latex?%20q_1(X)%20=%20%5Cfrac%7B1.0%20(X)%20+%200.5%20(Z1)%20+%200.5%20(Z2)%7D%7B4%7D%20=%20%5Cfrac%7B2.0%7D%7B4%7D%20=%20%5Cmathbf%7B0.50%7D%20"></p>
+<p>这意味着仅仅 <code>X</code> 一个人，就控制了整个参考群体 50% 的血统流向！她成为无可争议的第一且最大的<strong>特异祖先</strong>。</p>
+</section>
+<section id="第二步阻断并剥离重新分配" class="level4">
+<h4 class="anchored" data-anchor-id="第二步阻断并剥离重新分配">5.2.2 第二步：阻断并剥离重新分配</h4>
+<p>当 <code>X</code> 被确立为头号祖先后，她所在的父系母系节点被设为“黑洞”。此时，<code>X</code>、<code>Z1</code> 的母系、<code>Z2</code> 的母系基因流动全部被截断解释。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"X"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"all"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>我们看还剩下什么：</p>
+<ol type="1">
+<li><code>Z1</code> 体内存留的另外 <img src="https://latex.codecogs.com/png.latex?50%5C%25"> 的未解释变异，全部来自于它的父亲 <strong><code>N</code></strong>。</li>
+<li><code>Z2</code> 体内存留的另外 <img src="https://latex.codecogs.com/png.latex?50%5C%25"> 的未解释变异，也全部来自于它的父亲 <strong><code>N</code></strong>。</li>
+<li>（注意：<code>N</code> 原本也有一小部分可以通过网络传给 <code>X</code>，但随着 <code>X</code> 被全盘剥离，那部分基因被彻底阻断截留，不再重复计算）。</li>
+</ol>
+<p>因此，第二号祖先呼之欲出，即 <strong><code>N</code></strong>： <img src="https://latex.codecogs.com/png.latex?%20q_2(N)%20=%20%5Cfrac%7B0.5%20(Z1%E7%88%B6%E7%B3%BB)%20+%200.5%20(Z2%E7%88%B6%E7%B3%BB)%7D%7B4%7D%20=%20%5Cfrac%7B1.0%7D%7B4%7D%20=%20%5Cmathbf%7B0.25%7D%20"></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"N"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"down"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/fafe-20260307/index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>此时，<code>Z1</code>、<code>Z2</code> 和 <code>X</code> 这三个多代重叠个体的全部遗传变异（共占群体 <img src="https://latex.codecogs.com/png.latex?75%5C%25">）已经被完美的双节点模型 <img src="https://latex.codecogs.com/png.latex?X-N"> 分解殆尽！</p>
+</section>
+<section id="第三步残余份额清理" class="level4">
+<h4 class="anchored" data-anchor-id="第三步残余份额清理">5.2.3 第三步：残余份额清理</h4>
+<p>最后看我们的第四个参考个体 <strong><code>Y</code></strong>，它在系谱网络的一侧，且和前面的 <img src="https://latex.codecogs.com/png.latex?X,%20Z1,%20Z2"> 的阻断网完全隔离。 它 <img src="https://latex.codecogs.com/png.latex?100%5C%25"> 的变异依然完好无损没有被剥离。因此它自己代表了自己的完全变异（在真实的候选祖先计算中，可以是 <code>Y</code> 自己，或者 <code>Y</code> 的任一远端独占始祖等效作为其等量剥离源）。 为了补齐剩余的全部变异量，程序算出剩余边际贡献： <img src="https://latex.codecogs.com/png.latex?%20q_3(Y)%20=%20%5Cfrac%7B1.0%20(Y)%7D%7B4%7D%20=%20%5Cmathbf%7B0.25%7D%20"></p>
+<p>根据 <code>visPedigree</code> 的输出：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(res_small<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ancestors)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Ind Contrib CumContrib  Rank
+   &lt;char&gt;   &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+1:      X    0.50       0.50     1
+2:      N    0.25       0.75     2
+3:      Y    0.25       1.00     3</code></pre>
+</div>
+</div>
+<p>通过重叠个体的自融与阻断，程序巧妙找出了巨型的“直系血统瓶颈 <code>X</code>”，防止了向古老始祖做微弱连接的碎片化寻根。从而得出极其精准的 <img src="https://latex.codecogs.com/png.latex?f_a">： <img src="https://latex.codecogs.com/png.latex?%20f_a%20=%20%5Cfrac%7B1%7D%7B0.50%5E2%20+%200.25%5E2%20+%200.25%5E2%7D%20=%20%5Cfrac%7B1%7D%7B0.375%7D%20=%20%5Cmathbf%7B2.6667%7D%20"></p>
+<p>所有的 <img src="https://latex.codecogs.com/png.latex?q_i"> 之和完美等于 1.000，没有任何“脱靶”或双重计算！</p>
+</section>
+</section>
+</section>
+<section id="六.-结语" class="level2">
+<h2 class="anchored" data-anchor-id="六.-结语">六. 结语</h2>
+<p>使用 <code>visPedigree</code> 包对系谱信息的深度挖掘，有助于极大地方便育种团队在全基因组选择或是常规家系繁育过程中掌握群体的实际遗传动态：</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?f_e"> (Effective Founders, 有效始祖数)：通过评估最上层建群亲本的影响系数，暴露起始遗传结构的不平衡和瓶颈效应；</li>
+<li><img src="https://latex.codecogs.com/png.latex?f_a"> (Effective Ancestors, 有效祖先数)：采用 Boichard 的边际贡献迭代折减，完美捕获并量化了“代际繁育过程中的漏斗效应”及超级采种亲本带来的强连锁血统锁定。</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 检查群体的大体结果：</span></span>
+<span id="cb27-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str</span>(res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>List of 7
+ $ n_ref          : int 4
+ $ n_founder      : int 4
+ $ n_founder_show : int 4
+ $ f_e            : num 3.88
+ $ n_ancestor     : int 3
+ $ n_ancestor_show: int 3
+ $ f_a            : num 2.46</code></pre>
+</div>
+</div>
+<p>对于日常分析，我们极力推荐使用集成的 <code>pediv()</code> 取代所有的单步繁琐调用：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1">pediv_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pediv</span>(</span>
+<span id="cb29-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ped =</span> tidy_ped_sim,</span>
+<span id="cb29-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_inds,</span>
+<span id="cb29-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>,</span>
+<span id="cb29-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nsamples=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>,</span>
+<span id="cb29-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncores =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span></span>
+<span id="cb29-7">)</span>
+<span id="cb29-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(pediv_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    NRef NFounder       fe NAncestor       fa     fafe NeCoancestry
+   &lt;int&gt;    &lt;int&gt;    &lt;num&gt;     &lt;int&gt;    &lt;num&gt;    &lt;num&gt;        &lt;num&gt;
+1:     4        4 3.878788         3 2.461538 0.634615     4.067406
+   NeInbreeding NeDemographic
+          &lt;num&gt;         &lt;num&gt;
+1:           NA      2.666667</code></pre>
+</div>
+</div>
+<p>通过这套成熟算法，<strong><code>visPedigree</code></strong> 可以完美还原那些极难被手工计算或理论推导所捕捉的非对称繁殖体系中的深刻遗传变化趋势。</p>
+
+
+</section>
+
+ ]]></description>
+  <category>Breeding</category>
+  <category>Pedigree Analysis</category>
+  <category>visPedigree</category>
+  <guid>https://luansheng.github.io/lsblog/posts/fafe-20260307/</guid>
+  <pubDate>Sat, 07 Mar 2026 16:00:00 GMT</pubDate>
+  <media:content url="https://luansheng.github.io/lsblog/posts/fafe-20260307/pedigree.png" medium="image" type="image/png" height="103" width="144"/>
+</item>
 <item>
   <title>廿载罗虾育种路，斯人已逝，深切缅怀</title>
   <dc:creator>Sheng Luan</dc:creator>
