@@ -18,7 +18,7 @@ image: pedigree.png
 
 ## 摘要
 
-在群体遗传学和系谱分析中，**有效始祖数（Effective number of founders,** $f_e$）与**有效祖先数（Effective number of ancestors,** $f_a$）是衡量群体遗传多样性与遗传瓶颈的两个核心指标（Boichard et al., 1997）。本文通过构建一个具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用正在开发的 `visPedigree::pedcontrib()` 函数进行自动化计算，实现理论推导与工程实现的交叉验证。 可以通过`devtools::install_github("luansheng/visPedigree@pedigreeAnalysis")`安装最新版本的 `visPedigree` 包开发版分支来复现本文的计算过程。
+在群体遗传学和系谱分析中，**有效始祖数（Effective number of founders,** $f_e$）与**有效祖先数（Effective number of ancestors,** $f_a$）是衡量群体遗传多样性与遗传瓶颈的两个核心指标（Boichard et al., 1997）。本文通过构建一个具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用正在开发的 `visPedigree::pedcontrib()` 函数进行自动化计算，实现理论推导与工程实现的交叉验证。 可以通过`devtools::install_github("luansheng/visPedigree@pedigreeAnalysis")`安装最新版本的 `visPedigree` 包开发版（>=1.3.0）分支来复现本文的计算过程。ps: 增加了$f_g$参数。
 
 ## 一、 核心概念与理论背景
 
@@ -386,18 +386,19 @@ print(res_small$ancestors)
 #| label: unified-pediv-check
 
 # 检查群体的大体结果：
-str(res$summary)
+str(res_small$summary)
 ```
 
 对于日常分析，我们极力推荐使用集成的 `pediv()` 取代所有的单步繁琐调用：
 ```{r}
 #| label: pediv-check
 pediv_res <- pediv(
-  ped = tidy_ped_sim,
-  reference = ref_inds,
+  ped = tp,
+  reference = ref_small,
   top = 10,
   nsamples=1000,
-  ncores = 4
+  ncores = 4,
+  seed =123
 )
 print(pediv_res$summary)
 ```
