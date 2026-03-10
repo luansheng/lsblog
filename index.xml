@@ -739,18 +739,18 @@ background-color: null;
 font-style: inherit;"># 检查群体的大体结果：</span></span>
 <span id="cb27-2"><span class="fu" style="color: #4758AB;
 background-color: null;
-font-style: inherit;">str</span>(res<span class="sc" style="color: #5E5E5E;
+font-style: inherit;">str</span>(res_small<span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">$</span>summary)</span></code></pre></div></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>List of 7
  $ n_ref          : int 4
- $ n_founder      : int 4
- $ n_founder_show : int 4
- $ f_e            : num 3.88
+ $ n_founder      : int 9
+ $ n_founder_show : int 9
+ $ f_e            : num 6.59
  $ n_ancestor     : int 3
  $ n_ancestor_show: int 3
- $ f_a            : num 2.46</code></pre>
+ $ f_a            : num 2.67</code></pre>
 </div>
 </div>
 <p>对于日常分析，我们极力推荐使用集成的 <code>pediv()</code> 取代所有的单步繁琐调用：</p>
@@ -762,10 +762,10 @@ background-color: null;
 font-style: inherit;">pediv</span>(</span>
 <span id="cb29-2">  <span class="at" style="color: #657422;
 background-color: null;
-font-style: inherit;">ped =</span> tidy_ped_sim,</span>
+font-style: inherit;">ped =</span> tp,</span>
 <span id="cb29-3">  <span class="at" style="color: #657422;
 background-color: null;
-font-style: inherit;">reference =</span> ref_inds,</span>
+font-style: inherit;">reference =</span> ref_small,</span>
 <span id="cb29-4">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
@@ -780,20 +780,25 @@ font-style: inherit;">1000</span>,</span>
 background-color: null;
 font-style: inherit;">ncores =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
-font-style: inherit;">4</span></span>
-<span id="cb29-7">)</span>
-<span id="cb29-8"><span class="fu" style="color: #4758AB;
+font-style: inherit;">4</span>,</span>
+<span id="cb29-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span></span>
+<span id="cb29-8">)</span>
+<span id="cb29-9"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">print</span>(pediv_res<span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">$</span>summary)</span></code></pre></div></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>    NRef NFounder       fe NAncestor       fa     fafe NeCoancestry
-   &lt;int&gt;    &lt;int&gt;    &lt;num&gt;     &lt;int&gt;    &lt;num&gt;    &lt;num&gt;        &lt;num&gt;
-1:     4        4 3.878788         3 2.461538 0.634615     4.067406
-   NeInbreeding NeDemographic
-          &lt;num&gt;         &lt;num&gt;
-1:           NA      2.666667</code></pre>
+<pre><code>    NRef NFounder       fe NAncestor       fa     fafe       fg  MeanCoan
+   &lt;int&gt;    &lt;int&gt;    &lt;num&gt;     &lt;int&gt;    &lt;num&gt;    &lt;num&gt;    &lt;num&gt;     &lt;num&gt;
+1:     4        9 6.585209         3 2.666667 0.404948 2.074975 0.2409668
+   NSampledCoan NeCoancestry NeInbreeding NeDemographic
+          &lt;int&gt;        &lt;num&gt;        &lt;num&gt;         &lt;num&gt;
+1:            4     9.003717     29.42403             6</code></pre>
 </div>
 </div>
 <p>通过这套成熟算法，<strong><code>visPedigree</code></strong> 可以完美还原那些极难被手工计算或理论推导所捕捉的非对称繁殖体系中的深刻遗传变化趋势。</p>
