@@ -23,7 +23,8 @@
 
 <section id="摘要" class="level2">
 <h2 class="anchored" data-anchor-id="摘要">摘要</h2>
-<p>在群体遗传学和系谱分析中，<strong>有效始祖数（Effective number of founders,</strong> <img src="https://latex.codecogs.com/png.latex?f_e">）与<strong>有效祖先数（Effective number of ancestors,</strong> <img src="https://latex.codecogs.com/png.latex?f_a">）是衡量群体遗传多样性与遗传瓶颈的两个核心指标（Boichard et al., 1997）。本文通过构建一个具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用正在开发的 <code>visPedigree::pedcontrib()</code> 函数进行自动化计算，实现理论推导与工程实现的交叉验证。 可以通过<code>devtools::install_github("luansheng/visPedigree@pedigreeAnalysis")</code>安装最新版本的 <code>visPedigree</code> 包开发版分支来复现本文的计算过程。</p>
+<p>在群体遗传学和系谱分析中，<strong>有效始祖数（Effective number of founders,</strong> <img src="https://latex.codecogs.com/png.latex?f_e">）与<strong>有效祖先数（Effective number of ancestors,</strong> <img src="https://latex.codecogs.com/png.latex?f_a">）是衡量群体遗传多样性与遗传瓶颈的两个核心指标（Boichard et al., 1997）。本文通过构建一个具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用正在开发的 <code>visPedigree::pedcontrib()</code> 函数进行自动化计算，实现理论推导与工程实现的交叉验证。 可以通过<code>devtools::install_github("luansheng/visPedigree@pedigreeAnalysis")</code>安装最新版本的 <code>visPedigree</code> 包开发版（&gt;=1.3.0）分支来复现本文的计算过程。</p>
+<p>ps: pediv()增加了<img src="https://latex.codecogs.com/png.latex?f_g">参数;设置了 seed。</p>
 </section>
 <section id="一-核心概念与理论背景" class="level2">
 <h2 class="anchored" data-anchor-id="一-核心概念与理论背景">一、 核心概念与理论背景</h2>
