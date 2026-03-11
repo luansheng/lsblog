@@ -1352,9 +1352,9 @@ Figure&nbsp;5: Quick Start 示例输出
 <ul>
 <li><strong>GitHub</strong>: <a href="https://github.com/luansheng/visPedigree">luansheng/visPedigree</a></li>
 </ul>
-<p>visPedigree 1.0.1 已在cran上发布。</p>
+<p>visPedigree 1.0.1 已在 CRAN 上发布。</p>
 <ul>
-<li><strong>CRAN</strong>: `install.packages(“visPedigree”)</li>
+<li><strong>CRAN</strong>: <code>install.packages("visPedigree")</code></li>
 </ul>
 <p>欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。</p>
 <hr>
