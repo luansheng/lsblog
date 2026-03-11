@@ -8,3 +8,5 @@
 # !/_freeze/
 
 **/*.quarto_ipynb
+/*_files/
+/*_cache/
