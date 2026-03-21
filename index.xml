@@ -10,7 +10,953 @@
 <atom:link href="https://luansheng.github.io/lsblog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A blog built with Quarto</description>
 <generator>quarto-1.8.24</generator>
-<lastBuildDate>Sat, 07 Mar 2026 16:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 19 Mar 2026 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析</title>
+  <dc:creator>Sheng Luan</dc:creator>
+  <link>https://luansheng.github.io/lsblog/posts/faHfeH-20260320/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="摘要" class="level2">
+<h2 class="anchored" data-anchor-id="摘要">摘要</h2>
+<p>在前文<a href="../../posts/fafe-20260307/index.html">《有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证》</a>中，我们讨论了经典有效始祖数（<img src="https://latex.codecogs.com/png.latex?f_e">）与有效祖先数（<img src="https://latex.codecogs.com/png.latex?f_a">）的计算逻辑。它们本质上都建立在贡献度平方和之上，因此更敏感于头部始祖或祖先的集中贡献，却较难体现低频血统和边缘家系的存在感。此外，经典 <img src="https://latex.codecogs.com/png.latex?f_e"> 与 <img src="https://latex.codecogs.com/png.latex?f_a"> 更像是某一时点的“截面指标”，难以直接回答多样性正在以多快的速度流失。</p>
+<p><code>visPedigree</code> 1.6.0 引入了基于香农信息熵的 <strong><img src="https://latex.codecogs.com/png.latex?f_e%5E%7B(H)%7D"> (<code>feH</code>)</strong> 与 <strong><img src="https://latex.codecogs.com/png.latex?f_a%5E%7B(H)%7D"> (<code>faH</code>)</strong>，并提供 <strong><code>pedhalflife()</code></strong> 用于量化多样性随时间的衰减速度。本文结合一个包含 2015 至 2025 年连续记录的实际系谱数据集，说明这些指标背后的数学含义，并进一步讨论它们如何联合用于年度育种监控、风险分层与配种决策。</p>
+<p>与上一篇更偏重“静态结构拆解”不同，本文更关注两个问题：</p>
+<ol type="1">
+<li>当经典 <img src="https://latex.codecogs.com/png.latex?f_e">、<img src="https://latex.codecogs.com/png.latex?f_a"> 看起来尚可时，群体中是否仍然保留着被低估的长尾遗传贡献？</li>
+<li>在当前育种模式下，多样性下降的主要压力，究竟更接近于<strong>始祖利用不均</strong>、<strong>代际瓶颈</strong>，还是<strong>随机漂变</strong>？</li>
+</ol>
+</section>
+<section id="一核心概念基于信息熵的有效指标" class="level2">
+<h2 class="anchored" data-anchor-id="一核心概念基于信息熵的有效指标">一、核心概念：基于信息熵的有效指标</h2>
+<section id="经典指标的痛点平方和带来的集中偏好" class="level3">
+<h3 class="anchored" data-anchor-id="经典指标的痛点平方和带来的集中偏好">1.1 经典指标的痛点：平方和带来的集中偏好</h3>
+<p>经典有效数基于期望贡献度（<img src="https://latex.codecogs.com/png.latex?p_i"> 或 <img src="https://latex.codecogs.com/png.latex?q_j">）的平方和计算，可视作 Hill number 中 <img src="https://latex.codecogs.com/png.latex?q=2"> 的情形：</p>
+<p><img src="https://latex.codecogs.com/png.latex?%20f_e%20=%20%5Cfrac%7B1%7D%7B%5Csum_%7Bi=1%7D%5E%7Bf%7D%20p_i%5E2%7D,%20%5Cqquad%20f_a%20=%20%5Cfrac%7B1%7D%7B%5Csum_%7Bj=1%7D%5E%7Ba%7D%20q_j%5E2%7D%20"></p>
+<p>在求和前先平方，会显著放大高贡献项的权重。例如，20% 的贡献在平方后仍然很突出，而 0.5% 级别的贡献平方后几乎可以忽略。因此，经典有效数更擅长刻画“头部祖先”的集中程度，却不够敏感于低贡献、低频但真实存在的遗传来源。</p>
+</section>
+<section id="f_eh-与-f_ah-计算公式" class="level3">
+<h3 class="anchored" data-anchor-id="f_eh-与-f_ah-计算公式">1.2 <img src="https://latex.codecogs.com/png.latex?f_e%5E%7B(H)%7D"> 与 <img src="https://latex.codecogs.com/png.latex?f_a%5E%7B(H)%7D"> 计算公式</h3>
+<p>为了把低频贡献也纳入衡量，<code>visPedigree</code> 引入了信息论中的 <strong>香农熵（Shannon entropy，对应 Hill number 的 <img src="https://latex.codecogs.com/png.latex?q=1">）</strong>：</p>
+<p><img src="https://latex.codecogs.com/png.latex?%20f_e%5E%7B(H)%7D%20=%20%5Cexp%5C!%5CBigl(-%5Csum_%7Bi=1%7D%5E%7Bf%7D%20p_i%20%5Cln%20p_i%5CBigr)%20"> <img src="https://latex.codecogs.com/png.latex?%20f_a%5E%7B(H)%7D%20=%20%5Cexp%5C!%5CBigl(-%5Csum_%7Bj=1%7D%5E%7Ba%7D%20q_j%20%5Cln%20q_j%5CBigr)%20"></p>
+<p>香农熵中的 <img src="https://latex.codecogs.com/png.latex?p_i%20%5Cln%20p_i"> 对低频贡献的压缩远弱于平方项，因此能更平衡地反映“长尾”部分的存在。直观地说，经典 <img src="https://latex.codecogs.com/png.latex?f_e">、<img src="https://latex.codecogs.com/png.latex?f_a"> 更强调“头部占了多少”，而 <img src="https://latex.codecogs.com/png.latex?f_e%5E%7B(H)%7D">、<img src="https://latex.codecogs.com/png.latex?f_a%5E%7B(H)%7D"> 还会额外回答“尾部还剩多少”。</p>
+<p>所有这四个指标在数学上具有严格的不等式关系： <img src="https://latex.codecogs.com/png.latex?%20N_f%20%5Cge%20f_e%5E%7B(H)%7D%20%5Cge%20f_e,%20%5Cqquad%20K%20%5Cge%20f_a%5E%7B(H)%7D%20%5Cge%20f_a%20"> <em>（其中 <img src="https://latex.codecogs.com/png.latex?N_f"> 为总始祖数，<img src="https://latex.codecogs.com/png.latex?K"> 为计算所考虑的总祖先数）</em></p>
+</section>
+<section id="育种用途如何读懂长尾信号" class="level3">
+<h3 class="anchored" data-anchor-id="育种用途如何读懂长尾信号">1.3 育种用途：如何读懂“长尾信号”</h3>
+<p>在育种决策中，除了看绝对值，更值得关注的是 <img src="https://latex.codecogs.com/png.latex?%5Crho%20=%20f_e%5E%7B(H)%7D%20/%20f_e">（或 <img src="https://latex.codecogs.com/png.latex?f_a%5E%7B(H)%7D%20/%20f_a">）这样的比值：</p>
+<ul>
+<li><strong>当比值接近 1</strong>：说明头部祖先几乎定义了全部多样性，长尾贡献较弱；如果多样性继续收缩，单靠群体内部微调的操作空间通常有限。</li>
+<li><strong>当比值明显大于 1</strong>：说明除核心家系外，群体中仍保留着不少低频贡献。此时如果能在配种中有意识地续留这些边缘家系，往往还有机会延缓多样性进一步收缩。</li>
+</ul>
+<p>在应用上，这两个比值最有价值的地方并不在于“谁更大”，而在于它们帮助区分了两种完全不同的管理情形：一种是群体确实已经失去大部分潜在遗传来源，另一种则是潜在来源仍在，但这些来源没有被持续、均衡地传递到下一代。前者更接近“资源不足”问题，后者更接近“管理分配”问题。</p>
+</section>
+<section id="静态指标与动态指标的互补性" class="level3">
+<h3 class="anchored" data-anchor-id="静态指标与动态指标的互补性">1.4 静态指标与动态指标的互补性</h3>
+<p>从监测逻辑上看，<code>pediv()</code> 与 <code>pedhalflife()</code> 回答的是两个不同层面的问题：</p>
+<ul>
+<li><code>pediv()</code> 回答的是<strong>当前参考群体的结构状态</strong>，即多样性还剩多少、分布是否集中、哪些始祖或祖先贡献过高。</li>
+<li><code>pedhalflife()</code> 回答的是<strong>历史轨迹的动态趋势</strong>，即多样性正在以多快的速度流失，以及流失主要来自始祖利用不均、代际瓶颈还是随机漂变。</li>
+</ul>
+<p>如果只有 <code>pediv()</code>，我们可以看到“当前还剩多少”，却难以判断这种状态是在改善还是恶化；如果只有 <code>pedhalflife()</code>，我们可以看到“正在如何变化”，却不容易识别当前哪一批家系、哪一类祖先正在构成瓶颈。因此，在年度监控中，静态诊断与动态诊断应被视为互补而非替代的两组证据。</p>
+</section>
+</section>
+<section id="二遗传多样性半衰期diversity-half-life" class="level2">
+<h2 class="anchored" data-anchor-id="二遗传多样性半衰期diversity-half-life">二、遗传多样性半衰期（Diversity Half-Life）</h2>
+<section id="半衰期的概念" class="level3">
+<h3 class="anchored" data-anchor-id="半衰期的概念">2.1 半衰期的概念</h3>
+<p>仅知道当前还剩多少多样性并不够，育种管理更关心的是：如果继续沿用现有的配种与留种模式，群体多样性会以多快的速度下降？</p>
+<p><code>pedhalflife()</code> 通过对 <img src="https://latex.codecogs.com/png.latex?f_g"> 随时间变化的自然对数进行线性回归，估计<strong>总流失率</strong> <img src="https://latex.codecogs.com/png.latex?%5Clambda_%7Btotal%7D">。于是，多样性半衰期可以写为： <img src="https://latex.codecogs.com/png.latex?%20T_%7B1/2%7D%20=%20%5Cfrac%7B%5Cln%202%7D%7B%5Clambda_%7Btotal%7D%7D%20"></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>解读要点</strong>：</p>
+<p>这里的半衰期应理解为<strong>基于历史趋势的管理指标</strong>。它适合比较不同时间窗、不同留种策略下的流失快慢，但不应被理解为“到了某一年一定减半”的确定性预言。</p>
+</div>
+</div>
+</section>
+<section id="多样性流失的成分溯源三分离法" class="level3">
+<h3 class="anchored" data-anchor-id="多样性流失的成分溯源三分离法">2.2 多样性流失的成分溯源（三分离法）</h3>
+<p>仅知道流失多快还不够，还要知道流失主要来自哪里。利用下面的恒等式： <img src="https://latex.codecogs.com/png.latex?%20%5Cln%20fg%20=%20%5Cunderbrace%7B%5Cln%20fe%7D_%7B%5Ctext%7Blnfe%7D%7D%20+%20%5Cunderbrace%7B%5Cln%5C!%5Cleft(%5Cfrac%7Bfa%7D%7Bfe%7D%5Cright)%7D_%7B%5Ctext%7Blnfafe%7D%7D%20+%20%5Cunderbrace%7B%5Cln%5C!%5Cleft(%5Cfrac%7Bfg%7D%7Bfa%7D%5Cright)%7D_%7B%5Ctext%7Blnfgfa%7D%7D%20"></p>
+<p>由于普通最小二乘法（OLS）对加法分解保持线性，我们可以分别对这三项关于世代（或年份）做回归，从而把总流失速率严格拆解为三个来源：<img src="https://latex.codecogs.com/png.latex?%5Clambda_%7Btotal%7D%20=%20%5Clambda_e%20+%20%5Clambda_b%20+%20%5Clambda_d">：</p>
+<ol type="1">
+<li><strong>始祖效应 <img src="https://latex.codecogs.com/png.latex?%5Clambda_e">（Foundation）</strong>：始祖利用不均随时间加剧所造成的流失。</li>
+<li><strong>瓶颈效应 <img src="https://latex.codecogs.com/png.latex?%5Clambda_b">（Bottleneck）</strong>：中间世代核心父母本被重复使用，导致遗传来源进一步收缩。</li>
+<li><strong>漂变效应 <img src="https://latex.codecogs.com/png.latex?%5Clambda_d">（Drift）</strong>：有限群体在代际传递中，由随机抽样带来的等位基因损失。</li>
+</ol>
+</section>
+<section id="pedhalflife-的常用参数怎么理解" class="level3">
+<h3 class="anchored" data-anchor-id="pedhalflife-的常用参数怎么理解">2.3 <code>pedhalflife()</code> 的常用参数怎么理解？</h3>
+<p><code>visPedigree::pedhalflife()</code> 在 1.6.0 中的常用参数如下：</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">args</span>(pedhalflife)</span></code></pre></div></div>
+<p>其核心参数可按用途理解：</p>
+<ul>
+<li><code>ped</code>：已经整理好的系谱对象，通常是 <code>tidyped()</code> 的结果。</li>
+<li><code>timevar</code>：时间轴变量，默认是 <code>"Gen"</code>。如果数据中有真实年份或批次时间，优先用 <code>Year</code>、<code>BirthYear</code> 这类真实变量，更利于和生产节奏对接。</li>
+<li><code>at</code>：只分析某几个指定时间点。例如只想看最近 4 个世代是否加速流失，可以只传入末端年份集合。</li>
+<li><code>nsamples</code>：计算共祖或相关指标时的抽样规模。样本越大越稳定，但耗时更长。</li>
+<li><code>ncores</code>：并行核数。大数据集可适当提高。</li>
+<li><code>seed</code>：随机抽样的种子，用于保证结果可重复。</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>实践建议</strong>：</p>
+<ul>
+<li>若目标是年度管理报告，用 <code>timevar = "Year"</code>。</li>
+<li>若目标是理论对比或世代遗传改良分析，用 <code>timevar = "Gen"</code>。</li>
+<li>若群体规模非常大，建议显式设置 <code>nsamples</code> 和 <code>seed</code>，保证不同批次分析可以横向比较。</li>
+</ul>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="三实战演练多世代系谱分析" class="level2">
+<h2 class="anchored" data-anchor-id="三实战演练多世代系谱分析">三、实战演练：多世代系谱分析</h2>
+<p>下面使用真实群体档案 <code>G09_prunedPed.csv</code>（2015 至 2025 年连续繁育记录）演示，这些指标如何从“数学定义”转化为“管理判断”。</p>
+<section id="载入数据并格式化处理" class="level3">
+<h3 class="anchored" data-anchor-id="载入数据并格式化处理">3.1 载入数据并格式化处理</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(visPedigree)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 读入真实育种数据集</span></span>
+<span id="cb2-5">ped_raw <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"G09_prunedPed.csv"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.strings =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"NA"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"0"</span>))</span>
+<span id="cb2-6"></span>
+<span id="cb2-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 为了适配 tidyped 的默认要求，重命名主要列</span></span>
+<span id="cb2-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">setnames</span>(ped_raw, </span>
+<span id="cb2-9">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">old =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AnimalID"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SireID"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"DamID"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SexID"</span>), </span>
+<span id="cb2-10">         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">new =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Ind"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sire"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dam"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sex"</span>))</span>
+<span id="cb2-11"></span>
+<span id="cb2-12">tp_g09 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ped =</span> ped_raw)</span>
+<span id="cb2-13"></span>
+<span id="cb2-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 固定随机种子，保证抽样相关结果可复现</span></span>
+<span id="cb2-15">analysis_seed <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20260320</span>L</span>
+<span id="cb2-16"></span>
+<span id="cb2-17"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.table</span>(</span>
+<span id="cb2-18">  指标 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"总个体数"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"最大世代"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"年份数"</span>),</span>
+<span id="cb2-19">  数值 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tp_g09), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(tp_g09<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">uniqueN</span>(tp_g09<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Year))</span>
+<span id="cb2-20">)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       指标  数值
+     &lt;char&gt; &lt;int&gt;
+1: 总个体数 27635
+2: 最大世代    11
+3:   年份数    11</code></pre>
+</div>
+</div>
+<p>从结构上看，这是一套年份连续、世代信息完整，且末端参考群较大的群体档案，适合同时用于：</p>
+<ul>
+<li>单时点参考群体的静态多样性诊断；</li>
+<li>多年份动态衰减分析；</li>
+<li>漂变、瓶颈与始祖利用失衡三类风险分离。</li>
+</ul>
+</section>
+<section id="shannon-有效数的实证判读" class="level3">
+<h3 class="anchored" data-anchor-id="shannon-有效数的实证判读">3.2 Shannon 有效数的实证判读</h3>
+<p>我们将最后一年（2025 年）的所有个体作为<strong>参考群体</strong>进行全面诊断。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 获取 2025 年出生的参考群</span></span>
+<span id="cb4-2">ref_2025 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_g09[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2025</span>, Ind]</span>
+<span id="cb4-3"></span>
+<span id="cb4-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 运行 pediv，visPedigree 将自动给出所有综合指标</span></span>
+<span id="cb4-5">div_2025 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pediv</span>(tp_g09, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_2025, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> analysis_seed)</span>
+<span id="cb4-6"></span>
+<span id="cb4-7">div_2025<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary[, .(</span>
+<span id="cb4-8">  NRef,</span>
+<span id="cb4-9">  NFounder,</span>
+<span id="cb4-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fe =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">feH =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(feH, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-12">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">feH/fe</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(feH <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-13">  NAncestor,</span>
+<span id="cb4-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fa, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-15">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">faH =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(faH, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-16">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">faH/fa</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(faH <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fa, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-17">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fg =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fg, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb4-18">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fafe =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fafe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb4-19">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    NRef NFounder     fe    feH feH/fe NAncestor     fa    faH faH/fa     fg
+   &lt;int&gt;    &lt;int&gt;  &lt;num&gt;  &lt;num&gt;  &lt;num&gt;     &lt;int&gt;  &lt;num&gt;  &lt;num&gt;  &lt;num&gt;  &lt;num&gt;
+1: 26222      137 76.866 94.485  1.229       120 62.642 79.196  1.264 18.639
+    fafe
+   &lt;num&gt;
+1: 0.815</code></pre>
+</div>
+</div>
+<p>这组结果至少传递出三个信号：</p>
+<ol type="1">
+<li><strong><img src="https://latex.codecogs.com/png.latex?f_e%5E%7B(H)%7D%20/%20f_e%20%5Capprox%201.23"></strong>：始祖层面仍保留着一定长尾，说明不少低贡献始祖还在群体中留下了痕迹。</li>
+<li><strong><img src="https://latex.codecogs.com/png.latex?f_a%5E%7B(H)%7D%20/%20f_a%20%5Capprox%201.26"></strong>：祖先层面的长尾信号同样明显，提示后续繁育历史中虽然已经形成核心祖先，但外围祖先尚未完全消失。</li>
+<li><strong><img src="https://latex.codecogs.com/png.latex?f_a%20/%20f_e%20%5Capprox%200.815"></strong>：说明从始祖到祖先这一层确实存在瓶颈，但程度尚未塌缩到极端水平。</li>
+</ol>
+<p>如果把这些指标合并起来判读，可以得到一个更具体的结论：G09 群体的潜在遗传来源并未完全消失，但这些来源向当代参考群体的传递已经出现明显压缩。换言之，这一结果更接近“遗传库仍有储备，但代际传递效率下降”，而不是“遗传库本身已经耗尽”。对育种决策而言，这一区分十分重要，因为它决定了优先动作应是优化留种结构，还是考虑重建基础群体。</p>
+</section>
+<section id="哪些始祖和祖先最值得重点关注" class="level3">
+<h3 class="anchored" data-anchor-id="哪些始祖和祖先最值得重点关注">3.3 哪些始祖和祖先最值得重点关注？</h3>
+<p>只看综合指标还不够，育种管理最终要落实到“哪些个体或家系被用得太多”。下面分别查看 2025 年参考群体中的高贡献始祖和高边际贡献祖先。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">div_2025<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>founders[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                Ind    Contrib CumContrib  Rank
+             &lt;char&gt;      &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+ 1: MRYGY15B000M033 0.02702347 0.02702347     1
+ 2: MRYGY15B000F071 0.02326004 0.05028351     2
+ 3: MRYGY15B000M036 0.02326004 0.07354355     3
+ 4: MRTZD15B000F005 0.02301622 0.09655977     4
+ 5: MRTZD15B000M005 0.02301622 0.11957599     5
+ 6: MRYGY21G050M013 0.02292445 0.14250044     6
+ 7: MRYGY15B000F003 0.02270849 0.16520892     7
+ 8: MRYGY15B000M042 0.02270849 0.18791741     8
+ 9: MRYGY15B000F005 0.02131064 0.20922805     9
+10: MRYGY15B000M017 0.02131064 0.23053869    10</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">div_2025<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ancestors[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                Ind    Contrib CumContrib  Rank
+             &lt;char&gt;      &lt;num&gt;      &lt;num&gt; &lt;int&gt;
+ 1: MRYGY23G070B641 0.03646747 0.03646747     1
+ 2: MRYGY23G070A255 0.03386469 0.07033216     2
+ 3: MRYGY23G070A629 0.03175768 0.10208985     3
+ 4: MRYGY18G020D491 0.02730085 0.12939070     4
+ 5: MRYGY21G050A142 0.02536992 0.15476061     5
+ 6: MRYGY15B000M033 0.02416353 0.17892415     6
+ 7: MRYGY17G010A801 0.02367347 0.20259761     7
+ 8: MRYGY17G010A333 0.02354893 0.22614654     8
+ 9: MRYGY18G020D679 0.02293071 0.24907725     9
+10: MRYGY21G050M013 0.02292445 0.27200171    10</code></pre>
+</div>
+</div>
+<p>这里要特别注意两个层面的区别：</p>
+<ul>
+<li><code>founders</code> 表中的 <code>Contrib</code> 反映的是<strong>起始血统份额</strong>；</li>
+<li><code>ancestors</code> 表中的 <code>Contrib</code> 反映的是<strong>剥离重叠后仍然独立解释群体变异的边际贡献</strong>。</li>
+</ul>
+<p>如果某些个体在 <code>ancestors</code> 中排名非常靠前，却未必在 <code>founders</code> 中同样突出，通常意味着它们是后续代际中形成的“瓶颈节点”，也就是在繁育历史里被持续高频使用的父母本或家系。</p>
+</section>
+<section id="计算多样性动态与半衰期" class="level3">
+<h3 class="anchored" data-anchor-id="计算多样性动态与半衰期">3.4 计算多样性动态与半衰期</h3>
+<p>接下来利用 <code>pedhalflife()</code>，借助 <code>Year</code> 这条真实时间轴来建模分析遗传多样性的动态变化。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 使用 Year 追踪多样性随时间的流失率</span></span>
+<span id="cb10-2">hl_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedhalflife</span>(tp_g09, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> analysis_seed)</span>
+<span id="cb10-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(hl_res)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Information-Theoretic Diversity Half-Life
+-----------------------------------------
+Total Loss Rate (lambda_total):   0.139734
+  Foundation  (lambda_e)      :   0.002187
+  Bottleneck  (lambda_b)      :   0.016988
+  Drift       (lambda_d)      :   0.120560
+-----------------------------------------
+Diversity Half-life (T_1/2)   :       4.96 (Year)
+
+Timeseries: 11 time points</code></pre>
+</div>
+</div>
+<p>从打印结果可以看到，该群体的<strong>多样性半衰期约为 4.96 年</strong>。这意味着，在“当前结构继续延续”的假设下，始祖基因当量大约每 5 年减半一次。对于闭锁群体而言，这已经是一个值得高度关注的预警信号。</p>
+<p>为了更直观地看到多样性变化轨迹，还可以把各年份的等效数列出来：</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">hl_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>timeseries[, .(</span>
+<span id="cb12-2">  Time,</span>
+<span id="cb12-3">  NRef,</span>
+<span id="cb12-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fe =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb12-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fa, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb12-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fg =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fg, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>),</span>
+<span id="cb12-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lnfafe =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(lnfafe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb12-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lnfgfa =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(lnfgfa, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb12-9">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Time  NRef    fe    fa    fg lnfafe lnfgfa
+    &lt;int&gt; &lt;int&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt;  &lt;num&gt;  &lt;num&gt;
+ 1:  2015    98 98.00 98.00 98.00  0.000  0.000
+ 2:  2016   109 82.22 77.65 61.24 -0.057 -0.237
+ 3:  2017   111 63.96 58.12 38.37 -0.096 -0.415
+ 4:  2018   131 63.32 57.71 32.23 -0.093 -0.583
+ 5:  2019   138 66.25 54.88 27.21 -0.188 -0.701
+ 6:  2020   126 68.97 58.49 24.30 -0.165 -0.878
+ 7:  2021   123 82.00 69.22 26.49 -0.169 -0.961
+ 8:  2022   141 79.46 67.25 23.94 -0.167 -1.033
+ 9:  2023   130 76.34 64.90 21.00 -0.162 -1.128
+10:  2024   306 77.74 64.53 19.19 -0.186 -1.213
+11:  2025 26222 76.87 62.64 18.64 -0.205 -1.212</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(hl_res, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"log"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/faHfeH-20260320/index_files/figure-html/half-life-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>从时间序列中可以看到，2015 年作为基础群体起点时，<code>fe = fa = fg</code>，这是符合逻辑的：起始阶段尚未经历后续瓶颈与漂变。之后 <code>fg</code> 持续下降，并逐渐与 <code>fa</code>、<code>fe</code> 拉开距离，说明随机漂变效应在时间上持续累积。</p>
+</section>
+<section id="剖析衰减过程与靶向施策" class="level3">
+<h3 class="anchored" data-anchor-id="剖析衰减过程与靶向施策">3.5 剖析衰减过程与靶向施策</h3>
+<p>那么，干预重点应当放在哪里？关键就在 <code>hl_res$decay</code> 给出的衰减分解。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1">hl_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay[, .(</span>
+<span id="cb15-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaE =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaE, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaB =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaB, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaD =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaD, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaTotal =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaTotal, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">THalf =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(THalf, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb15-7">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    LambdaE  LambdaB LambdaD LambdaTotal THalf
+      &lt;num&gt;    &lt;num&gt;   &lt;num&gt;       &lt;num&gt; &lt;num&gt;
+1: 0.002187 0.016988 0.12056    0.139734  4.96</code></pre>
+</div>
+</div>
+<p>输出的 <img src="https://latex.codecogs.com/png.latex?%5Clambda_e">、<img src="https://latex.codecogs.com/png.latex?%5Clambda_b"> 与 <img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 分工明确。在这套 G09 数据中，分解结果呈现出较清晰的层次：</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?%5Clambda_e"> 很小（~0.002）：说明始祖利用不均并不是当前的主要矛盾。</li>
+<li><img src="https://latex.codecogs.com/png.latex?%5Clambda_b"> 有一定规模（~0.017）：说明后续繁育过程中确实形成了可观的瓶颈。</li>
+<li><strong><img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 最大（~0.121）</strong>：说明总流失率主要由漂变驱动，也就是每代真正留下来的遗传样本面偏窄。</li>
+</ul>
+<p>据此更稳妥的表述是：当前阶段的首要压力来自有限群体中的持续漂变，瓶颈次之，而建群起点的失衡影响相对较小。</p>
+<p><strong>对生产的启示：</strong> 如果分解格局与本例相似，优先策略通常不是继续压缩核心留种群，而是扩大实际参与下一代的家系面和个体面。让更多平行家系都能留下后代，往往比进一步强化少数“明星家系”的选择强度，更能延缓 <img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 主导下的多样性流失。</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>解读边界</strong>：</p>
+<ul>
+<li><code>feH</code> 与 <code>faH</code> 反映的是系谱贡献分布的均匀度，不直接等同于全基因组实测杂合度。</li>
+<li><code>T_{1/2}</code> 对时间窗、参考群体定义和留种方式敏感，因此更适合做纵向监测与方案比较。</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="从指标组合到育种决策" class="level3">
+<h3 class="anchored" data-anchor-id="从指标组合到育种决策">3.6 从指标组合到育种决策</h3>
+<p>在实际管理中，单个指标往往不足以支撑决策。更有效的做法，是把 <code>pediv()</code> 给出的静态结构指标与 <code>pedhalflife()</code> 给出的动态衰减指标联合起来解释。下面给出一个更接近年度决策场景的判读框架：</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 30%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>指标组合特征</th>
+<th>遗传学解释</th>
+<th>管理优先方向</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>feH/fe</code> 接近 1，且 <img src="https://latex.codecogs.com/png.latex?%5Clambda_e"> 较高</td>
+<td>始祖层面的遗传来源已经偏窄，且这种不均仍在持续强化</td>
+<td>重新审视基础群构成；必要时考虑引入新始祖、外部材料或扩展保种基础群</td>
+</tr>
+<tr class="even">
+<td><code>fa/fe</code> 较低，且 <img src="https://latex.codecogs.com/png.latex?%5Clambda_b"> 较高</td>
+<td>历代繁育中存在明显瓶颈，核心父母本被重复使用</td>
+<td>对高边际贡献祖先设置使用上限；分散配种机会；降低单一明星家系的后代占比</td>
+</tr>
+<tr class="odd">
+<td><code>feH/fe</code> 与 <code>faH/fa</code> 均较高，但 <img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 主导</td>
+<td>长尾仍然存在，但未被稳定续留，漂变正在持续吞噬低频家系</td>
+<td>扩大每代保留家系数；提高低频家系的续留概率；控制父母本贡献偏斜</td>
+</tr>
+<tr class="even">
+<td><code>feH/fe</code> 较高而 <img src="https://latex.codecogs.com/png.latex?T_%7B1/2%7D"> 持续缩短</td>
+<td>潜在多样性仍在，但流失速度加快</td>
+<td>将“抢救性保留边缘家系”作为短期重点，并在下一繁殖周期复测干预效果</td>
+</tr>
+</tbody>
+</table>
+<p>这个框架的核心思想是：<code>feH</code>/<code>faH</code> 反映的是<strong>潜在遗传来源是否仍在</strong>，<code>fa/fe</code> 反映的是<strong>传递过程是否已经收缩</strong>，而 <img src="https://latex.codecogs.com/png.latex?%5Clambda_e">、<img src="https://latex.codecogs.com/png.latex?%5Clambda_b">、<img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 进一步说明<strong>收缩主要发生在哪个阶段</strong>。只有把这三层信息叠加起来，育种决策才不至于停留在“多保留一些家系”这样过于宽泛的建议上。</p>
+<p>从 G09 的结果看，更合理的动作顺序应是：</p>
+<ol type="1">
+<li><strong>先控制漂变。</strong> 通过提高每代实际留种规模、增加平行家系数、降低父母本贡献偏斜，直接针对 <img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 主导的问题。</li>
+<li><strong>同步约束瓶颈节点。</strong> 对 <code>ancestors</code> 表中长期居前的个体或家系实施使用阈值，避免 <img src="https://latex.codecogs.com/png.latex?%5Clambda_b"> 进一步抬升。</li>
+<li><strong>定向续留长尾来源。</strong> 当 <code>feH/fe</code> 与 <code>faH/fa</code> 显著高于 1 时，说明边缘家系仍具有管理价值，应通过保留配额、分层留种或平衡交配设计确保其进入下一代。</li>
+<li><strong>用下一年度结果验证干预是否有效。</strong> 如果干预后 <img src="https://latex.codecogs.com/png.latex?T_%7B1/2%7D"> 延长、<img src="https://latex.codecogs.com/png.latex?%5Clambda_d"> 下降、<code>fa/fe</code> 回升，则说明策略方向基本正确；反之，则应重新评估配种强度与留种面。</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>一个实用的快速判读框架</strong>：</p>
+<ul>
+<li><code>feH/fe</code> 高：说明始祖层面仍有长尾；</li>
+<li><code>faH/fa</code> 高：说明祖先层面仍有长尾；</li>
+<li><code>fa/fe</code> 低：说明瓶颈明显；</li>
+<li><code>lambda_d</code> 高：说明第一优先级不是继续压缩核心群，而是先把群体留大、留宽。</li>
+</ul>
+</div>
+</div>
+</section>
+</section>
+<section id="四pediv-与-pedhalflife-联合用于年度育种监控的标准流程" class="level2">
+<h2 class="anchored" data-anchor-id="四pediv-与-pedhalflife-联合用于年度育种监控的标准流程">四、<code>pediv()</code> 与 <code>pedhalflife()</code> 联合用于年度育种监控的标准流程</h2>
+<p>如果目标不是一次性的事后分析，而是建立一个可重复执行的年度监控体系，那么 <code>pediv()</code> 与 <code>pedhalflife()</code> 最好被放在同一套固定流程中。一个相对稳健的年度工作流通常包括以下五步：</p>
+<section id="第一步固定数据口径与参考群体定义" class="level3">
+<h3 class="anchored" data-anchor-id="第一步固定数据口径与参考群体定义">4.1 第一步：固定数据口径与参考群体定义</h3>
+<p>年度监控最忌讳的是“每年换一套统计口径”。在进入分析前，至少应固定以下三项：</p>
+<ol type="1">
+<li><strong>系谱冻结时点</strong>：每年在同一业务节点冻结一次完整系谱。</li>
+<li><strong>参考群体定义</strong>：例如固定为“当年全部候选留种个体”或“当年进入核心群的个体”。</li>
+<li><strong>时间窗口定义</strong>：<code>pedhalflife()</code> 应明确使用累计历史窗口还是固定长度滚动窗口，并长期保持一致。</li>
+</ol>
+<p>如果这三项定义在年度之间频繁变化，那么指标的年际可比性会明显下降。</p>
+</section>
+<section id="第二步用-pediv-完成当前年度的结构诊断" class="level3">
+<h3 class="anchored" data-anchor-id="第二步用-pediv-完成当前年度的结构诊断">4.2 第二步：用 <code>pediv()</code> 完成当前年度的结构诊断</h3>
+<p><code>pediv()</code> 适合回答“今年的参考群体结构如何”这一问题。年度报告中建议至少固定输出以下内容：</p>
+<ul>
+<li><code>fe</code>、<code>feH</code>、<code>fa</code>、<code>faH</code>、<code>fg</code>；</li>
+<li><code>feH/fe</code>、<code>faH/fa</code>、<code>fa/fe</code> 三个比值；</li>
+<li><code>founders</code> 与 <code>ancestors</code> 表的前若干名个体。</li>
+</ul>
+<p>其中，前一组指标用于判断多样性总量与长尾保留情况，后一组列表用于定位具体的高贡献始祖、瓶颈祖先或需要特别关注的家系。</p>
+</section>
+<section id="第三步用-pedhalflife-评估年际趋势与风险来源" class="level3">
+<h3 class="anchored" data-anchor-id="第三步用-pedhalflife-评估年际趋势与风险来源">4.3 第三步：用 <code>pedhalflife()</code> 评估年际趋势与风险来源</h3>
+<p><code>pedhalflife()</code> 适合回答“过去若干年中，多样性正在怎样变化”这一问题。年度监控中至少应跟踪：</p>
+<ul>
+<li><code>THalf</code>：衡量总体流失速度；</li>
+<li><code>LambdaE</code>：反映始祖利用不均的动态变化；</li>
+<li><code>LambdaB</code>：反映瓶颈是否在加强；</li>
+<li><code>LambdaD</code>：反映漂变是否成为主导风险。</li>
+</ul>
+<p>在解释这些结果时，建议把重点放在<strong>年际变化方向</strong>而不是单年绝对值。对管理者而言，<code>THalf</code> 从 8 年缩短到 5 年，通常比“当前数值究竟是 5.0 还是 5.3”更值得重视。</p>
+</section>
+<section id="第四步把指标映射为管理触发条件" class="level3">
+<h3 class="anchored" data-anchor-id="第四步把指标映射为管理触发条件">4.4 第四步：把指标映射为管理触发条件</h3>
+<p>年度监控真正有用的前提，是指标变化能够触发明确动作。下面给出一组示例性规则，这些阈值并非普适标准，但可以作为制定内部 SOP 的起点：</p>
+<ul>
+<li>当 <code>fa/fe</code> 连续下降时，启动对热门父母本使用结构的复核。</li>
+<li>当 <code>LambdaB</code> 升高时，收紧高边际贡献祖先的使用上限。</li>
+<li>当 <code>LambdaD</code> 长期占主导时，优先扩大留种规模和家系覆盖面，而不是进一步提高选择强度。</li>
+<li>当 <code>feH/fe</code> 或 <code>faH/fa</code> 仍高而 <code>THalf</code> 快速缩短时，说明潜在长尾尚在，但其传递正在加速丢失，应启动边缘家系的定向续留。</li>
+<li>当 <code>feH/fe</code> 接近 1 且 <code>LambdaE</code> 同时升高时，应讨论是否需要扩展基础群体或引入新血统。</li>
+</ul>
+<p>换言之，监控体系不能只停留在“出报表”，而应进一步进入“触发动作”的层面。</p>
+</section>
+<section id="第五步形成年度闭环并追踪干预结果" class="level3">
+<h3 class="anchored" data-anchor-id="第五步形成年度闭环并追踪干预结果">4.5 第五步：形成年度闭环并追踪干预结果</h3>
+<p>一个完整的年度闭环，至少应包含以下输出：</p>
+<ul>
+<li>当年的结构诊断结果；</li>
+<li>当年的动态风险分解；</li>
+<li>据此调整的配种、留种或保种措施；</li>
+<li>下一年度对这些措施效果的复测。</li>
+</ul>
+<p>只有当监控结果被用于调整实际配种方案，并在下一年度被再次验证时，<code>pediv()</code> 与 <code>pedhalflife()</code> 才真正从分析工具转化为管理工具。</p>
+</section>
+<section id="一个可复用的年度监控代码模板" class="level3">
+<h3 class="anchored" data-anchor-id="一个可复用的年度监控代码模板">4.6 一个可复用的年度监控代码模板</h3>
+<p>下面给出一个简化的代码模板，用于生成某一年度的监控面板。实际生产中，可以把它封装为固定脚本，每年在同一数据冻结节点执行。</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1">monitor_year <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2025</span>L</span>
+<span id="cb17-2"></span>
+<span id="cb17-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 参考群体定义：当年个体</span></span>
+<span id="cb17-4">ref_ids <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_g09[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> monitor_year, Ind]</span>
+<span id="cb17-5"></span>
+<span id="cb17-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 若需要构建截至 monitor_year 的完整分析对象，可先截取子系谱</span></span>
+<span id="cb17-7">ped_monitor <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(</span>
+<span id="cb17-8">  tp_g09,</span>
+<span id="cb17-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cand =</span> tp_g09[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;=</span> monitor_year, Ind],</span>
+<span id="cb17-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"up"</span></span>
+<span id="cb17-11">)</span>
+<span id="cb17-12"></span>
+<span id="cb17-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 当前年度的静态结构诊断</span></span>
+<span id="cb17-14">iv_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pediv</span>(</span>
+<span id="cb17-15">  ped_monitor,</span>
+<span id="cb17-16">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_ids,</span>
+<span id="cb17-17">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>,</span>
+<span id="cb17-18">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> analysis_seed</span>
+<span id="cb17-19">)</span>
+<span id="cb17-20"></span>
+<span id="cb17-21"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 历史趋势与衰减来源诊断</span></span>
+<span id="cb17-22">hl_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedhalflife</span>(</span>
+<span id="cb17-23">  ped_monitor,</span>
+<span id="cb17-24">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>,</span>
+<span id="cb17-25">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> analysis_seed</span>
+<span id="cb17-26">)</span>
+<span id="cb17-27"></span>
+<span id="cb17-28"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 生成年度监控面板</span></span>
+<span id="cb17-29">annual_panel <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> iv_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary[, .(</span>
+<span id="cb17-30">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Year =</span> monitor_year,</span>
+<span id="cb17-31">  NRef,</span>
+<span id="cb17-32">  fe,</span>
+<span id="cb17-33">  feH,</span>
+<span id="cb17-34">  fa,</span>
+<span id="cb17-35">  faH,</span>
+<span id="cb17-36">  fg,</span>
+<span id="cb17-37">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">feH_fe =</span> feH <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fe,</span>
+<span id="cb17-38">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">faH_fa =</span> faH <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fa,</span>
+<span id="cb17-39">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa_fe =</span> fa <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fe</span>
+<span id="cb17-40">)][, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">:=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>(</span>
+<span id="cb17-41">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">THalf =</span> hl_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>THalf,</span>
+<span id="cb17-42">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaE =</span> hl_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>LambdaE,</span>
+<span id="cb17-43">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaB =</span> hl_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>LambdaB,</span>
+<span id="cb17-44">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaD =</span> hl_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>LambdaD</span>
+<span id="cb17-45">)]</span>
+<span id="cb17-46"></span>
+<span id="cb17-47">annual_panel</span></code></pre></div></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>实施建议</strong>：</p>
+<ul>
+<li>若用于年度监管，务必固定参考群体定义与时间窗口定义。</li>
+<li>若用于不同群体横向比较，应优先比较变化方向与相对结构，而不是机械比较绝对值。</li>
+<li>若群体规模较大，建议把年度面板、Top 祖先列表和触发动作记录保存为同一份管理档案。</li>
+</ul>
+</div>
+</div>
+</section>
+</section>
+<section id="五总结" class="level2">
+<h2 class="anchored" data-anchor-id="五总结">五、总结</h2>
+<p>经典 <img src="https://latex.codecogs.com/png.latex?f_e">、<img src="https://latex.codecogs.com/png.latex?f_a"> 告诉我们多样性还剩多少，<img src="https://latex.codecogs.com/png.latex?f_e%5E%7B(H)%7D">、<img src="https://latex.codecogs.com/png.latex?f_a%5E%7B(H)%7D"> 进一步告诉我们长尾是否仍在，而 <code>pedhalflife()</code> 则把“剩多少”转化为“流失得多快”。三者结合，才能把系谱多样性的静态结构与动态趋势放到同一张图上理解。</p>
+<p>对 G09 群体而言，更需要警惕的不是始祖数量本身，而是每代真正进入下一轮繁育的遗传样本面过窄。换句话说，问题的重点不是“是否存在长尾来源”，而是“这些长尾来源能否被稳定地传递下去”。如果后续管理能在维持选择响应的同时，扩大基础群、均衡父母本贡献并持续续留边缘家系，那么半衰期就有机会被显著拉长。</p>
+<p>因此，从方法学上看，<code>pediv()</code> 更适合承担“年度结构体检”的角色，<code>pedhalflife()</code> 更适合承担“历史趋势预警”的角色。把两者纳入统一的年度 SOP，才能使多样性管理从静态描述走向可执行、可追踪、可复核的育种决策流程。</p>
+</section>
+<section id="六参考文献" class="level2">
+<h2 class="anchored" data-anchor-id="六参考文献">六、参考文献</h2>
+<ul>
+<li>Boichard, D., Maignel, L., &amp; Verrier, É. (1997). The value of using probabilities of gene origin to measure genetic variability in a population. <em>Genetics Selection Evolution</em>, 29(1), 5-23.</li>
+<li>Caballero, A., &amp; Toro, M. A. (2000). Interrelations between effective population size and other pedigree tools for the management of conserved populations. <em>Genetical Research</em>, 75(3), 331-343.</li>
+<li>Hill, M. O. (1973). Diversity and evenness: a unifying notation and its consequences. <em>Ecology</em>, 54(2), 427-432.</li>
+<li>Jost, L. (2006). Entropy and diversity. <em>Oikos</em>, 113(2), 363-375.</li>
+<li>Lacy, R. C. (1989). Analysis of founder representation in pedigrees: founder equivalents and founder genome equivalents. <em>Zoo Biology</em>, 8(2), 111-123.</li>
+</ul>
+
+
+</section>
+
+ ]]></description>
+  <category>Breeding</category>
+  <category>Pedigree Analysis</category>
+  <category>visPedigree</category>
+  <guid>https://luansheng.github.io/lsblog/posts/faHfeH-20260320/</guid>
+  <pubDate>Thu, 19 Mar 2026 16:00:00 GMT</pubDate>
+</item>
 <item>
   <title>有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证</title>
   <dc:creator>Sheng Luan</dc:creator>
