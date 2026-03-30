@@ -98,97 +98,6 @@
     "text": "总结\n通过 DataExplorer，我们仅用几行代码就完成了对数据的全面体检。结合 tidyverse 的灵活处理，我们还能深入探讨更复杂的育种问题。这种 “Overview first, zoom and filter, then details-on-demand” 的分析流程，是高效数据科学工作的典范。"
   },
   {
-    "objectID": "posts/visPedigree-20260124/index.html",
-    "href": "posts/visPedigree-20260124/index.html",
-    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
-    "section": "",
-    "text": "visPedigree 是一款基于 R 语言开发的系谱分析与可视化工具，旨在解决动植物育种中复杂系谱结构的展示难题。\n随着育种群体规模的扩大，传统工具在处理大规模系谱，特别是水产动物大家系系谱时，时常面临计算缓慢、可视化困难等问题。为此，visPedigree 1.0.1 进行了底层架构的全面重构。新版本引入 C++ (Rcpp) 对矩阵运算和近交系数计算等密集型任务进行底层加速，显著提升了计算效率；同时，利用图论算法 (Graph Theory) 优化了系谱整理逻辑，实现了世代自动推断与逻辑错误（如 Loop）的高效检测。\n本文将介绍该版本的主要功能更新，包括焦点个体追踪、近交系数可视化及新增的矩阵分析工具。\n\n\n\n\n在大规模群体中，快速定位特定个体及其血缘脉络是系谱分析的常见需求。新版本引入了交互式的 highlight 和 trace 参数，支持对核心个体及其祖先或后代进行针对性展示。\n\nhighlight: 指定需要高亮显示的“核心个体”。\ntrace: 定义追踪方向。\n\n\"up\": 仅追踪并显示其祖先节点。\n\"down\": 仅追踪并显示其后代节点。\n\"all\": 同时追踪祖先与后代。\n\n\n\n# 安装并加载\n# devtools::install_github(\"luansheng/visPedigree\")\nlibrary(visPedigree)\ndata(simple_ped)\n\n# 场景：高亮显示个体 \"J5X804\" 并追踪其所有祖先\ntidy_ped &lt;- tidyped(simple_ped, genmethod = \"bottom\")\nvisped(tidy_ped, highlight = \"J5X804\", trace = \"up\", cex = 0.5, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 1: 高亮显示个体 J5X804 及其祖先\n\n\n\n\n\n\n\n\ntidyped 函数不仅用于数据清洗，现在还集成了强大的诊断与统计功能：\n\n逻辑错误诊断: 利用图论算法自动检测系谱中的死循环 (Loops) 和重复条目。\n深度数据摘要: 通过 summary() 方法，提供系谱深度、世代重叠度、每代近交水平等详细统计信息。\n系谱修剪 (prune): 自适应保留有效核心群体。\n\n\n# 检测系谱死循环\ntry(tidyped(loop_ped))\n\nError : Pedigree error! Pedigree loops detected:\n M -&gt; P -&gt; R -&gt; T -&gt; V -&gt; M\nF -&gt; E -&gt; C -&gt; A -&gt; F\n\n# 数据清洗与近交计算\ndt_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 查看系谱统计摘要\nsummary(dt_ped)\n\nPedigree Summary\n================\n\nTotal Individuals:  59 \n  - Males:    29 (49.2%) \n  - Females:  30 (50.8%) \n\nPedigree Structure:\n  - Founders (no parents):   28 \n  - Both parents known:      28 \n  - Sire only known:         2 \n  - Dam only known:          1 \n\nGeneration:\n  - Maximum:  6 \n  - Distribution:\n      Gen 1: 28 individuals\n      Gen 2: 16 individuals\n      Gen 3: 8 individuals\n      Gen 4: 4 individuals\n      Gen 5: 2 individuals\n      Gen 6: 1 individuals\n\nReproduction:\n  - Individuals with offspring:  56 \n  - Sires:  28  (Mean=1.1, Max=2 offspring)\n  - Dams:   28  (Mean=1.0, Max=2 offspring)\n\nFull-sibling Families:\n  - Number of families:      27 \n  - Mean family size:        1.04\n  - Maximum family size:     2 \n  - Top families by size:\n      J0Z475xJ0C612: 2\n      J0C317xJ0C450: 1\n      J0C561xJ0C032: 1\n      J0C583xJ0Z380: 1\n      J0C591xJ0C231: 1\n\nInbreeding Coefficients:\n  - All individuals:\n      Mean = 0.0001, Min = 0.0000, Max = 0.0039\n      Inbred (f &gt; 0): 1 (1.7%)\n\n================\n\n\n\n\n\n控制近交水平是制定育种方案的关键。visPedigree 1.0.0 将近交系数 (\\(F\\)) 的计算与可视化进行了整合。用户可在数据整理阶段直接计算 \\(F\\) 值，并在绘图时将其直观标注在个体节点上。\n\ntidyped(..., inbreed = TRUE): 数据预处理阶段自动计算近交系数。\nvisped(..., showf = TRUE): 绘图时在节点下方标注 \\(F\\) 值。\n\n\n# 整理系谱并计算近交系数\nDT_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 绘图时显示近交系数\nvisped(DT_ped, showf = TRUE, cex = 0.45, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 2: 在节点中展示近交系数\n\n\n\n\n\n\n\n\n在水产育种等高繁殖力物种的场景中，全同胞家系（Full-sib family）往往包含大量个体。如果不加处理直接绘图，图像会横向无限延伸，导致关键结构难以辨识。\nvisPedigree 提供了 compact = TRUE 参数，专门针对全同胞家系进行了可视化优化。开启该模式后，同一全同胞家系的后代将被“折叠”展示，极大缩减了绘图宽度，使整体系谱结构更加紧凑、清晰。 visPedigree设计函数时，考虑了对管道符|&gt;的支持，简化代码量，逻辑性更强。\n\n# 1. 系谱清洗并自动分割独立群体（GP1 为最大的连通群体）\nped_groups &lt;- big_family_size_ped |&gt; \n  tidyped() |&gt; \n  splitped()\n\nmaxi_group &lt;- ped_groups$GP1\n\n# 2. 选取最后 10 个家系的个体作为目标，演示系谱修剪 (Pruning)\n# 使用 data.table 的语法确保高效提取\nlast_10_fams &lt;- tail(unique(maxi_group$Family), 10)\ncands &lt;- maxi_group[Family %in% last_10_fams, Ind]\n\n# 3. 提取目标个体的完整血缘脉络，并开启 Compact 模式展示\n# Compact 模式会将全同胞家系“折叠”，极大提升了大规模家系的可视化清晰度\nmaxi_group |&gt; \n  tidyped(cand = cands, genmethod=\"bottom\") |&gt;\n  visped(compact = TRUE, cex = 0.3)\n\n\n\n\n\n\n\nFigure 3: 系谱图压缩模式 (Compact Mode)\n\n\n\n\n\n\n\n\n\n除核心的可视化功能外，visPedigree 还提供了一系列辅助育种分析的工具函数，支持从系谱数据中提取关键遗传信息。\n\n\npedmat() 函数利用 C++ 加速，可高效计算亲缘关系矩阵 (Numerator Relationship Matrix, A-Matrix) 或近交系数向量。\n它同样支持 compact 参数。在水产育种等场景下，如果不需要针对每个个体计算矩阵，pedmat(..., compact=TRUE) 可以输出全同胞家系层面的亲缘关系矩阵，这将矩阵维度从个体级（数万行）降低到家系级（数百行），极大地节省了内存和后续遗传评估的计算时间。\n\n# 计算个体级稀疏 A 矩阵\nA_ind &lt;- pedmat(simple_ped, method = \"A\", sparse = TRUE)\n\n# 计算家系级压缩 A 矩阵 (Compact Mode)\nA_fam &lt;- pedmat(simple_ped, method = \"A\", compact = TRUE)\n\n\n\n\nvismat() 专门用于可视化亲缘关系矩阵。通过热图 (Heatmap) 的形式，直观展示群体内部的亲缘结构，有助于快速识别家系聚类和潜在的近交风险。\n\n# 可视化 A 矩阵\nvismat(A_ind, labelsize=0.5)\n\n\n\n\n\n\n\nFigure 4: 利用热图可视化亲缘关系矩阵 (A-Matrix)\n\n\n\n\n\n\n\n\n\nvisPedigree 遵循 Tidy Data 原则。无论原始数据是否存在缺失或乱序，tidyped() 均可将其标准化为符合分析要求的格式。\n\nlibrary(visPedigree)\nlibrary(data.table)\n\n# 1. 准备示例数据\nped &lt;- data.table(\n  ID = c(\"A\", \"B\", \"C\", \"D\", \"E\"),\n  Sire = c(NA, NA, \"A\", \"A\", \"C\"),\n  Dam = c(NA, NA, \"B\", \"B\", \"D\")\n)\n\n# 2. 数据清洗 (补全、排序、计算近交)\ntidy_ped &lt;- tidyped(ped, inbreed = TRUE)\n\n# 3. 可视化展示\nvisped(tidy_ped, showf = TRUE)\n\n\n\n\n\n\n\nFigure 5: Quick Start 示例输出\n\n\n\n\n\n快速入手的最便捷途径，是阅读viPedigree包的3个vignette，可以在该包pkgdowns站点的Articles中找到。\n\n\n\nvisPedigree 1.0.1 源代码及文档已托管至 GitHub。\n\nGitHub: luansheng/visPedigree\n\nvisPedigree 1.0.1 已在 CRAN 上发布。\n\nCRAN: install.packages(\"visPedigree\")\n\n欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。\n\nCitation: Luan, S. (2026). visPedigree: Visualization and Analysis of Pedigrees. R package version 1.0.1. https://doi.org/10.32614/CRAN.package.visPedigree"
-  },
-  {
-    "objectID": "posts/visPedigree-20260124/index.html#主要功能更新",
-    "href": "posts/visPedigree-20260124/index.html#主要功能更新",
-    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
-    "section": "",
-    "text": "在大规模群体中，快速定位特定个体及其血缘脉络是系谱分析的常见需求。新版本引入了交互式的 highlight 和 trace 参数，支持对核心个体及其祖先或后代进行针对性展示。\n\nhighlight: 指定需要高亮显示的“核心个体”。\ntrace: 定义追踪方向。\n\n\"up\": 仅追踪并显示其祖先节点。\n\"down\": 仅追踪并显示其后代节点。\n\"all\": 同时追踪祖先与后代。\n\n\n\n# 安装并加载\n# devtools::install_github(\"luansheng/visPedigree\")\nlibrary(visPedigree)\ndata(simple_ped)\n\n# 场景：高亮显示个体 \"J5X804\" 并追踪其所有祖先\ntidy_ped &lt;- tidyped(simple_ped, genmethod = \"bottom\")\nvisped(tidy_ped, highlight = \"J5X804\", trace = \"up\", cex = 0.5, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 1: 高亮显示个体 J5X804 及其祖先\n\n\n\n\n\n\n\n\ntidyped 函数不仅用于数据清洗，现在还集成了强大的诊断与统计功能：\n\n逻辑错误诊断: 利用图论算法自动检测系谱中的死循环 (Loops) 和重复条目。\n深度数据摘要: 通过 summary() 方法，提供系谱深度、世代重叠度、每代近交水平等详细统计信息。\n系谱修剪 (prune): 自适应保留有效核心群体。\n\n\n# 检测系谱死循环\ntry(tidyped(loop_ped))\n\nError : Pedigree error! Pedigree loops detected:\n M -&gt; P -&gt; R -&gt; T -&gt; V -&gt; M\nF -&gt; E -&gt; C -&gt; A -&gt; F\n\n# 数据清洗与近交计算\ndt_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 查看系谱统计摘要\nsummary(dt_ped)\n\nPedigree Summary\n================\n\nTotal Individuals:  59 \n  - Males:    29 (49.2%) \n  - Females:  30 (50.8%) \n\nPedigree Structure:\n  - Founders (no parents):   28 \n  - Both parents known:      28 \n  - Sire only known:         2 \n  - Dam only known:          1 \n\nGeneration:\n  - Maximum:  6 \n  - Distribution:\n      Gen 1: 28 individuals\n      Gen 2: 16 individuals\n      Gen 3: 8 individuals\n      Gen 4: 4 individuals\n      Gen 5: 2 individuals\n      Gen 6: 1 individuals\n\nReproduction:\n  - Individuals with offspring:  56 \n  - Sires:  28  (Mean=1.1, Max=2 offspring)\n  - Dams:   28  (Mean=1.0, Max=2 offspring)\n\nFull-sibling Families:\n  - Number of families:      27 \n  - Mean family size:        1.04\n  - Maximum family size:     2 \n  - Top families by size:\n      J0Z475xJ0C612: 2\n      J0C317xJ0C450: 1\n      J0C561xJ0C032: 1\n      J0C583xJ0Z380: 1\n      J0C591xJ0C231: 1\n\nInbreeding Coefficients:\n  - All individuals:\n      Mean = 0.0001, Min = 0.0000, Max = 0.0039\n      Inbred (f &gt; 0): 1 (1.7%)\n\n================\n\n\n\n\n\n控制近交水平是制定育种方案的关键。visPedigree 1.0.0 将近交系数 (\\(F\\)) 的计算与可视化进行了整合。用户可在数据整理阶段直接计算 \\(F\\) 值，并在绘图时将其直观标注在个体节点上。\n\ntidyped(..., inbreed = TRUE): 数据预处理阶段自动计算近交系数。\nvisped(..., showf = TRUE): 绘图时在节点下方标注 \\(F\\) 值。\n\n\n# 整理系谱并计算近交系数\nDT_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 绘图时显示近交系数\nvisped(DT_ped, showf = TRUE, cex = 0.45, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 2: 在节点中展示近交系数\n\n\n\n\n\n\n\n\n在水产育种等高繁殖力物种的场景中，全同胞家系（Full-sib family）往往包含大量个体。如果不加处理直接绘图，图像会横向无限延伸，导致关键结构难以辨识。\nvisPedigree 提供了 compact = TRUE 参数，专门针对全同胞家系进行了可视化优化。开启该模式后，同一全同胞家系的后代将被“折叠”展示，极大缩减了绘图宽度，使整体系谱结构更加紧凑、清晰。 visPedigree设计函数时，考虑了对管道符|&gt;的支持，简化代码量，逻辑性更强。\n\n# 1. 系谱清洗并自动分割独立群体（GP1 为最大的连通群体）\nped_groups &lt;- big_family_size_ped |&gt; \n  tidyped() |&gt; \n  splitped()\n\nmaxi_group &lt;- ped_groups$GP1\n\n# 2. 选取最后 10 个家系的个体作为目标，演示系谱修剪 (Pruning)\n# 使用 data.table 的语法确保高效提取\nlast_10_fams &lt;- tail(unique(maxi_group$Family), 10)\ncands &lt;- maxi_group[Family %in% last_10_fams, Ind]\n\n# 3. 提取目标个体的完整血缘脉络，并开启 Compact 模式展示\n# Compact 模式会将全同胞家系“折叠”，极大提升了大规模家系的可视化清晰度\nmaxi_group |&gt; \n  tidyped(cand = cands, genmethod=\"bottom\") |&gt;\n  visped(compact = TRUE, cex = 0.3)\n\n\n\n\n\n\n\nFigure 3: 系谱图压缩模式 (Compact Mode)"
-  },
-  {
-    "objectID": "posts/visPedigree-20260124/index.html#矩阵分析工具",
-    "href": "posts/visPedigree-20260124/index.html#矩阵分析工具",
-    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
-    "section": "",
-    "text": "除核心的可视化功能外，visPedigree 还提供了一系列辅助育种分析的工具函数，支持从系谱数据中提取关键遗传信息。\n\n\npedmat() 函数利用 C++ 加速，可高效计算亲缘关系矩阵 (Numerator Relationship Matrix, A-Matrix) 或近交系数向量。\n它同样支持 compact 参数。在水产育种等场景下，如果不需要针对每个个体计算矩阵，pedmat(..., compact=TRUE) 可以输出全同胞家系层面的亲缘关系矩阵，这将矩阵维度从个体级（数万行）降低到家系级（数百行），极大地节省了内存和后续遗传评估的计算时间。\n\n# 计算个体级稀疏 A 矩阵\nA_ind &lt;- pedmat(simple_ped, method = \"A\", sparse = TRUE)\n\n# 计算家系级压缩 A 矩阵 (Compact Mode)\nA_fam &lt;- pedmat(simple_ped, method = \"A\", compact = TRUE)\n\n\n\n\nvismat() 专门用于可视化亲缘关系矩阵。通过热图 (Heatmap) 的形式，直观展示群体内部的亲缘结构，有助于快速识别家系聚类和潜在的近交风险。\n\n# 可视化 A 矩阵\nvismat(A_ind, labelsize=0.5)\n\n\n\n\n\n\n\nFigure 4: 利用热图可视化亲缘关系矩阵 (A-Matrix)"
-  },
-  {
-    "objectID": "posts/visPedigree-20260124/index.html#快速上手-quick-start",
-    "href": "posts/visPedigree-20260124/index.html#快速上手-quick-start",
-    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
-    "section": "",
-    "text": "visPedigree 遵循 Tidy Data 原则。无论原始数据是否存在缺失或乱序，tidyped() 均可将其标准化为符合分析要求的格式。\n\nlibrary(visPedigree)\nlibrary(data.table)\n\n# 1. 准备示例数据\nped &lt;- data.table(\n  ID = c(\"A\", \"B\", \"C\", \"D\", \"E\"),\n  Sire = c(NA, NA, \"A\", \"A\", \"C\"),\n  Dam = c(NA, NA, \"B\", \"B\", \"D\")\n)\n\n# 2. 数据清洗 (补全、排序、计算近交)\ntidy_ped &lt;- tidyped(ped, inbreed = TRUE)\n\n# 3. 可视化展示\nvisped(tidy_ped, showf = TRUE)\n\n\n\n\n\n\n\nFigure 5: Quick Start 示例输出\n\n\n\n\n\n快速入手的最便捷途径，是阅读viPedigree包的3个vignette，可以在该包pkgdowns站点的Articles中找到。"
-  },
-  {
-    "objectID": "posts/visPedigree-20260124/index.html#获取与反馈",
-    "href": "posts/visPedigree-20260124/index.html#获取与反馈",
-    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
-    "section": "",
-    "text": "visPedigree 1.0.1 源代码及文档已托管至 GitHub。\n\nGitHub: luansheng/visPedigree\n\nvisPedigree 1.0.1 已在 CRAN 上发布。\n\nCRAN: install.packages(\"visPedigree\")\n\n欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。\n\nCitation: Luan, S. (2026). visPedigree: Visualization and Analysis of Pedigrees. R package version 1.0.1. https://doi.org/10.32614/CRAN.package.visPedigree"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html",
-    "href": "posts/vib-coding/index.html",
-    "title": "Vibe coding",
-    "section": "",
-    "text": "目前Vibe coding很火。关于他的解释，Gemini 3 Pro是这么说的：\n最近想试一下，Vibe coding能不能帮我更新之前的一个R包visPedigree包的相关功能。说实话，年龄大了，很多R的语法都记不清楚了。特别是原来一直搞不清楚的S3等高级写法。这次visPedigree包更新，主要是增加了2功能：\n上述都是工作量很大的工作。通过Vibe coding真的是解放了开发者。对于我来说，相当于聘用了一个专业的编程助手，我有什么想法，都可以帮我实现。之前卡在不知道怎么做上，现在知道做什么就可以了。代码编写和性能优化交给大模型。真的是令人振奋。只要你有想法，做好规划，你可以同时跑多个项目。\n两个重要链接：\n以下内容均为Gemini 3 Pro大模型自动生成，谨慎阅读。"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html#智能编程简介",
-    "href": "posts/vib-coding/index.html#智能编程简介",
-    "title": "Vibe coding",
-    "section": "智能编程简介",
-    "text": "智能编程简介\n智能编程是利用人工智能技术来辅助或自动化编程过程的技术。它可以帮助开发者提高代码质量、减少错误、加快开发速度。智能编程工具通常包括代码自动补全、代码生成、错误检测和修复等功能。"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html#智能编程的应用",
-    "href": "posts/vib-coding/index.html#智能编程的应用",
-    "title": "Vibe coding",
-    "section": "智能编程的应用",
-    "text": "智能编程的应用\n\n代码自动补全：智能编程工具可以根据上下文自动补全代码，提高编写效率。\n代码生成：通过自然语言描述，智能编程工具可以生成相应的代码片段。\n错误检测和修复：智能编程工具可以检测代码中的错误，并提供修复建议。\n代码优化：智能编程工具可以分析代码性能，并提出优化建议。"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html#智能编程的优势",
-    "href": "posts/vib-coding/index.html#智能编程的优势",
-    "title": "Vibe coding",
-    "section": "智能编程的优势",
-    "text": "智能编程的优势\n\n提高开发效率：智能编程工具可以减少重复劳动，提高代码编写速度。\n提升代码质量：通过自动检测和修复错误，智能编程工具可以提高代码的质量。\n降低学习曲线：智能编程工具可以帮助新手开发者更快地掌握编程技能。\n促进创新：智能编程工具可以激发开发者的创造力，推动技术创新。"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html#未来展望",
-    "href": "posts/vib-coding/index.html#未来展望",
-    "title": "Vibe coding",
-    "section": "未来展望",
-    "text": "未来展望\n随着人工智能技术的不断发展，智能编程有望在未来发挥更大的作用。未来的智能编程工具可能会更加智能化，能够理解更复杂的需求，并生成更高质量的代码。此外，智能编程还可能与其他技术（如自动化测试、持续集成等）结合，形成更加完整的开发生态系统。"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html#结论",
-    "href": "posts/vib-coding/index.html#结论",
-    "title": "Vibe coding",
-    "section": "结论",
-    "text": "结论\n智能编程作为一种新兴技术，正在逐渐改变传统的编程方式。 通过利用人工智能技术，智能编程工具可以帮助开发者提高效率、提升代码质量，并促进技术创新。随着技术的不断进步，智能编程有望在未来发挥更大的作用，成为软件开发的重要组成部分。"
-  },
-  {
-    "objectID": "posts/vib-coding/index.html#参考文献",
-    "href": "posts/vib-coding/index.html#参考文献",
-    "title": "Vibe coding",
-    "section": "参考文献",
-    "text": "参考文献\n\nSmith, J. (2020). “The Future of Intelligent Programming”. Journal of Software Development, 15(3), 45-60.\nDoe, A., & Brown, B. (2019). “AI-Powered Code Generation: A Review”. International Conference on Artificial Intelligence in Software Engineering, 120-130.\nLee, C. (2021). “Improving Code Quality with Intelligent Tools”. Software Engineering Today, 10(2), 25-35.\nZhang, Y., & Wang, L. (2018). “Automated Error Detection in Programming”. Proceedings of the 2018 IEEE International Conference on Software Testing, Verification and Validation, 200-210."
-  },
-  {
-    "objectID": "posts/missing-yang/index.html",
-    "href": "posts/missing-yang/index.html",
-    "title": "廿载罗虾育种路，斯人已逝，深切缅怀",
-    "section": "",
-    "text": "每年春节前后，都是罗氏沼虾配种方案制定与审核的关键节点。自2006年算起，我们在这一领域深耕已整整二十个年头。过去，配种方案大多由我跟孔所主导制定；近年来，得益于团队的成长，隋、代和强已能独当一面，承担起方案设计的主干工作，而我的角色也更多地转为了审核与把关。\n然而，2026年春节在审核今年的罗虾配种方案时，看着案头的数据，我心中却升腾起难以抑制的失落与怀念——因为那个每次出方案前总要与我反复探讨、交流产业现状的杨国梁研究员（因认识他时担任浙江淡水所副所长，我习惯称他为“杨所”），已经不在了。\n斯人已逝。2025年8月27日，刚到成都的我，在清晨惊闻杨所因病离世的噩耗，痛心万分。即便知道他深受病痛折磨，但这无情的结局依然令人难以接受。就在那年七月，我们还通过微信交流罗虾育种测试的具体问题，不曾想那竟是最后一次对话。\n我与杨所相识于2006年，也就是我刚涉足罗虾育种的那一年。自那时起，他便一直是我科研路上极其敬重的前辈与良师。在罗氏沼虾产业里，杨所是真正躬身入局的人。他在“育繁推”一体化体系上的实践，实实在在地打通了科研与应用的关键环节。每年年初和年底，无论工作多忙碌，他总会抽出时间与我们深入探讨罗虾下一步的育种细节。每次与他交流，我都能从他对产业现实的敏锐洞察中受益良多。\n杨所对罗虾事业的专注与坚持，多年来深深感染着我。正是从他那里，我更真切地感受到作为一名育种工作者，将科研成果转化为现实生产力所带来的成就感，以及自我价值的实现。他不仅是业界泰斗，更是我在这条漫长科研路上的良师益友。他的离世，无疑是整个罗氏沼虾产业的长痛，也是水产育种界的重大损失。\n二十载罗虾育种路，几多汗水，几多感慨。看着新一年的配种方案，仿佛还能听见杨所中肯的建议。\n斯人已逝，风范永存。"
-  },
-  {
     "objectID": "posts/faHfeH-20260320/index.html",
     "href": "posts/faHfeH-20260320/index.html",
     "title": "系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析",
@@ -243,6 +152,153 @@
     "title": "系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析",
     "section": "六、参考文献",
     "text": "六、参考文献\n\nBoichard, D., Maignel, L., & Verrier, É. (1997). The value of using probabilities of gene origin to measure genetic variability in a population. Genetics Selection Evolution, 29(1), 5-23.\nCaballero, A., & Toro, M. A. (2000). Interrelations between effective population size and other pedigree tools for the management of conserved populations. Genetical Research, 75(3), 331-343.\nHill, M. O. (1973). Diversity and evenness: a unifying notation and its consequences. Ecology, 54(2), 427-432.\nJost, L. (2006). Entropy and diversity. Oikos, 113(2), 363-375.\nLacy, R. C. (1989). Analysis of founder representation in pedigrees: founder equivalents and founder genome equivalents. Zoo Biology, 8(2), 111-123."
+  },
+  {
+    "objectID": "posts/missing-yang/index.html",
+    "href": "posts/missing-yang/index.html",
+    "title": "廿载罗虾育种路，斯人已逝，深切缅怀",
+    "section": "",
+    "text": "每年春节前后，都是罗氏沼虾配种方案制定与审核的关键节点。自2006年算起，我们在这一领域深耕已整整二十个年头。过去，配种方案大多由我跟孔所主导制定；近年来，得益于团队的成长，隋、代和强已能独当一面，承担起方案设计的主干工作，而我的角色也更多地转为了审核与把关。\n然而，2026年春节在审核今年的罗虾配种方案时，看着案头的数据，我心中却升腾起难以抑制的失落与怀念——因为那个每次出方案前总要与我反复探讨、交流产业现状的杨国梁研究员（因认识他时担任浙江淡水所副所长，我习惯称他为“杨所”），已经不在了。\n斯人已逝。2025年8月27日，刚到成都的我，在清晨惊闻杨所因病离世的噩耗，痛心万分。即便知道他深受病痛折磨，但这无情的结局依然令人难以接受。就在那年七月，我们还通过微信交流罗虾育种测试的具体问题，不曾想那竟是最后一次对话。\n我与杨所相识于2006年，也就是我刚涉足罗虾育种的那一年。自那时起，他便一直是我科研路上极其敬重的前辈与良师。在罗氏沼虾产业里，杨所是真正躬身入局的人。他在“育繁推”一体化体系上的实践，实实在在地打通了科研与应用的关键环节。每年年初和年底，无论工作多忙碌，他总会抽出时间与我们深入探讨罗虾下一步的育种细节。每次与他交流，我都能从他对产业现实的敏锐洞察中受益良多。\n杨所对罗虾事业的专注与坚持，多年来深深感染着我。正是从他那里，我更真切地感受到作为一名育种工作者，将科研成果转化为现实生产力所带来的成就感，以及自我价值的实现。他不仅是业界泰斗，更是我在这条漫长科研路上的良师益友。他的离世，无疑是整个罗氏沼虾产业的长痛，也是水产育种界的重大损失。\n二十载罗虾育种路，几多汗水，几多感慨。看着新一年的配种方案，仿佛还能听见杨所中肯的建议。\n斯人已逝，风范永存。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html",
+    "href": "posts/vib-coding/index.html",
+    "title": "Vibe coding",
+    "section": "",
+    "text": "目前Vibe coding很火。关于他的解释，Gemini 3 Pro是这么说的：\n最近想试一下，Vibe coding能不能帮我更新之前的一个R包visPedigree包的相关功能。说实话，年龄大了，很多R的语法都记不清楚了。特别是原来一直搞不清楚的S3等高级写法。这次visPedigree包更新，主要是增加了2功能：\n上述都是工作量很大的工作。通过Vibe coding真的是解放了开发者。对于我来说，相当于聘用了一个专业的编程助手，我有什么想法，都可以帮我实现。之前卡在不知道怎么做上，现在知道做什么就可以了。代码编写和性能优化交给大模型。真的是令人振奋。只要你有想法，做好规划，你可以同时跑多个项目。\n两个重要链接：\n以下内容均为Gemini 3 Pro大模型自动生成，谨慎阅读。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html#智能编程简介",
+    "href": "posts/vib-coding/index.html#智能编程简介",
+    "title": "Vibe coding",
+    "section": "智能编程简介",
+    "text": "智能编程简介\n智能编程是利用人工智能技术来辅助或自动化编程过程的技术。它可以帮助开发者提高代码质量、减少错误、加快开发速度。智能编程工具通常包括代码自动补全、代码生成、错误检测和修复等功能。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html#智能编程的应用",
+    "href": "posts/vib-coding/index.html#智能编程的应用",
+    "title": "Vibe coding",
+    "section": "智能编程的应用",
+    "text": "智能编程的应用\n\n代码自动补全：智能编程工具可以根据上下文自动补全代码，提高编写效率。\n代码生成：通过自然语言描述，智能编程工具可以生成相应的代码片段。\n错误检测和修复：智能编程工具可以检测代码中的错误，并提供修复建议。\n代码优化：智能编程工具可以分析代码性能，并提出优化建议。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html#智能编程的优势",
+    "href": "posts/vib-coding/index.html#智能编程的优势",
+    "title": "Vibe coding",
+    "section": "智能编程的优势",
+    "text": "智能编程的优势\n\n提高开发效率：智能编程工具可以减少重复劳动，提高代码编写速度。\n提升代码质量：通过自动检测和修复错误，智能编程工具可以提高代码的质量。\n降低学习曲线：智能编程工具可以帮助新手开发者更快地掌握编程技能。\n促进创新：智能编程工具可以激发开发者的创造力，推动技术创新。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html#未来展望",
+    "href": "posts/vib-coding/index.html#未来展望",
+    "title": "Vibe coding",
+    "section": "未来展望",
+    "text": "未来展望\n随着人工智能技术的不断发展，智能编程有望在未来发挥更大的作用。未来的智能编程工具可能会更加智能化，能够理解更复杂的需求，并生成更高质量的代码。此外，智能编程还可能与其他技术（如自动化测试、持续集成等）结合，形成更加完整的开发生态系统。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html#结论",
+    "href": "posts/vib-coding/index.html#结论",
+    "title": "Vibe coding",
+    "section": "结论",
+    "text": "结论\n智能编程作为一种新兴技术，正在逐渐改变传统的编程方式。 通过利用人工智能技术，智能编程工具可以帮助开发者提高效率、提升代码质量，并促进技术创新。随着技术的不断进步，智能编程有望在未来发挥更大的作用，成为软件开发的重要组成部分。"
+  },
+  {
+    "objectID": "posts/vib-coding/index.html#参考文献",
+    "href": "posts/vib-coding/index.html#参考文献",
+    "title": "Vibe coding",
+    "section": "参考文献",
+    "text": "参考文献\n\nSmith, J. (2020). “The Future of Intelligent Programming”. Journal of Software Development, 15(3), 45-60.\nDoe, A., & Brown, B. (2019). “AI-Powered Code Generation: A Review”. International Conference on Artificial Intelligence in Software Engineering, 120-130.\nLee, C. (2021). “Improving Code Quality with Intelligent Tools”. Software Engineering Today, 10(2), 25-35.\nZhang, Y., & Wang, L. (2018). “Automated Error Detection in Programming”. Proceedings of the 2018 IEEE International Conference on Software Testing, Verification and Validation, 200-210."
+  },
+  {
+    "objectID": "posts/visPedigree-20260124/index.html",
+    "href": "posts/visPedigree-20260124/index.html",
+    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
+    "section": "",
+    "text": "visPedigree 是一款基于 R 语言开发的系谱分析与可视化工具，旨在解决动植物育种中复杂系谱结构的展示难题。\n随着育种群体规模的扩大，传统工具在处理大规模系谱，特别是水产动物大家系系谱时，时常面临计算缓慢、可视化困难等问题。为此，visPedigree 1.0.1 进行了底层架构的全面重构。新版本引入 C++ (Rcpp) 对矩阵运算和近交系数计算等密集型任务进行底层加速，显著提升了计算效率；同时，利用图论算法 (Graph Theory) 优化了系谱整理逻辑，实现了世代自动推断与逻辑错误（如 Loop）的高效检测。\n本文将介绍该版本的主要功能更新，包括焦点个体追踪、近交系数可视化及新增的矩阵分析工具。\n\n\n\n\n在大规模群体中，快速定位特定个体及其血缘脉络是系谱分析的常见需求。新版本引入了交互式的 highlight 和 trace 参数，支持对核心个体及其祖先或后代进行针对性展示。\n\nhighlight: 指定需要高亮显示的“核心个体”。\ntrace: 定义追踪方向。\n\n\"up\": 仅追踪并显示其祖先节点。\n\"down\": 仅追踪并显示其后代节点。\n\"all\": 同时追踪祖先与后代。\n\n\n\n# 安装并加载\n# devtools::install_github(\"luansheng/visPedigree\")\nlibrary(visPedigree)\ndata(simple_ped)\n\n# 场景：高亮显示个体 \"J5X804\" 并追踪其所有祖先\ntidy_ped &lt;- tidyped(simple_ped, genmethod = \"bottom\")\nvisped(tidy_ped, highlight = \"J5X804\", trace = \"up\", cex = 0.5, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 1: 高亮显示个体 J5X804 及其祖先\n\n\n\n\n\n\n\n\ntidyped 函数不仅用于数据清洗，现在还集成了强大的诊断与统计功能：\n\n逻辑错误诊断: 利用图论算法自动检测系谱中的死循环 (Loops) 和重复条目。\n深度数据摘要: 通过 summary() 方法，提供系谱深度、世代重叠度、每代近交水平等详细统计信息。\n系谱修剪 (prune): 自适应保留有效核心群体。\n\n\n# 检测系谱死循环\ntry(tidyped(loop_ped))\n\nError : Pedigree error! Pedigree loops detected:\n M -&gt; P -&gt; R -&gt; T -&gt; V -&gt; M\nF -&gt; E -&gt; C -&gt; A -&gt; F\n\n# 数据清洗与近交计算\ndt_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 查看系谱统计摘要\nsummary(dt_ped)\n\nPedigree Summary\n================\n\nTotal Individuals:  59 \n  - Males:    29 (49.2%) \n  - Females:  30 (50.8%) \n\nPedigree Structure:\n  - Founders (no parents):   28 \n  - Both parents known:      28 \n  - Sire only known:         2 \n  - Dam only known:          1 \n\nGeneration:\n  - Maximum:  6 \n  - Distribution:\n      Gen 1: 28 individuals\n      Gen 2: 16 individuals\n      Gen 3: 8 individuals\n      Gen 4: 4 individuals\n      Gen 5: 2 individuals\n      Gen 6: 1 individuals\n\nReproduction:\n  - Individuals with offspring:  56 \n  - Sires:  28  (Mean=1.1, Max=2 offspring)\n  - Dams:   28  (Mean=1.0, Max=2 offspring)\n\nFull-sibling Families:\n  - Number of families:      27 \n  - Mean family size:        1.04\n  - Maximum family size:     2 \n  - Top families by size:\n      J0Z475xJ0C612: 2\n      J0C317xJ0C450: 1\n      J0C561xJ0C032: 1\n      J0C583xJ0Z380: 1\n      J0C591xJ0C231: 1\n\nInbreeding Coefficients:\n  - All individuals:\n      Mean = 0.0001, Min = 0.0000, Max = 0.0039\n      Inbred (f &gt; 0): 1 (1.7%)\n\n================\n\n\n\n\n\n控制近交水平是制定育种方案的关键。visPedigree 1.0.0 将近交系数 (\\(F\\)) 的计算与可视化进行了整合。用户可在数据整理阶段直接计算 \\(F\\) 值，并在绘图时将其直观标注在个体节点上。\n\ntidyped(..., inbreed = TRUE): 数据预处理阶段自动计算近交系数。\nvisped(..., showf = TRUE): 绘图时在节点下方标注 \\(F\\) 值。\n\n\n# 整理系谱并计算近交系数\nDT_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 绘图时显示近交系数\nvisped(DT_ped, showf = TRUE, cex = 0.45, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 2: 在节点中展示近交系数\n\n\n\n\n\n\n\n\n在水产育种等高繁殖力物种的场景中，全同胞家系（Full-sib family）往往包含大量个体。如果不加处理直接绘图，图像会横向无限延伸，导致关键结构难以辨识。\nvisPedigree 提供了 compact = TRUE 参数，专门针对全同胞家系进行了可视化优化。开启该模式后，同一全同胞家系的后代将被“折叠”展示，极大缩减了绘图宽度，使整体系谱结构更加紧凑、清晰。 visPedigree设计函数时，考虑了对管道符|&gt;的支持，简化代码量，逻辑性更强。\n\n# 1. 系谱清洗并自动分割独立群体（GP1 为最大的连通群体）\nped_groups &lt;- big_family_size_ped |&gt; \n  tidyped() |&gt; \n  splitped()\n\nmaxi_group &lt;- ped_groups$GP1\n\n# 2. 选取最后 10 个家系的个体作为目标，演示系谱修剪 (Pruning)\n# 使用 data.table 的语法确保高效提取\nlast_10_fams &lt;- tail(unique(maxi_group$Family), 10)\ncands &lt;- maxi_group[Family %in% last_10_fams, Ind]\n\n# 3. 提取目标个体的完整血缘脉络，并开启 Compact 模式展示\n# Compact 模式会将全同胞家系“折叠”，极大提升了大规模家系的可视化清晰度\nmaxi_group |&gt; \n  tidyped(cand = cands, genmethod=\"bottom\") |&gt;\n  visped(compact = TRUE, cex = 0.3)\n\n\n\n\n\n\n\nFigure 3: 系谱图压缩模式 (Compact Mode)\n\n\n\n\n\n\n\n\n\n除核心的可视化功能外，visPedigree 还提供了一系列辅助育种分析的工具函数，支持从系谱数据中提取关键遗传信息。\n\n\npedmat() 函数利用 C++ 加速，可高效计算亲缘关系矩阵 (Numerator Relationship Matrix, A-Matrix) 或近交系数向量。\n它同样支持 compact 参数。在水产育种等场景下，如果不需要针对每个个体计算矩阵，pedmat(..., compact=TRUE) 可以输出全同胞家系层面的亲缘关系矩阵，这将矩阵维度从个体级（数万行）降低到家系级（数百行），极大地节省了内存和后续遗传评估的计算时间。\n\n# 计算个体级稀疏 A 矩阵\nA_ind &lt;- pedmat(simple_ped, method = \"A\", sparse = TRUE)\n\n# 计算家系级压缩 A 矩阵 (Compact Mode)\nA_fam &lt;- pedmat(simple_ped, method = \"A\", compact = TRUE)\n\n\n\n\nvismat() 专门用于可视化亲缘关系矩阵。通过热图 (Heatmap) 的形式，直观展示群体内部的亲缘结构，有助于快速识别家系聚类和潜在的近交风险。\n\n# 可视化 A 矩阵\nvismat(A_ind, labelsize=0.5)\n\n\n\n\n\n\n\nFigure 4: 利用热图可视化亲缘关系矩阵 (A-Matrix)\n\n\n\n\n\n\n\n\n\nvisPedigree 遵循 Tidy Data 原则。无论原始数据是否存在缺失或乱序，tidyped() 均可将其标准化为符合分析要求的格式。\n\nlibrary(visPedigree)\nlibrary(data.table)\n\n# 1. 准备示例数据\nped &lt;- data.table(\n  ID = c(\"A\", \"B\", \"C\", \"D\", \"E\"),\n  Sire = c(NA, NA, \"A\", \"A\", \"C\"),\n  Dam = c(NA, NA, \"B\", \"B\", \"D\")\n)\n\n# 2. 数据清洗 (补全、排序、计算近交)\ntidy_ped &lt;- tidyped(ped, inbreed = TRUE)\n\n# 3. 可视化展示\nvisped(tidy_ped, showf = TRUE)\n\n\n\n\n\n\n\nFigure 5: Quick Start 示例输出\n\n\n\n\n\n快速入手的最便捷途径，是阅读viPedigree包的3个vignette，可以在该包pkgdowns站点的Articles中找到。\n\n\n\nvisPedigree 1.0.1 源代码及文档已托管至 GitHub。\n\nGitHub: luansheng/visPedigree\n\nvisPedigree 1.0.1 已在 CRAN 上发布。\n\nCRAN: install.packages(\"visPedigree\")\n\n欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。\n\nCitation: Luan, S. (2026). visPedigree: Visualization and Analysis of Pedigrees. R package version 1.0.1. https://doi.org/10.32614/CRAN.package.visPedigree"
+  },
+  {
+    "objectID": "posts/visPedigree-20260124/index.html#主要功能更新",
+    "href": "posts/visPedigree-20260124/index.html#主要功能更新",
+    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
+    "section": "",
+    "text": "在大规模群体中，快速定位特定个体及其血缘脉络是系谱分析的常见需求。新版本引入了交互式的 highlight 和 trace 参数，支持对核心个体及其祖先或后代进行针对性展示。\n\nhighlight: 指定需要高亮显示的“核心个体”。\ntrace: 定义追踪方向。\n\n\"up\": 仅追踪并显示其祖先节点。\n\"down\": 仅追踪并显示其后代节点。\n\"all\": 同时追踪祖先与后代。\n\n\n\n# 安装并加载\n# devtools::install_github(\"luansheng/visPedigree\")\nlibrary(visPedigree)\ndata(simple_ped)\n\n# 场景：高亮显示个体 \"J5X804\" 并追踪其所有祖先\ntidy_ped &lt;- tidyped(simple_ped, genmethod = \"bottom\")\nvisped(tidy_ped, highlight = \"J5X804\", trace = \"up\", cex = 0.5, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 1: 高亮显示个体 J5X804 及其祖先\n\n\n\n\n\n\n\n\ntidyped 函数不仅用于数据清洗，现在还集成了强大的诊断与统计功能：\n\n逻辑错误诊断: 利用图论算法自动检测系谱中的死循环 (Loops) 和重复条目。\n深度数据摘要: 通过 summary() 方法，提供系谱深度、世代重叠度、每代近交水平等详细统计信息。\n系谱修剪 (prune): 自适应保留有效核心群体。\n\n\n# 检测系谱死循环\ntry(tidyped(loop_ped))\n\nError : Pedigree error! Pedigree loops detected:\n M -&gt; P -&gt; R -&gt; T -&gt; V -&gt; M\nF -&gt; E -&gt; C -&gt; A -&gt; F\n\n# 数据清洗与近交计算\ndt_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 查看系谱统计摘要\nsummary(dt_ped)\n\nPedigree Summary\n================\n\nTotal Individuals:  59 \n  - Males:    29 (49.2%) \n  - Females:  30 (50.8%) \n\nPedigree Structure:\n  - Founders (no parents):   28 \n  - Both parents known:      28 \n  - Sire only known:         2 \n  - Dam only known:          1 \n\nGeneration:\n  - Maximum:  6 \n  - Distribution:\n      Gen 1: 28 individuals\n      Gen 2: 16 individuals\n      Gen 3: 8 individuals\n      Gen 4: 4 individuals\n      Gen 5: 2 individuals\n      Gen 6: 1 individuals\n\nReproduction:\n  - Individuals with offspring:  56 \n  - Sires:  28  (Mean=1.1, Max=2 offspring)\n  - Dams:   28  (Mean=1.0, Max=2 offspring)\n\nFull-sibling Families:\n  - Number of families:      27 \n  - Mean family size:        1.04\n  - Maximum family size:     2 \n  - Top families by size:\n      J0Z475xJ0C612: 2\n      J0C317xJ0C450: 1\n      J0C561xJ0C032: 1\n      J0C583xJ0Z380: 1\n      J0C591xJ0C231: 1\n\nInbreeding Coefficients:\n  - All individuals:\n      Mean = 0.0001, Min = 0.0000, Max = 0.0039\n      Inbred (f &gt; 0): 1 (1.7%)\n\n================\n\n\n\n\n\n控制近交水平是制定育种方案的关键。visPedigree 1.0.0 将近交系数 (\\(F\\)) 的计算与可视化进行了整合。用户可在数据整理阶段直接计算 \\(F\\) 值，并在绘图时将其直观标注在个体节点上。\n\ntidyped(..., inbreed = TRUE): 数据预处理阶段自动计算近交系数。\nvisped(..., showf = TRUE): 绘图时在节点下方标注 \\(F\\) 值。\n\n\n# 整理系谱并计算近交系数\nDT_ped &lt;- tidyped(simple_ped, inbreed = TRUE)\n\n# 绘图时显示近交系数\nvisped(DT_ped, showf = TRUE, cex = 0.45, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 2: 在节点中展示近交系数\n\n\n\n\n\n\n\n\n在水产育种等高繁殖力物种的场景中，全同胞家系（Full-sib family）往往包含大量个体。如果不加处理直接绘图，图像会横向无限延伸，导致关键结构难以辨识。\nvisPedigree 提供了 compact = TRUE 参数，专门针对全同胞家系进行了可视化优化。开启该模式后，同一全同胞家系的后代将被“折叠”展示，极大缩减了绘图宽度，使整体系谱结构更加紧凑、清晰。 visPedigree设计函数时，考虑了对管道符|&gt;的支持，简化代码量，逻辑性更强。\n\n# 1. 系谱清洗并自动分割独立群体（GP1 为最大的连通群体）\nped_groups &lt;- big_family_size_ped |&gt; \n  tidyped() |&gt; \n  splitped()\n\nmaxi_group &lt;- ped_groups$GP1\n\n# 2. 选取最后 10 个家系的个体作为目标，演示系谱修剪 (Pruning)\n# 使用 data.table 的语法确保高效提取\nlast_10_fams &lt;- tail(unique(maxi_group$Family), 10)\ncands &lt;- maxi_group[Family %in% last_10_fams, Ind]\n\n# 3. 提取目标个体的完整血缘脉络，并开启 Compact 模式展示\n# Compact 模式会将全同胞家系“折叠”，极大提升了大规模家系的可视化清晰度\nmaxi_group |&gt; \n  tidyped(cand = cands, genmethod=\"bottom\") |&gt;\n  visped(compact = TRUE, cex = 0.3)\n\n\n\n\n\n\n\nFigure 3: 系谱图压缩模式 (Compact Mode)"
+  },
+  {
+    "objectID": "posts/visPedigree-20260124/index.html#矩阵分析工具",
+    "href": "posts/visPedigree-20260124/index.html#矩阵分析工具",
+    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
+    "section": "",
+    "text": "除核心的可视化功能外，visPedigree 还提供了一系列辅助育种分析的工具函数，支持从系谱数据中提取关键遗传信息。\n\n\npedmat() 函数利用 C++ 加速，可高效计算亲缘关系矩阵 (Numerator Relationship Matrix, A-Matrix) 或近交系数向量。\n它同样支持 compact 参数。在水产育种等场景下，如果不需要针对每个个体计算矩阵，pedmat(..., compact=TRUE) 可以输出全同胞家系层面的亲缘关系矩阵，这将矩阵维度从个体级（数万行）降低到家系级（数百行），极大地节省了内存和后续遗传评估的计算时间。\n\n# 计算个体级稀疏 A 矩阵\nA_ind &lt;- pedmat(simple_ped, method = \"A\", sparse = TRUE)\n\n# 计算家系级压缩 A 矩阵 (Compact Mode)\nA_fam &lt;- pedmat(simple_ped, method = \"A\", compact = TRUE)\n\n\n\n\nvismat() 专门用于可视化亲缘关系矩阵。通过热图 (Heatmap) 的形式，直观展示群体内部的亲缘结构，有助于快速识别家系聚类和潜在的近交风险。\n\n# 可视化 A 矩阵\nvismat(A_ind, labelsize=0.5)\n\n\n\n\n\n\n\nFigure 4: 利用热图可视化亲缘关系矩阵 (A-Matrix)"
+  },
+  {
+    "objectID": "posts/visPedigree-20260124/index.html#快速上手-quick-start",
+    "href": "posts/visPedigree-20260124/index.html#快速上手-quick-start",
+    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
+    "section": "",
+    "text": "visPedigree 遵循 Tidy Data 原则。无论原始数据是否存在缺失或乱序，tidyped() 均可将其标准化为符合分析要求的格式。\n\nlibrary(visPedigree)\nlibrary(data.table)\n\n# 1. 准备示例数据\nped &lt;- data.table(\n  ID = c(\"A\", \"B\", \"C\", \"D\", \"E\"),\n  Sire = c(NA, NA, \"A\", \"A\", \"C\"),\n  Dam = c(NA, NA, \"B\", \"B\", \"D\")\n)\n\n# 2. 数据清洗 (补全、排序、计算近交)\ntidy_ped &lt;- tidyped(ped, inbreed = TRUE)\n\n# 3. 可视化展示\nvisped(tidy_ped, showf = TRUE)\n\n\n\n\n\n\n\nFigure 5: Quick Start 示例输出\n\n\n\n\n\n快速入手的最便捷途径，是阅读viPedigree包的3个vignette，可以在该包pkgdowns站点的Articles中找到。"
+  },
+  {
+    "objectID": "posts/visPedigree-20260124/index.html#获取与反馈",
+    "href": "posts/visPedigree-20260124/index.html#获取与反馈",
+    "title": "visPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案",
+    "section": "",
+    "text": "visPedigree 1.0.1 源代码及文档已托管至 GitHub。\n\nGitHub: luansheng/visPedigree\n\nvisPedigree 1.0.1 已在 CRAN 上发布。\n\nCRAN: install.packages(\"visPedigree\")\n\n欢迎使用者通过 GitHub Issue 反馈使用问题或提出功能建议。\n\nCitation: Luan, S. (2026). visPedigree: Visualization and Analysis of Pedigrees. R package version 1.0.1. https://doi.org/10.32614/CRAN.package.visPedigree"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html",
+    "href": "posts/million_ped-20260324/index.html",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "",
+    "text": "水产动物选择育种通常以家系为基本管理单元。建群时需要控制基础亲本来源，育种过程中需要在家系间和家系内同时进行选择，连续世代中又必须抑制近交累积、家系丢失和少数优势亲本的过度扩张。随着亲子鉴定、共同培育和跨年度留种体系的普及，系谱规模迅速扩展到几十万甚至上百万个体。此时真正的问题已不再是“数据能否存下”，而是：哪些分析应在全量系谱上完成，哪些分析应围绕当前参考群体展开，以及哪些问题根本不应通过整图硬画来解决。\n本文使用 pedigree_mixed_founder_to_G50.csv 作为示例数据。该数据包含 1,000,150 个体、150 个始祖、50 个连续世代和 6 个始祖来源群体。文章从水产动物家系选育的理论与技术体系出发，回答三个方法学问题：\n\n面对百万级系谱，visPedigree 1.8.0 的高效分析流程应如何组织？\ntidyped()、pediv()、pedhalflife() 和局部 visped() 各自对应哪一类育种学问题？\n这些指标如何转化为家系保留、留种面控制和年度多样性监控的管理建议？\n\n全文的基本判断是：\n\n全量系谱适合承担数据整理、代次结构重建和长期趋势分析；\n参考群体适合承担家系多样性诊断和年度决策支持；\n图形展示应回到局部家系、关键祖先和候选群体，而不是追求整库可视化。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#摘要",
+    "href": "posts/million_ped-20260324/index.html#摘要",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "",
+    "text": "水产动物选择育种通常以家系为基本管理单元。建群时需要控制基础亲本来源，育种过程中需要在家系间和家系内同时进行选择，连续世代中又必须抑制近交累积、家系丢失和少数优势亲本的过度扩张。随着亲子鉴定、共同培育和跨年度留种体系的普及，系谱规模迅速扩展到几十万甚至上百万个体。此时真正的问题已不再是“数据能否存下”，而是：哪些分析应在全量系谱上完成，哪些分析应围绕当前参考群体展开，以及哪些问题根本不应通过整图硬画来解决。\n本文使用 pedigree_mixed_founder_to_G50.csv 作为示例数据。该数据包含 1,000,150 个体、150 个始祖、50 个连续世代和 6 个始祖来源群体。文章从水产动物家系选育的理论与技术体系出发，回答三个方法学问题：\n\n面对百万级系谱，visPedigree 1.8.0 的高效分析流程应如何组织？\ntidyped()、pediv()、pedhalflife() 和局部 visped() 各自对应哪一类育种学问题？\n这些指标如何转化为家系保留、留种面控制和年度多样性监控的管理建议？\n\n全文的基本判断是：\n\n全量系谱适合承担数据整理、代次结构重建和长期趋势分析；\n参考群体适合承担家系多样性诊断和年度决策支持；\n图形展示应回到局部家系、关键祖先和候选群体，而不是追求整库可视化。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#一为什么水产家系选育的百万系谱不应从画图开始",
+    "href": "posts/million_ped-20260324/index.html#一为什么水产家系选育的百万系谱不应从画图开始",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "一、为什么水产家系选育的百万系谱不应从“画图”开始",
+    "text": "一、为什么水产家系选育的百万系谱不应从“画图”开始\n在水产动物家系选育体系中，百万级系谱的意义并不在于“终于可以把所有个体同时画出来”，而在于它提供了足够长的代际深度和足够完整的亲缘传递记录，使研究者和育种者能够回答以下问题：\n\n当前候选留种群到底来自哪些始祖和关键祖先？\n多样性损失主要发生在建群初期、后续家系瓶颈，还是持续漂变？\n哪些低频家系仍保留有续留价值，值得在下一轮配种中被重新纳入？\n如果沿用当前留种结构，多样性半衰期大约还有多久？\n\n这类问题本质上都指向“家系贡献在时间上的实现方式”，而不是指向图形本身。因此，对百万系谱最有效的使用方式，不是从“能不能一把画全图”开始，而是从“先把全量数据转化成一个可分析对象”开始。visPedigree 1.8.0 在这一点上的意义主要体现在三方面：\n\ntidyped() 把原始系谱标准化为带代次、整数编号和拓扑顺序的分析对象。\npediv() 让多样性诊断围绕参考群体展开，而不是停留在整库平均意义上。\npedhalflife() 把长期家系收缩过程压缩为更适合管理解释的趋势指标，例如半衰期与衰减来源分解。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#二数据概况理论背景与分析目标",
+    "href": "posts/million_ped-20260324/index.html#二数据概况理论背景与分析目标",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "二、数据概况、理论背景与分析目标",
+    "text": "二、数据概况、理论背景与分析目标\n\n2.1 数据结构\n\nlibrary(data.table)\nlibrary(ggplot2)\nlibrary(showtext)\nlibrary(sysfonts)\nlibrary(visPedigree)\n\nfont_add(\"cn\", \"/System/Library/Fonts/STHeiti Medium.ttc\")\nshowtext_auto()\n\ntheme_set(\n  theme_minimal(base_family = \"cn\") +\n    theme(\n      plot.title = element_text(face = \"bold\"),\n      plot.title.position = \"plot\",\n      panel.grid.minor = element_blank()\n    )\n)\n\npath_ped &lt;- \"pedigree_mixed_founder_to_G50.csv\"\n\nped_raw &lt;- fread(path_ped, na.strings = c(\"\", \"NA\", \"0\"))\nped_raw[, `:=`(\n  Ind = as.character(Ind),\n  Sire = fifelse(is.na(Sire), NA_character_, as.character(Sire)),\n  Dam = fifelse(is.na(Dam), NA_character_, as.character(Dam)),\n  Sex = as.character(Sex),\n  Breed = as.character(Breed),\n  Year = as.integer(Year)\n)]\n\ndata.table(\n  指标 = c(\"总个体数\", \"字段数\", \"Year 范围\", \"始祖来源群体数\"),\n  数值 = c(\n    format(nrow(ped_raw), big.mark = \",\"),\n    ncol(ped_raw),\n    paste(range(ped_raw$Year, na.rm = TRUE), collapse = \" ~ \"),\n    uniqueN(ped_raw$Breed)\n  )\n)\n\n             指标      数值\n           &lt;char&gt;    &lt;char&gt;\n1:       总个体数 1,000,150\n2:         字段数         6\n3:      Year 范围    1 ~ 50\n4: 始祖来源群体数         6\n\n\n这份数据有几个很适合示范 visPedigree 的特点：\n\n个体数达到 1,000,150，足以覆盖百万级使用场景；\nYear 从 0 到 50，适合做连续时间趋势分析；\n始祖来源有 6 个群体，便于观察基础群来源是否逐步收缩；\n每个非 founder 世代规模基本稳定，便于把结果解释成长期繁育制度下的结构演化。\n\n\n\n2.2 与水产动物家系选育体系的对应关系\n虽然本文使用的是模拟数据，但其结构与水产动物家系选育中的典型技术路径高度一致：\n\nFounder 可对应建群时期纳入核心群的基础亲本；\nYear 可对应连续育种周期中的年级群或世代批次；\n末代参考群体可对应当期候选留种群、核心群后备群或计划配种群；\n多世代连续系谱可对应“建群后长期封闭选育，辅以家系记录和亲子鉴定”的技术体系。\n\n在水产动物中，单对亲本往往能产生大量后代，早期家系成活差异、共同培育后的选择强度差异，以及少数优势亲本的重复利用，都可能使“理论上的家系数”与“实际传递到下一代的家系贡献”明显偏离。因此，百万级系谱分析的核心不在于统计总个体数，而在于识别：\n\n初始亲本来源是否被长期均衡利用；\n家系间选择是否在中间世代形成了额外瓶颈；\n当前参考群体中，仍有哪些低频家系和祖先可以被重新纳入管理。\n\n\n\n2.3 方法学上最适合回答什么问题\n对于这样的百万系谱，最有价值的不是“把所有模块都跑一遍”，而是回答三个具有明确管理含义的方法学问题：\n\n结构上还剩多少多样性？\n多样性是怎么丢掉的？\n哪些家系和祖先值得继续追踪与保留？\n\n后文的分析顺序，正是围绕这三个问题来设计。需要强调的是，本文所有指标都属于系谱层面的多样性代理指标。它们反映的是祖先贡献和亲缘传递结构，而不是直接替代基因组层面的变异测量；但在水产动物家系选育中，它们恰好对应日常最需要管理的对象，即家系贡献、亲本利用和年度留种结构。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#三百万系谱下的推荐工作流",
+    "href": "posts/million_ped-20260324/index.html#三百万系谱下的推荐工作流",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "三、百万系谱下的推荐工作流",
+    "text": "三、百万系谱下的推荐工作流\n\n3.1 第一步：先把全量系谱转成 tidyped\n百万级分析的起点不是 pediv()，也不是 visped()，而是 tidyped()。因为后续大多数分析都依赖它补充出来的几个核心字段：\n\nGen：代次层级\nIndNum、SireNum、DamNum：整数编号\n对象结构与拓扑顺序：保证上游祖先先于后代\n\n\ntm_tidyped &lt;- system.time(\n  tp_million &lt;- tidyped(ped_raw)\n)\n\ntm_tidyped\n\n 用户  系统  流逝 \n4.649 0.153 2.418 \n\n\n\ndata.table(\n  指标 = c(\n    \"tidyped 后个体数\",\n    \"最大 Gen\",\n    \"末代参考群规模\",\n    \"Founder 数量\"\n  ),\n  数值 = c(\n    format(nrow(tp_million), big.mark = \",\"),\n    max(tp_million$Gen, na.rm = TRUE),\n    tp_million[Year == max(Year, na.rm = TRUE), .N],\n    tp_million[SireNum == 0 & DamNum == 0, .N]\n  )\n)\n\n               指标      数值\n             &lt;char&gt;    &lt;char&gt;\n1: tidyped 后个体数 1,000,150\n2:         最大 Gen        51\n3:   末代参考群规模     20000\n4:     Founder 数量       150\n\n\n这一阶段的管理意义在于：你先得到一个“全库统一坐标系”。在水产家系选育体系中，这一步等价于把历年亲子鉴定结果、家系记录和年级群信息统一到同一个分析底座上。之后不管是抽取候选留种群、分析核心群后备群，还是追踪某一批关键家系，都不需要再回到原始 CSV 反复清洗。\n\n\n3.2 第二步：全量上先看结构概览，而不是直接做全量深分析\n全量数据最适合做的是“概览性判断”，例如各年份个体规模、founder 来源是否均衡等。\n\nyear_profile &lt;- tp_million[!is.na(Year), .N, by = Year][order(Year)]\n\nggplot(year_profile, aes(x = Year, y = N)) +\n  geom_line(linewidth = 0.8, color = \"#1f5aa6\") +\n  geom_point(size = 1.5, color = \"#1f5aa6\") +\n  scale_y_continuous(labels = scales::label_comma()) +\n  labs(\n    title = \"各世代个体规模概览\",\n    x = \"Year\",\n    y = \"个体数\"\n  )\n\n\n\n\n\n\n\n\n\nfounder_breed &lt;- tp_million[SireNum == 0 & DamNum == 0, .N, by = Breed][order(Breed)]\n\nggplot(founder_breed, aes(x = Breed, y = N, fill = Breed)) +\n  geom_col(width = 0.7, show.legend = FALSE) +\n  labs(\n    title = \"始祖来源群体分布\",\n    x = \"Breed\",\n    y = \"Founder 数量\"\n  )\n\n\n\n\n\n\n\n\n这两张图传达的信息在方法学上非常重要：\n\n这份数据并不是一个“规模忽大忽小”的不规则样本，而是一个长期稳定维护的繁育体系；\n始祖来源在起点上并不偏斜，因此后续若观察到多样性收缩，更可能来自后续代际中的家系贡献失衡、瓶颈和漂变，而不是建群时的资源严重不足。\n\n\n\n3.3 第三步：围绕参考群体运行 pediv()，而不是对整库谈多样性\n百万系谱真正值得做的多样性分析，不是“把全库所有个体都当成同一个群体”，而是先定义参考群体。在水产动物家系选育中，参考群体本身就是管理单位。最常见的三类参考群体是：\n\n当前年度候选留种群\n当前年度核心群\n某个特定家系或品系子群\n\n这里以末代 (Year == 50) 个体作为参考群体。\n\nref_50 &lt;- tp_million[Year == 50, Ind]\n\ntm_pediv &lt;- system.time(\n  div_50 &lt;- pediv(tp_million, reference = ref_50, top = 10, seed = 20260328L)\n)\n\ntm_pediv\n\n  用户   系统   流逝 \n11.871  0.288  5.346 \n\n\n\ndiv_50$summary[, .(\n  NRef,\n  NFounder,\n  fe = round(fe, 3),\n  feH = round(feH, 3),\n  `feH/fe` = round(feH / fe, 3),\n  NAncestor,\n  fa = round(fa, 3),\n  faH = round(faH, 3),\n  `faH/fa` = round(faH / fa, 3),\n  fg = round(fg, 3),\n  `fa/fe` = round(fafe, 3)\n)]\n\n    NRef NFounder     fe    feH feH/fe NAncestor     fa   faH faH/fa    fg\n   &lt;int&gt;    &lt;int&gt;  &lt;num&gt;  &lt;num&gt;  &lt;num&gt;     &lt;int&gt;  &lt;num&gt; &lt;num&gt;  &lt;num&gt; &lt;num&gt;\n1: 20000      150 45.208 53.089  1.174        79 30.402 42.63  1.402 2.135\n   fa/fe\n   &lt;num&gt;\n1: 0.673\n\n\n从水产动物家系选育的角度，这组结果可以作如下解释：\n\nfe = 45.208，表示末代参考群体所体现出来的始祖等效数约为 45。也就是说，虽然基础群共有 150 个始祖，但真正以较均衡方式传递到当前候选群体的始祖来源远少于名义始祖数。\nfa = 30.402，说明当系谱沿时间向后展开后，起主导作用的关键祖先进一步收缩。对家系选育而言，这通常意味着部分家系虽曾进入体系，但未能持续贡献到后续选留阶段。\nfa / fe = 0.673，表明从始祖层到关键祖先层之间存在明显瓶颈。这一比值下降，通常对应于家系间选择、成活差异或少数亲本反复利用所导致的中间世代收缩。\nfeH / fe = 1.174、faH / fa = 1.402，说明低频始祖和低频祖先仍有一部分贡献被保留下来，长尾来源并未完全消失。对管理而言，这意味着仍存在通过配种设计恢复部分稀有谱系的空间。\nfg = 2.135，提示始祖基因组当量已经非常低，随机漂变的累积影响不可忽视。对于高繁殖力物种，这往往与有效留种亲本数不足、家系规模方差过大或后备家系淘汰过早有关。\n\n因此，这个群体的核心问题不是“已经没有其他血统可用”，而是“历史上保留下来的家系来源，没有被足够均衡地实现到当前参考群体”。从方法学上看，这意味着管理重心不应只放在补充新始祖上，而更应放在控制中间世代瓶颈、降低家系贡献方差、维持平行家系续留上。\n\n\n3.4 第四步：用 pedhalflife() 看长期趋势，而不是只看单时点结果\n如果 pediv() 回答的是“当前结构如何”，那么 pedhalflife() 回答的是“这种结构在过去几十代里是怎么形成的”。\n\ntm_halflife &lt;- system.time(\n  hl_million &lt;- pedhalflife(tp_million, timevar = \"Year\", seed = 20260328L)\n)\n\ntm_halflife\n\n   用户    系统    流逝 \n202.115   5.553  87.553 \n\n\n\nhl_million$decay[, .(\n  LambdaE = round(LambdaE, 6),\n  LambdaB = round(LambdaB, 6),\n  LambdaD = round(LambdaD, 6),\n  LambdaTotal = round(LambdaTotal, 6),\n  THalf = round(THalf, 3)\n)]\n\n    LambdaE  LambdaB  LambdaD LambdaTotal  THalf\n      &lt;num&gt;    &lt;num&gt;    &lt;num&gt;       &lt;num&gt;  &lt;num&gt;\n1: 0.004979 0.007451 0.043057    0.055486 12.492\n\n\n\nhl_plot &lt;- hl_million$timeseries[, .(\n  Time,\n  fe,\n  fa,\n  fg\n)]\n\nhl_long &lt;- melt(\n  hl_plot,\n  id.vars = \"Time\",\n  variable.name = \"Metric\",\n  value.name = \"Value\"\n)\n\nggplot(hl_long, aes(Time, Value, color = Metric)) +\n  geom_line(linewidth = 0.9) +\n  scale_color_manual(\n    values = c(fe = \"#1f5aa6\", fa = \"#d95f02\", fg = \"#238b45\"),\n    labels = c(fe = \"Fe\", fa = \"Fa\", fg = \"Fg\")\n  ) +\n  labs(\n    title = \"多样性等效数随时间的变化\",\n    x = \"Year\",\n    y = \"等效数\",\n    color = NULL\n  )\n\n\n\n\n\n\n\n\n这里最重要的不是某一个绝对值，而是三个衰减成分的相对关系。对水产动物家系选育而言，它们分别对应不同的管理环节：\n\nLambdaE = 0.004979：建群起点的始祖利用不均确有影响，但不是主导因素；\nLambdaB = 0.007451：后续世代中存在持续的家系瓶颈，说明选留和家系续留过程并非完全平衡；\nLambdaD = 0.043057：漂变是最大的衰减来源，提示在既定育种规模下，有效贡献亲本数和有效续留家系数偏低；\nTHalf = 12.492：在当前管理格局延续的假设下，多样性半衰期约为 12.5 个时间单位。\n\n对育种管理而言，这样的结果比单纯给出某一时点的 fa 或 fe 更有指导意义。它提示：\n\n问题不主要出在建群起点，而在于后续周转过程中家系贡献没有被长期稳定地保留下来；\n仅靠减少一两个热门父母本的使用，通常不足以逆转趋势；\n更需要优先处理的是扩大有效留种面、增加平行家系续留、控制家系间贡献方差，以减弱漂变在连续世代中的放大。\n\n\n\n3.4.1 参考群体的近交累积与有效群体大小\n如果说 fa / fe 和 LambdaD 主要回答的是“家系贡献在哪里收缩、收缩由什么过程驱动”，那么近交系数 F 及其代际增量 DeltaF 回答的则是：这种结构性收缩是否已经转化为候选群体的遗传同质化压力。进一步地，由 DeltaF 估算的有效群体大小 Ne，可以把“家系瓶颈”和“持续漂变”转化为更直接的管理量。\n\ntm_inbreed &lt;- system.time(\n  tp_inb &lt;- inbreed(tp_million)\n)\n\ntm_inbreed\n\n 用户  系统  流逝 \n0.248 0.019 0.267 \n\n\n\ntp_inb[Year == 50, .(\n  MeanF = round(mean(f), 3),\n  MedianF = round(median(f), 3),\n  P95F = round(quantile(f, 0.95), 3),\n  MaxF = round(max(f), 3)\n)]\n\n   MeanF MedianF  P95F  MaxF\n   &lt;num&gt;   &lt;num&gt; &lt;num&gt; &lt;num&gt;\n1: 0.232   0.225 0.269 0.426\n\n\n\nyearly_f &lt;- tp_inb[!is.na(Year), .(\n  MeanF = mean(f),\n  MedianF = median(f)\n), by = Year][order(Year)]\n\nggplot(yearly_f, aes(x = Year, y = MeanF)) +\n  geom_line(linewidth = 0.9, color = \"#8c2d04\") +\n  geom_point(size = 1.2, color = \"#8c2d04\") +\n  labs(\n    title = \"各世代平均近交系数的变化\",\n    x = \"Year\",\n    y = \"Mean F\"\n  )\n\n\n\n\n\n\n\n\n\nne_inb &lt;- pedne(tp_inb, method = \"inbreeding\", by = \"Year\")\n\nne_inb[Cohort %in% tail(sort(Cohort), 5), .(\n  Cohort,\n  MeanF = round(MeanF, 3),\n  DeltaF = round(DeltaF, 6),\n  Ne = round(Ne, 1)\n)]\n\n   Cohort MeanF   DeltaF    Ne\n    &lt;int&gt; &lt;num&gt;    &lt;num&gt; &lt;num&gt;\n1:     46 0.215 0.005386  92.8\n2:     47 0.221 0.005433  92.0\n3:     48 0.222 0.005338  93.7\n4:     49 0.228 0.005387  92.8\n5:     50 0.232 0.005398  92.6\n\n\n\nggplot(ne_inb, aes(x = Cohort, y = Ne)) +\n  geom_line(linewidth = 0.9, color = \"#4d9221\") +\n  geom_point(size = 1.2, color = \"#4d9221\") +\n  labs(\n    title = \"基于近交增量估算的有效群体大小\",\n    x = \"Year\",\n    y = \"Ne\"\n  )\n\n\n\n\n\n\n\n\n对当前数据而言，这一层结果与前面的结构指标形成了很好的互证：\n\n末代参考群体平均近交系数约为 0.232，中位数约为 0.225，最大值约为 0.426，说明近交累积已经不是零散个体现象，而是候选群体层面的整体压力。\nYear 维度上的平均 F 呈持续上升趋势，说明前述瓶颈和漂变并非停留在祖先贡献结构上，而是已经转化为逐代累积的系谱近交。\n基于 DeltaF 估算的末代 Ne 约为 92.6。这一定义下的 Ne 并不等于实际存栏数或候选数，而是反映“真正以独立方式参与遗传传递的有效贡献规模”。\n\n因此，在这份数据里，问题可以被更完整地表述为：群体的 census size 很大，但 pedigree-based Ne 仍然处在百以内量级，说明当前体系虽然维持了大样本数量，却没有把足够多的独立家系贡献稳定地传递到下一代。\n需要说明的是，这里的 F 和 Ne 都是基于系谱记录推导得到的预期量，适合用于年度监控和育种管理，不应直接替代 SNP 或 ROH 层面的基因组近交与基因组 Ne。\n\n\n3.5 第五步：可视化要做局部，不要硬画整库\n百万系谱下，最容易产生误解的一点是：只要软件足够快，就应该直接把全图画出来。实际上并不是这样。\n对育种者真正有价值的图，通常是：\n\n某个候选个体的 3 到 5 代祖先链；\n某个参考群体的局部来源网络；\n某个高边际贡献祖先的扩张路径；\n某个家系在最近几代中的保留情况。\n\n下面示范一个更实际的局部可视化流程：从末代参考群体中取 20 个候选个体，再向上追溯 3 代祖先。\n\ncand_20 &lt;- tp_million[Year == 50, Ind][1:20]\nsubped_20 &lt;- tidyped(tp_million, cand = cand_20, trace = \"up\", tracegen = 3)\n\nsubped_20[, .N, by = Year][order(Year)]\n\n    Year     N\n   &lt;int&gt; &lt;int&gt;\n1:    47     8\n2:    48     4\n3:    49     2\n4:    50    20\n\n\n\npar(family = \"cn\")\nvisped(\n  subped_20,\n  compact = FALSE,\n  cex = 0.45,\n  symbolsize = 5,\n  showgraph = TRUE\n)\n\n\n\n\n末代 20 个候选个体向上追溯 3 代的局部系谱\n\n\n\n\n这一点非常关键：百万级系谱的正确可视化策略不是“全量绘图”，而是“全量整理 + 局部提取 + 目标导向可视化”。这也是为什么 tidyped(cand = ..., trace = ..., tracegen = ...) 在大数据场景下如此重要。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#四面向水产动物家系选育的方法学解释",
+    "href": "posts/million_ped-20260324/index.html#四面向水产动物家系选育的方法学解释",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "四、面向水产动物家系选育的方法学解释",
+    "text": "四、面向水产动物家系选育的方法学解释\n\n4.1 系谱指标与家系选育技术环节的对应\n如果把 visPedigree 的结果放回水产动物家系选育流程，几类核心指标大致对应于以下管理环节：\n\n\n\n\n\n\n\n\n指标\n主要反映的问题\n在家系选育中的管理位置\n\n\n\n\nfe、feH/fe\n基础群始祖来源是否被均衡保留，是否仍有低频始祖可供恢复\n建群设计、基础亲本来源配置、长期始祖利用\n\n\nfa、faH/fa、fa/fe\n中间世代是否形成关键祖先瓶颈，是否出现家系贡献集中\n家系间选择、家系续留、亲本重复利用控制\n\n\nfg、LambdaD\n漂变累积是否过快，实际有效贡献家系数是否偏低\n年度留种面、候选家系规模、家系间贡献方差控制\n\n\nF、DeltaF、Ne\n结构收缩是否已经转化为近交累积，以及当前有效管理压力大小\n近交控制、交配设计、有效留种面评估\n\n\nLambdaE、LambdaB、THalf\n风险主要来自起点、瓶颈还是持续漂变，当前结构还能维持多久\n年度监控、方案调整评估、干预效果追踪\n\n\n\n因此，这些指标并不是抽象的数学量，而是对家系选育技术体系中几个关键环节的压缩表征：建群是否充分，家系是否均衡续留，亲本利用是否过度集中，以及多样性流失是否已进入需要主动干预的阶段。\n\n\n4.2 对当前结果的水产育种学解释\n将本文结果放在“家系为基础的选择育种”框架下，可以得到一个更清晰的判断链条：\n\n建群阶段的始祖基础并不差。\nFounder 来源较均衡，LambdaE 较低，说明问题并不主要来自起点不足。\n家系在后续世代中的实现并不均衡。\nfa &lt; fe 且 fa/fe = 0.673，提示一部分家系虽进入体系，但在中间世代并未持续进入下一轮选留。\n漂变已经成为主导性风险。\nLambdaD 远高于 LambdaE 和 LambdaB，说明多样性损失更多表现为“长期有效留种面偏窄”而非单次剧烈收缩。\n长尾家系仍然具有恢复潜力。\nfeH/fe 与 faH/fa 高于 1，说明仍有部分低频来源存在于谱系尾部，并非完全消失。\n结构收缩已经转化为近交压力。\n末代平均 F 约为 0.232，而基于近交增量得到的 Ne 约为 92.6，说明“候选数很多”并没有自动转化为“有效遗传贡献足够分散”。\n\n从水产育种学角度，这种结构最常见于以下情形：早期家系数名义上充足，但在候选群构建、成活筛选、表型选留和亲本复用过程中，真正持续进入下一代的家系数逐渐收缩。于是问题并不是“系统里没有家系”，而是“系统长期在重复使用有限的一部分家系”。\n\n\n4.3 对育种决策的直接启示\n如果把这些结果转化为更接近操作层面的建议，优先级大致如下：\n\n优先扩大有效留种面，而不是只扩大候选个体总数。\n对高繁殖力水产动物而言，增加候选个体数并不自动等于增加有效多样性；真正关键的是提高进入下一轮配种的独立家系数和独立亲本数。\n控制家系间贡献方差，而不只是限制单个明星亲本。\n仅限制少数高频父母本常常不够，更应关注若干优势家系是否整体持续占据配种与选留资源。\n把长尾家系管理为“可恢复资源”。\n当 feH/fe 和 faH/fa 仍高于 1 时，说明稀有谱系尚未彻底断裂。此时应通过计划交配、目标留种或关键家系保护，把低频来源重新导入核心群，而不是等其完全消失后再补救。\n把年度监控重点放在趋势而不是单点数值。\n对家系选育项目而言，更重要的是连续观察 fa/fe、LambdaD、THalf、平均 F 与 Ne 是否同步恶化，而不是孤立解读某一年的绝对值。\n\n\n\n4.4 visPedigree 在方法学上的合适定位\n对百万级水产系谱而言，visPedigree 的最佳定位不是“整图绘制工具”，而是一套由三个层次组成的分析框架：\n\ntidyped() 负责把跨年度、跨批次的原始系谱整理成稳定分析对象；\npediv() 负责把多样性问题精确地落到当前参考群体；\npedhalflife() 负责把长期家系收缩过程转化为可监控的趋势指标；\ninbreed() 与 pedne() 负责把结构收缩进一步转换为近交累积和有效群体大小的管理解释；\nvisped() 负责针对焦点个体、关键祖先和局部家系问题提供可解释图形。\n\n换句话说，visPedigree 在百万系谱中的方法学价值，不是“所有任务都在图上完成”，而是把结构整理、指标诊断、趋势判断和局部审计组合成一个连贯流程。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#五面向水产家系选育的标准分析与决策流程",
+    "href": "posts/million_ped-20260324/index.html#五面向水产家系选育的标准分析与决策流程",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "五、面向水产家系选育的标准分析与决策流程",
+    "text": "五、面向水产家系选育的标准分析与决策流程\n如果把本文压缩成一套更接近方法学短文的推荐流程，我会建议把百万系谱分析组织为以下 5 步：\n\n冻结年度系谱并建立主分析对象。\n每个育种周期结束后，先将当年亲子鉴定结果、年级群、性别和家系信息并入总系谱，再统一运行 tidyped()。这一步相当于建立全年唯一的分析底座。\n以当前管理单元定义参考群体。\n参考群体不应笼统定义为“全库”。更合理的做法是分别定义候选留种群、核心群后备群、计划配种群或保种家系群，然后分别运行 pediv()。\n用 pediv() 做结构诊断，而不是只报一个多样性值。\n重点同时查看 fe、fa、fg、fa/fe、feH/fe 和 faH/fa。其中：\n\nfa/fe 持续下降，提示家系瓶颈加重；\nfg 很低，提示漂变累积显著；\nfeH/fe 或 faH/fa 仍高，提示稀有家系仍有恢复空间。\n\n用 pedhalflife()、inbreed() 和 pedne() 做年度趋势监控。\n每年更新一次 LambdaE、LambdaB、LambdaD、THalf、平均 F 与 Ne。如果 LambdaD 长期占主导且 Ne 偏低，应优先检讨有效留种家系数和家系间贡献均衡；如果 LambdaB 抬升，则应回查中间世代是否出现明显家系淘汰或亲本集中。\n仅针对问题节点做局部可视化与审计。\n当指标提示某些家系或祖先贡献异常时，再通过 visped() 回到局部 pedigree，检查其扩张路径、同胞结构和近几代保留情况。图形在这里承担的是“结构审计”角色，而不是代替指标分析。\n\n这套流程特别适合水产动物家系选育项目中的年度复盘、配种前评估和核心群多样性监控。"
+  },
+  {
+    "objectID": "posts/million_ped-20260324/index.html#六总结",
+    "href": "posts/million_ped-20260324/index.html#六总结",
+    "title": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释",
+    "section": "六、总结",
+    "text": "六、总结\n从水产动物家系选育的理论出发，百万系谱分析的关键并不在于“能否处理一百万个体”，而在于能否把家系贡献、亲本利用和多样性流失过程转化为可解释、可追踪、可干预的管理信息。\n对这份包含 1,000,150 个体、50 个世代的示例数据，visPedigree 1.8.0 给出的核心结论是：\n\n当前参考群体的始祖基础并非主要矛盾；\n家系在中间世代的实现存在明显瓶颈；\n多样性损失的主导来源是持续漂变，而不是单纯的建群失衡；\n这种结构收缩已经转化为持续近交累积，且 pedigree-based Ne 仍处于百以内量级；\n低频始祖和祖先仍部分保留，说明长尾家系并非没有恢复空间。\n\n因此，对育种方案最有意义的建议不是泛泛地“增加种群规模”，而是更具体地：\n\n扩大进入下一轮配种的独立家系数和独立亲本数；\n控制家系间贡献方差，避免优势家系长期垄断后续世代；\n针对仍有残余贡献的低频家系开展计划续留；\n将 pediv()、pedhalflife()、inbreed() 与 pedne() 作为年度固定监控环节，而不是临时分析工具。\n\n如果说百万系谱真正能为水产育种者带来的价值是什么，那么答案不是“看见更大的图”，而是更早地识别家系收缩、更准确地定位风险来源，并把这些信号转化为下一轮配种和留种的实际约束条件。这也是 visPedigree 1.8.0 在大规模水产系谱分析中的方法学意义。"
   },
   {
     "objectID": "posts/fafe-20260307/index.html",
@@ -305,6 +361,6 @@
     "href": "index.html",
     "title": "Simple living, high thinking",
     "section": "",
-    "text": "系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在育种管理中，仅看某一时点的有效始祖数或有效祖先数，往往不足以判断多样性流失的速度与来源。本文在经典有效数基础上，引入基于香农信息熵的有效始祖数（feH）与有效祖先数（faH），说明其原理、公式与“长尾”遗传贡献的解释方式；并结合 visPedigree::pedhalflife() 和真实群体数据集 G09_prunedPed.csv，演示如何评估多样性半衰期、拆解始祖效应/瓶颈/漂变三类衰减来源，以及如何建立 pediv() 与 pedhalflife() 联合使用的年度育种监控流程。\n\n\n\n\n\nMar 20, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。\n\n\n\n\n\nMar 8, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n廿载罗虾育种路，斯人已逝，深切缅怀\n\n\n\nBreeding\n\nMemorial\n\n\n\n记录参与罗虾育种20年的零碎感悟，以及对杨国梁研究员的深切怀念。\n\n\n\n\n\nMar 3, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nvisPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案\n\n\n\nR\n\nVisualization\n\nPedigree\n\nBreeding\n\n\n\nvisPedigree 1.0.1 cran正式发布。新版本通过 C++ 加速与图论优化重构核心架构，新增高亮追踪、近交系数可视化及矩阵分析工具，显著提升大规模系谱数据处理效率。\n\n\n\n\n\nFeb 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n家系育种数据的探索性数据分析（EDA）\n\n\n\nR\n\nEDA\n\nBreeding\n\nDataExplorer\n\n\n\n利用 DataExplorer 和 Tidyverse 进行高效的数据清理与可视化\n\n\n\n\n\nJan 5, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nVibe coding\n\n\n\ncode\n\nAI\n\n\n\n大模型编程世代到来了\n\n\n\n\n\nJan 3, 2026\n\n\nSheng Luan\n\n\n\n\n\nNo matching items"
+    "text": "面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n以一个包含 1,000,150 个体、50 个世代的模拟系谱为例，从水产动物家系选育的理论与技术体系出发，说明如何用 visPedigree 1.8.0 完成百万级系谱整理、参考群体多样性诊断、半衰期监控与局部可视化，并将结果转化为可执行的育种管理建议。\n\n\n\n\n\nMar 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在育种管理中，仅看某一时点的有效始祖数或有效祖先数，往往不足以判断多样性流失的速度与来源。本文在经典有效数基础上，引入基于香农信息熵的有效始祖数（feH）与有效祖先数（faH），说明其原理、公式与“长尾”遗传贡献的解释方式；并结合 visPedigree::pedhalflife() 和真实群体数据集 G09_prunedPed.csv，演示如何评估多样性半衰期、拆解始祖效应/瓶颈/漂变三类衰减来源，以及如何建立 pediv() 与 pedhalflife() 联合使用的年度育种监控流程。\n\n\n\n\n\nMar 20, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。\n\n\n\n\n\nMar 8, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n廿载罗虾育种路，斯人已逝，深切缅怀\n\n\n\nBreeding\n\nMemorial\n\n\n\n记录参与罗虾育种20年的零碎感悟，以及对杨国梁研究员的深切怀念。\n\n\n\n\n\nMar 3, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nvisPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案\n\n\n\nR\n\nVisualization\n\nPedigree\n\nBreeding\n\n\n\nvisPedigree 1.0.1 cran正式发布。新版本通过 C++ 加速与图论优化重构核心架构，新增高亮追踪、近交系数可视化及矩阵分析工具，显著提升大规模系谱数据处理效率。\n\n\n\n\n\nFeb 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n家系育种数据的探索性数据分析（EDA）\n\n\n\nR\n\nEDA\n\nBreeding\n\nDataExplorer\n\n\n\n利用 DataExplorer 和 Tidyverse 进行高效的数据清理与可视化\n\n\n\n\n\nJan 5, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nVibe coding\n\n\n\ncode\n\nAI\n\n\n\n大模型编程世代到来了\n\n\n\n\n\nJan 3, 2026\n\n\nSheng Luan\n\n\n\n\n\nNo matching items"
   }
 ]

@@ -10,7 +10,1467 @@
 <atom:link href="https://luansheng.github.io/lsblog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A blog built with Quarto</description>
 <generator>quarto-1.8.24</generator>
-<lastBuildDate>Thu, 19 Mar 2026 16:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 23 Mar 2026 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>面向水产动物家系选育的百万系谱分析：visPedigree 1.8.0 的工作流与方法学解释</title>
+  <dc:creator>Sheng Luan</dc:creator>
+  <link>https://luansheng.github.io/lsblog/posts/million_ped-20260324/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="摘要" class="level2">
+<h2 class="anchored" data-anchor-id="摘要">摘要</h2>
+<p>水产动物选择育种通常以家系为基本管理单元。建群时需要控制基础亲本来源，育种过程中需要在家系间和家系内同时进行选择，连续世代中又必须抑制近交累积、家系丢失和少数优势亲本的过度扩张。随着亲子鉴定、共同培育和跨年度留种体系的普及，系谱规模迅速扩展到几十万甚至上百万个体。此时真正的问题已不再是“数据能否存下”，而是：<strong>哪些分析应在全量系谱上完成，哪些分析应围绕当前参考群体展开，以及哪些问题根本不应通过整图硬画来解决</strong>。</p>
+<p>本文使用 <a href="pedigree_mixed_founder_to_G50.csv">pedigree_mixed_founder_to_G50.csv</a> 作为示例数据。该数据包含 1,000,150 个体、150 个始祖、50 个连续世代和 6 个始祖来源群体。文章从水产动物家系选育的理论与技术体系出发，回答三个方法学问题：</p>
+<ol type="1">
+<li>面对百万级系谱，<code>visPedigree</code> 1.8.0 的高效分析流程应如何组织？</li>
+<li><code>tidyped()</code>、<code>pediv()</code>、<code>pedhalflife()</code> 和局部 <code>visped()</code> 各自对应哪一类育种学问题？</li>
+<li>这些指标如何转化为家系保留、留种面控制和年度多样性监控的管理建议？</li>
+</ol>
+<p>全文的基本判断是：</p>
+<ul>
+<li><strong>全量系谱适合承担数据整理、代次结构重建和长期趋势分析；</strong></li>
+<li><strong>参考群体适合承担家系多样性诊断和年度决策支持；</strong></li>
+<li><strong>图形展示应回到局部家系、关键祖先和候选群体，而不是追求整库可视化。</strong></li>
+</ul>
+</section>
+<section id="一为什么水产家系选育的百万系谱不应从画图开始" class="level2">
+<h2 class="anchored" data-anchor-id="一为什么水产家系选育的百万系谱不应从画图开始">一、为什么水产家系选育的百万系谱不应从“画图”开始</h2>
+<p>在水产动物家系选育体系中，百万级系谱的意义并不在于“终于可以把所有个体同时画出来”，而在于它提供了足够长的代际深度和足够完整的亲缘传递记录，使研究者和育种者能够回答以下问题：</p>
+<ul>
+<li>当前候选留种群到底来自哪些始祖和关键祖先？</li>
+<li>多样性损失主要发生在建群初期、后续家系瓶颈，还是持续漂变？</li>
+<li>哪些低频家系仍保留有续留价值，值得在下一轮配种中被重新纳入？</li>
+<li>如果沿用当前留种结构，多样性半衰期大约还有多久？</li>
+</ul>
+<p>这类问题本质上都指向“家系贡献在时间上的实现方式”，而不是指向图形本身。因此，对百万系谱最有效的使用方式，不是从“能不能一把画全图”开始，而是从“<strong>先把全量数据转化成一个可分析对象</strong>”开始。<code>visPedigree</code> 1.8.0 在这一点上的意义主要体现在三方面：</p>
+<ol type="1">
+<li><code>tidyped()</code> 把原始系谱标准化为带代次、整数编号和拓扑顺序的分析对象。</li>
+<li><code>pediv()</code> 让多样性诊断围绕参考群体展开，而不是停留在整库平均意义上。</li>
+<li><code>pedhalflife()</code> 把长期家系收缩过程压缩为更适合管理解释的趋势指标，例如半衰期与衰减来源分解。</li>
+</ol>
+</section>
+<section id="二数据概况理论背景与分析目标" class="level2">
+<h2 class="anchored" data-anchor-id="二数据概况理论背景与分析目标">二、数据概况、理论背景与分析目标</h2>
+<section id="数据结构" class="level3">
+<h3 class="anchored" data-anchor-id="数据结构">2.1 数据结构</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(showtext)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(sysfonts)</span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(visPedigree)</span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">font_add</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cn"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/System/Library/Fonts/STHeiti Medium.ttc"</span>)</span>
+<span id="cb1-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">showtext_auto</span>()</span>
+<span id="cb1-9"></span>
+<span id="cb1-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_set</span>(</span>
+<span id="cb1-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">base_family =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cn"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb1-12">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(</span>
+<span id="cb1-13">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">plot.title =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">face =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bold"</span>),</span>
+<span id="cb1-14">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">plot.title.position =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"plot"</span>,</span>
+<span id="cb1-15">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">panel.grid.minor =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_blank</span>()</span>
+<span id="cb1-16">    )</span>
+<span id="cb1-17">)</span>
+<span id="cb1-18"></span>
+<span id="cb1-19">path_ped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pedigree_mixed_founder_to_G50.csv"</span></span>
+<span id="cb1-20"></span>
+<span id="cb1-21">ped_raw <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(path_ped, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.strings =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"NA"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"0"</span>))</span>
+<span id="cb1-22">ped_raw[, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">:=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span>(</span>
+<span id="cb1-23">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Ind =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.character</span>(Ind),</span>
+<span id="cb1-24">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Sire =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fifelse</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(Sire), <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA_character_</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.character</span>(Sire)),</span>
+<span id="cb1-25">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Dam =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fifelse</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(Dam), <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA_character_</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.character</span>(Dam)),</span>
+<span id="cb1-26">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Sex =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.character</span>(Sex),</span>
+<span id="cb1-27">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Breed =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.character</span>(Breed),</span>
+<span id="cb1-28">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Year =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.integer</span>(Year)</span>
+<span id="cb1-29">)]</span>
+<span id="cb1-30"></span>
+<span id="cb1-31"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.table</span>(</span>
+<span id="cb1-32">  指标 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"总个体数"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"字段数"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year 范围"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"始祖来源群体数"</span>),</span>
+<span id="cb1-33">  数值 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb1-34">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">format</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(ped_raw), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">big.mark =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">","</span>),</span>
+<span id="cb1-35">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(ped_raw),</span>
+<span id="cb1-36">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">range</span>(ped_raw<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Year, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">collapse =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" ~ "</span>),</span>
+<span id="cb1-37">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">uniqueN</span>(ped_raw<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Breed)</span>
+<span id="cb1-38">  )</span>
+<span id="cb1-39">)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             指标      数值
+           &lt;char&gt;    &lt;char&gt;
+1:       总个体数 1,000,150
+2:         字段数         6
+3:      Year 范围    1 ~ 50
+4: 始祖来源群体数         6</code></pre>
+</div>
+</div>
+<p>这份数据有几个很适合示范 <code>visPedigree</code> 的特点：</p>
+<ul>
+<li>个体数达到 <code>1,000,150</code>，足以覆盖百万级使用场景；</li>
+<li><code>Year</code> 从 <code>0</code> 到 <code>50</code>，适合做连续时间趋势分析；</li>
+<li>始祖来源有 <code>6</code> 个群体，便于观察基础群来源是否逐步收缩；</li>
+<li>每个非 founder 世代规模基本稳定，便于把结果解释成长期繁育制度下的结构演化。</li>
+</ul>
+</section>
+<section id="与水产动物家系选育体系的对应关系" class="level3">
+<h3 class="anchored" data-anchor-id="与水产动物家系选育体系的对应关系">2.2 与水产动物家系选育体系的对应关系</h3>
+<p>虽然本文使用的是模拟数据，但其结构与水产动物家系选育中的典型技术路径高度一致：</p>
+<ul>
+<li><code>Founder</code> 可对应建群时期纳入核心群的基础亲本；</li>
+<li><code>Year</code> 可对应连续育种周期中的年级群或世代批次；</li>
+<li>末代参考群体可对应当期候选留种群、核心群后备群或计划配种群；</li>
+<li>多世代连续系谱可对应“建群后长期封闭选育，辅以家系记录和亲子鉴定”的技术体系。</li>
+</ul>
+<p>在水产动物中，单对亲本往往能产生大量后代，早期家系成活差异、共同培育后的选择强度差异，以及少数优势亲本的重复利用，都可能使“理论上的家系数”与“实际传递到下一代的家系贡献”明显偏离。因此，百万级系谱分析的核心不在于统计总个体数，而在于识别：</p>
+<ol type="1">
+<li>初始亲本来源是否被长期均衡利用；</li>
+<li>家系间选择是否在中间世代形成了额外瓶颈；</li>
+<li>当前参考群体中，仍有哪些低频家系和祖先可以被重新纳入管理。</li>
+</ol>
+</section>
+<section id="方法学上最适合回答什么问题" class="level3">
+<h3 class="anchored" data-anchor-id="方法学上最适合回答什么问题">2.3 方法学上最适合回答什么问题</h3>
+<p>对于这样的百万系谱，最有价值的不是“把所有模块都跑一遍”，而是回答三个具有明确管理含义的方法学问题：</p>
+<ol type="1">
+<li><strong>结构上还剩多少多样性？</strong></li>
+<li><strong>多样性是怎么丢掉的？</strong></li>
+<li><strong>哪些家系和祖先值得继续追踪与保留？</strong></li>
+</ol>
+<p>后文的分析顺序，正是围绕这三个问题来设计。需要强调的是，本文所有指标都属于<strong>系谱层面的多样性代理指标</strong>。它们反映的是祖先贡献和亲缘传递结构，而不是直接替代基因组层面的变异测量；但在水产动物家系选育中，它们恰好对应日常最需要管理的对象，即家系贡献、亲本利用和年度留种结构。</p>
+</section>
+</section>
+<section id="三百万系谱下的推荐工作流" class="level2">
+<h2 class="anchored" data-anchor-id="三百万系谱下的推荐工作流">三、百万系谱下的推荐工作流</h2>
+<section id="第一步先把全量系谱转成-tidyped" class="level3">
+<h3 class="anchored" data-anchor-id="第一步先把全量系谱转成-tidyped">3.1 第一步：先把全量系谱转成 <code>tidyped</code></h3>
+<p>百万级分析的起点不是 <code>pediv()</code>，也不是 <code>visped()</code>，而是 <code>tidyped()</code>。因为后续大多数分析都依赖它补充出来的几个核心字段：</p>
+<ul>
+<li><code>Gen</code>：代次层级</li>
+<li><code>IndNum</code>、<code>SireNum</code>、<code>DamNum</code>：整数编号</li>
+<li>对象结构与拓扑顺序：保证上游祖先先于后代</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">tm_tidyped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(</span>
+<span id="cb3-2">  tp_million <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(ped_raw)</span>
+<span id="cb3-3">)</span>
+<span id="cb3-4"></span>
+<span id="cb3-5">tm_tidyped</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> 用户  系统  流逝 
+4.649 0.153 2.418 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.table</span>(</span>
+<span id="cb5-2">  指标 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb5-3">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"tidyped 后个体数"</span>,</span>
+<span id="cb5-4">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"最大 Gen"</span>,</span>
+<span id="cb5-5">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"末代参考群规模"</span>,</span>
+<span id="cb5-6">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Founder 数量"</span></span>
+<span id="cb5-7">  ),</span>
+<span id="cb5-8">  数值 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb5-9">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">format</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tp_million), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">big.mark =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">","</span>),</span>
+<span id="cb5-10">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(tp_million<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>),</span>
+<span id="cb5-11">    tp_million[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(Year, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.rm =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>), .N],</span>
+<span id="cb5-12">    tp_million[SireNum <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> DamNum <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, .N]</span>
+<span id="cb5-13">  )</span>
+<span id="cb5-14">)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               指标      数值
+             &lt;char&gt;    &lt;char&gt;
+1: tidyped 后个体数 1,000,150
+2:         最大 Gen        51
+3:   末代参考群规模     20000
+4:     Founder 数量       150</code></pre>
+</div>
+</div>
+<p>这一阶段的管理意义在于：<strong>你先得到一个“全库统一坐标系”</strong>。在水产家系选育体系中，这一步等价于把历年亲子鉴定结果、家系记录和年级群信息统一到同一个分析底座上。之后不管是抽取候选留种群、分析核心群后备群，还是追踪某一批关键家系，都不需要再回到原始 CSV 反复清洗。</p>
+</section>
+<section id="第二步全量上先看结构概览而不是直接做全量深分析" class="level3">
+<h3 class="anchored" data-anchor-id="第二步全量上先看结构概览而不是直接做全量深分析">3.2 第二步：全量上先看结构概览，而不是直接做全量深分析</h3>
+<p>全量数据最适合做的是“概览性判断”，例如各年份个体规模、founder 来源是否均衡等。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">year_profile <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_million[<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(Year), .N, by <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> Year][<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">order</span>(Year)]</span>
+<span id="cb7-2"></span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(year_profile, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Year, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> N)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb7-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.8</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#1f5aa6"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb7-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#1f5aa6"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb7-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_y_continuous</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> scales<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">label_comma</span>()) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb7-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb7-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"各世代个体规模概览"</span>,</span>
+<span id="cb7-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>,</span>
+<span id="cb7-10">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"个体数"</span></span>
+<span id="cb7-11">  )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/million_ped-20260324/index_files/figure-html/year-profile-1.png" class="img-fluid figure-img" width="2100"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">founder_breed <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_million[SireNum <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> DamNum <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, .N, by <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> Breed][<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">order</span>(Breed)]</span>
+<span id="cb8-2"></span>
+<span id="cb8-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(founder_breed, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Breed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> N, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> Breed)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_col</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">width =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.7</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb8-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb8-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"始祖来源群体分布"</span>,</span>
+<span id="cb8-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Breed"</span>,</span>
+<span id="cb8-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Founder 数量"</span></span>
+<span id="cb8-9">  )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/million_ped-20260324/index_files/figure-html/founder-breed-1.png" class="img-fluid figure-img" width="2100"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>这两张图传达的信息在方法学上非常重要：</p>
+<ul>
+<li>这份数据并不是一个“规模忽大忽小”的不规则样本，而是一个长期稳定维护的繁育体系；</li>
+<li>始祖来源在起点上并不偏斜，因此后续若观察到多样性收缩，更可能来自<strong>后续代际中的家系贡献失衡、瓶颈和漂变</strong>，而不是建群时的资源严重不足。</li>
+</ul>
+</section>
+<section id="第三步围绕参考群体运行-pediv而不是对整库谈多样性" class="level3">
+<h3 class="anchored" data-anchor-id="第三步围绕参考群体运行-pediv而不是对整库谈多样性">3.3 第三步：围绕参考群体运行 <code>pediv()</code>，而不是对整库谈多样性</h3>
+<p>百万系谱真正值得做的多样性分析，不是“把全库所有个体都当成同一个群体”，而是<strong>先定义参考群体</strong>。在水产动物家系选育中，参考群体本身就是管理单位。最常见的三类参考群体是：</p>
+<ul>
+<li>当前年度候选留种群</li>
+<li>当前年度核心群</li>
+<li>某个特定家系或品系子群</li>
+</ul>
+<p>这里以末代 (<code>Year == 50</code>) 个体作为参考群体。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">ref_50 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_million[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, Ind]</span>
+<span id="cb9-2"></span>
+<span id="cb9-3">tm_pediv <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(</span>
+<span id="cb9-4">  div_50 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pediv</span>(tp_million, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_50, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20260328</span>L)</span>
+<span id="cb9-5">)</span>
+<span id="cb9-6"></span>
+<span id="cb9-7">tm_pediv</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  用户   系统   流逝 
+11.871  0.288  5.346 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1">div_50<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary[, .(</span>
+<span id="cb11-2">  NRef,</span>
+<span id="cb11-3">  NFounder,</span>
+<span id="cb11-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fe =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">feH =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(feH, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-6">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">feH/fe</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(feH <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-7">  NAncestor,</span>
+<span id="cb11-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fa, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">faH =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(faH, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-10">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">faH/fa</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(faH <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> fa, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fg =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fg, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb11-12">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa/fe</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">`</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(fafe, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb11-13">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    NRef NFounder     fe    feH feH/fe NAncestor     fa   faH faH/fa    fg
+   &lt;int&gt;    &lt;int&gt;  &lt;num&gt;  &lt;num&gt;  &lt;num&gt;     &lt;int&gt;  &lt;num&gt; &lt;num&gt;  &lt;num&gt; &lt;num&gt;
+1: 20000      150 45.208 53.089  1.174        79 30.402 42.63  1.402 2.135
+   fa/fe
+   &lt;num&gt;
+1: 0.673</code></pre>
+</div>
+</div>
+<p>从水产动物家系选育的角度，这组结果可以作如下解释：</p>
+<ul>
+<li><code>fe = 45.208</code>，表示末代参考群体所体现出来的始祖等效数约为 45。也就是说，虽然基础群共有 150 个始祖，但真正以较均衡方式传递到当前候选群体的始祖来源远少于名义始祖数。</li>
+<li><code>fa = 30.402</code>，说明当系谱沿时间向后展开后，起主导作用的关键祖先进一步收缩。对家系选育而言，这通常意味着部分家系虽曾进入体系，但未能持续贡献到后续选留阶段。</li>
+<li><code>fa / fe = 0.673</code>，表明从始祖层到关键祖先层之间存在明显瓶颈。这一比值下降，通常对应于家系间选择、成活差异或少数亲本反复利用所导致的中间世代收缩。</li>
+<li><code>feH / fe = 1.174</code>、<code>faH / fa = 1.402</code>，说明低频始祖和低频祖先仍有一部分贡献被保留下来，长尾来源并未完全消失。对管理而言，这意味着仍存在通过配种设计恢复部分稀有谱系的空间。</li>
+<li><code>fg = 2.135</code>，提示始祖基因组当量已经非常低，随机漂变的累积影响不可忽视。对于高繁殖力物种，这往往与有效留种亲本数不足、家系规模方差过大或后备家系淘汰过早有关。</li>
+</ul>
+<p>因此，这个群体的核心问题不是“已经没有其他血统可用”，而是“<strong>历史上保留下来的家系来源，没有被足够均衡地实现到当前参考群体</strong>”。从方法学上看，这意味着管理重心不应只放在补充新始祖上，而更应放在<strong>控制中间世代瓶颈、降低家系贡献方差、维持平行家系续留</strong>上。</p>
+</section>
+<section id="第四步用-pedhalflife-看长期趋势而不是只看单时点结果" class="level3">
+<h3 class="anchored" data-anchor-id="第四步用-pedhalflife-看长期趋势而不是只看单时点结果">3.4 第四步：用 <code>pedhalflife()</code> 看长期趋势，而不是只看单时点结果</h3>
+<p>如果 <code>pediv()</code> 回答的是“当前结构如何”，那么 <code>pedhalflife()</code> 回答的是“这种结构在过去几十代里是怎么形成的”。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">tm_halflife <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(</span>
+<span id="cb13-2">  hl_million <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedhalflife</span>(tp_million, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20260328</span>L)</span>
+<span id="cb13-3">)</span>
+<span id="cb13-4"></span>
+<span id="cb13-5">tm_halflife</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   用户    系统    流逝 
+202.115   5.553  87.553 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1">hl_million<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay[, .(</span>
+<span id="cb15-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaE =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaE, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaB =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaB, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaD =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaD, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">LambdaTotal =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(LambdaTotal, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb15-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">THalf =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(THalf, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb15-7">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    LambdaE  LambdaB  LambdaD LambdaTotal  THalf
+      &lt;num&gt;    &lt;num&gt;    &lt;num&gt;       &lt;num&gt;  &lt;num&gt;
+1: 0.004979 0.007451 0.043057    0.055486 12.492</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1">hl_plot <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> hl_million<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>timeseries[, .(</span>
+<span id="cb17-2">  Time,</span>
+<span id="cb17-3">  fe,</span>
+<span id="cb17-4">  fa,</span>
+<span id="cb17-5">  fg</span>
+<span id="cb17-6">)]</span>
+<span id="cb17-7"></span>
+<span id="cb17-8">hl_long <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">melt</span>(</span>
+<span id="cb17-9">  hl_plot,</span>
+<span id="cb17-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">id.vars =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Time"</span>,</span>
+<span id="cb17-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">variable.name =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Metric"</span>,</span>
+<span id="cb17-12">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value.name =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Value"</span></span>
+<span id="cb17-13">)</span>
+<span id="cb17-14"></span>
+<span id="cb17-15"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(hl_long, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(Time, Value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> Metric)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb17-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.9</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb17-17">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_color_manual</span>(</span>
+<span id="cb17-18">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">values =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fe =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#1f5aa6"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#d95f02"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fg =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#238b45"</span>),</span>
+<span id="cb17-19">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fe =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Fe"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fa =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Fa"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fg =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Fg"</span>)</span>
+<span id="cb17-20">  ) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb17-21">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb17-22">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"多样性等效数随时间的变化"</span>,</span>
+<span id="cb17-23">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>,</span>
+<span id="cb17-24">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"等效数"</span>,</span>
+<span id="cb17-25">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span></span>
+<span id="cb17-26">  )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/million_ped-20260324/index_files/figure-html/pedhalflife-trend-1.png" class="img-fluid figure-img" width="2100"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>这里最重要的不是某一个绝对值，而是三个衰减成分的相对关系。对水产动物家系选育而言，它们分别对应不同的管理环节：</p>
+<ul>
+<li><code>LambdaE = 0.004979</code>：建群起点的始祖利用不均确有影响，但不是主导因素；</li>
+<li><code>LambdaB = 0.007451</code>：后续世代中存在持续的家系瓶颈，说明选留和家系续留过程并非完全平衡；</li>
+<li><code>LambdaD = 0.043057</code>：漂变是最大的衰减来源，提示在既定育种规模下，有效贡献亲本数和有效续留家系数偏低；</li>
+<li><code>THalf = 12.492</code>：在当前管理格局延续的假设下，多样性半衰期约为 12.5 个时间单位。</li>
+</ul>
+<p>对育种管理而言，这样的结果比单纯给出某一时点的 <code>fa</code> 或 <code>fe</code> 更有指导意义。它提示：</p>
+<ol type="1">
+<li>问题不主要出在建群起点，而在于后续周转过程中家系贡献没有被长期稳定地保留下来；</li>
+<li>仅靠减少一两个热门父母本的使用，通常不足以逆转趋势；</li>
+<li>更需要优先处理的是<strong>扩大有效留种面、增加平行家系续留、控制家系间贡献方差</strong>，以减弱漂变在连续世代中的放大。</li>
+</ol>
+</section>
+<section id="参考群体的近交累积与有效群体大小" class="level3">
+<h3 class="anchored" data-anchor-id="参考群体的近交累积与有效群体大小">3.4.1 参考群体的近交累积与有效群体大小</h3>
+<p>如果说 <code>fa / fe</code> 和 <code>LambdaD</code> 主要回答的是“家系贡献在哪里收缩、收缩由什么过程驱动”，那么近交系数 <code>F</code> 及其代际增量 <code>DeltaF</code> 回答的则是：<strong>这种结构性收缩是否已经转化为候选群体的遗传同质化压力</strong>。进一步地，由 <code>DeltaF</code> 估算的有效群体大小 <code>Ne</code>，可以把“家系瓶颈”和“持续漂变”转化为更直接的管理量。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1">tm_inbreed <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(</span>
+<span id="cb18-2">  tp_inb <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">inbreed</span>(tp_million)</span>
+<span id="cb18-3">)</span>
+<span id="cb18-4"></span>
+<span id="cb18-5">tm_inbreed</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> 用户  系统  流逝 
+0.248 0.019 0.267 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1">tp_inb[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, .(</span>
+<span id="cb20-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MeanF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(f), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb20-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MedianF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(f), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb20-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">P95F =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">quantile</span>(f, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.95</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb20-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MaxF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(f), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb20-6">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   MeanF MedianF  P95F  MaxF
+   &lt;num&gt;   &lt;num&gt; &lt;num&gt; &lt;num&gt;
+1: 0.232   0.225 0.269 0.426</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1">yearly_f <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_inb[<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(Year), .(</span>
+<span id="cb22-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MeanF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(f),</span>
+<span id="cb22-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MedianF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">median</span>(f)</span>
+<span id="cb22-4">), by <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> Year][<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">order</span>(Year)]</span>
+<span id="cb22-5"></span>
+<span id="cb22-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(yearly_f, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Year, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> MeanF)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb22-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.9</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#8c2d04"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb22-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#8c2d04"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb22-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb22-10">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"各世代平均近交系数的变化"</span>,</span>
+<span id="cb22-11">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>,</span>
+<span id="cb22-12">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Mean F"</span></span>
+<span id="cb22-13">  )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/million_ped-20260324/index_files/figure-html/inbreeding-trend-1.png" class="img-fluid figure-img" width="2100"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1">ne_inb <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedne</span>(tp_inb, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"inbreeding"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>)</span>
+<span id="cb23-2"></span>
+<span id="cb23-3">ne_inb[Cohort <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%in%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tail</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sort</span>(Cohort), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>), .(</span>
+<span id="cb23-4">  Cohort,</span>
+<span id="cb23-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MeanF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(MeanF, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb23-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">DeltaF =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(DeltaF, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>),</span>
+<span id="cb23-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Ne =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(Ne, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb23-8">)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Cohort MeanF   DeltaF    Ne
+    &lt;int&gt; &lt;num&gt;    &lt;num&gt; &lt;num&gt;
+1:     46 0.215 0.005386  92.8
+2:     47 0.221 0.005433  92.0
+3:     48 0.222 0.005338  93.7
+4:     49 0.228 0.005387  92.8
+5:     50 0.232 0.005398  92.6</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(ne_inb, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> Cohort, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> Ne)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.9</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#4d9221"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#4d9221"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb25-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(</span>
+<span id="cb25-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">title =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"基于近交增量估算的有效群体大小"</span>,</span>
+<span id="cb25-6">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Year"</span>,</span>
+<span id="cb25-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Ne"</span></span>
+<span id="cb25-8">  )</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/million_ped-20260324/index_files/figure-html/ne-trend-1.png" class="img-fluid figure-img" width="2100"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>对当前数据而言，这一层结果与前面的结构指标形成了很好的互证：</p>
+<ul>
+<li>末代参考群体平均近交系数约为 <code>0.232</code>，中位数约为 <code>0.225</code>，最大值约为 <code>0.426</code>，说明近交累积已经不是零散个体现象，而是候选群体层面的整体压力。</li>
+<li><code>Year</code> 维度上的平均 <code>F</code> 呈持续上升趋势，说明前述瓶颈和漂变并非停留在祖先贡献结构上，而是已经转化为逐代累积的系谱近交。</li>
+<li>基于 <code>DeltaF</code> 估算的末代 <code>Ne</code> 约为 <code>92.6</code>。这一定义下的 <code>Ne</code> 并不等于实际存栏数或候选数，而是反映“真正以独立方式参与遗传传递的有效贡献规模”。</li>
+</ul>
+<p>因此，在这份数据里，问题可以被更完整地表述为：<strong>群体的 census size 很大，但 pedigree-based Ne 仍然处在百以内量级，说明当前体系虽然维持了大样本数量，却没有把足够多的独立家系贡献稳定地传递到下一代。</strong></p>
+<p>需要说明的是，这里的 <code>F</code> 和 <code>Ne</code> 都是基于系谱记录推导得到的预期量，适合用于年度监控和育种管理，不应直接替代 SNP 或 ROH 层面的基因组近交与基因组 <code>Ne</code>。</p>
+</section>
+<section id="第五步可视化要做局部不要硬画整库" class="level3">
+<h3 class="anchored" data-anchor-id="第五步可视化要做局部不要硬画整库">3.5 第五步：可视化要做局部，不要硬画整库</h3>
+<p>百万系谱下，最容易产生误解的一点是：只要软件足够快，就应该直接把全图画出来。实际上并不是这样。</p>
+<p>对育种者真正有价值的图，通常是：</p>
+<ul>
+<li>某个候选个体的 3 到 5 代祖先链；</li>
+<li>某个参考群体的局部来源网络；</li>
+<li>某个高边际贡献祖先的扩张路径；</li>
+<li>某个家系在最近几代中的保留情况。</li>
+</ul>
+<p>下面示范一个更实际的局部可视化流程：从末代参考群体中取 20 个候选个体，再向上追溯 3 代祖先。</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1">cand_20 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_million[Year <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>, Ind][<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>]</span>
+<span id="cb26-2">subped_20 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(tp_million, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cand =</span> cand_20, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"up"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">tracegen =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb26-3"></span>
+<span id="cb26-4">subped_20[, .N, by <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> Year][<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">order</span>(Year)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Year     N
+   &lt;int&gt; &lt;int&gt;
+1:    47     8
+2:    48     4
+3:    49     2
+4:    50    20</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">par</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cn"</span>)</span>
+<span id="cb28-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(</span>
+<span id="cb28-3">  subped_20,</span>
+<span id="cb28-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">compact =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb28-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.45</span>,</span>
+<span id="cb28-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>,</span>
+<span id="cb28-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">showgraph =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb28-8">)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/million_ped-20260324/index_files/figure-html/local-visped-1.png" class="img-fluid figure-img" width="3000"></p>
+<figcaption>末代 20 个候选个体向上追溯 3 代的局部系谱</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>这一点非常关键：<strong>百万级系谱的正确可视化策略不是“全量绘图”，而是“全量整理 + 局部提取 + 目标导向可视化”</strong>。这也是为什么 <code>tidyped(cand = ..., trace = ..., tracegen = ...)</code> 在大数据场景下如此重要。</p>
+</section>
+</section>
+<section id="四面向水产动物家系选育的方法学解释" class="level2">
+<h2 class="anchored" data-anchor-id="四面向水产动物家系选育的方法学解释">四、面向水产动物家系选育的方法学解释</h2>
+<section id="系谱指标与家系选育技术环节的对应" class="level3">
+<h3 class="anchored" data-anchor-id="系谱指标与家系选育技术环节的对应">4.1 系谱指标与家系选育技术环节的对应</h3>
+<p>如果把 <code>visPedigree</code> 的结果放回水产动物家系选育流程，几类核心指标大致对应于以下管理环节：</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>指标</th>
+<th>主要反映的问题</th>
+<th>在家系选育中的管理位置</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>fe</code>、<code>feH/fe</code></td>
+<td>基础群始祖来源是否被均衡保留，是否仍有低频始祖可供恢复</td>
+<td>建群设计、基础亲本来源配置、长期始祖利用</td>
+</tr>
+<tr class="even">
+<td><code>fa</code>、<code>faH/fa</code>、<code>fa/fe</code></td>
+<td>中间世代是否形成关键祖先瓶颈，是否出现家系贡献集中</td>
+<td>家系间选择、家系续留、亲本重复利用控制</td>
+</tr>
+<tr class="odd">
+<td><code>fg</code>、<code>LambdaD</code></td>
+<td>漂变累积是否过快，实际有效贡献家系数是否偏低</td>
+<td>年度留种面、候选家系规模、家系间贡献方差控制</td>
+</tr>
+<tr class="even">
+<td><code>F</code>、<code>DeltaF</code>、<code>Ne</code></td>
+<td>结构收缩是否已经转化为近交累积，以及当前有效管理压力大小</td>
+<td>近交控制、交配设计、有效留种面评估</td>
+</tr>
+<tr class="odd">
+<td><code>LambdaE</code>、<code>LambdaB</code>、<code>THalf</code></td>
+<td>风险主要来自起点、瓶颈还是持续漂变，当前结构还能维持多久</td>
+<td>年度监控、方案调整评估、干预效果追踪</td>
+</tr>
+</tbody>
+</table>
+<p>因此，这些指标并不是抽象的数学量，而是对家系选育技术体系中几个关键环节的压缩表征：建群是否充分，家系是否均衡续留，亲本利用是否过度集中，以及多样性流失是否已进入需要主动干预的阶段。</p>
+</section>
+<section id="对当前结果的水产育种学解释" class="level3">
+<h3 class="anchored" data-anchor-id="对当前结果的水产育种学解释">4.2 对当前结果的水产育种学解释</h3>
+<p>将本文结果放在“家系为基础的选择育种”框架下，可以得到一个更清晰的判断链条：</p>
+<ol type="1">
+<li><p>建群阶段的始祖基础并不差。<br>
+<code>Founder</code> 来源较均衡，<code>LambdaE</code> 较低，说明问题并不主要来自起点不足。</p></li>
+<li><p>家系在后续世代中的实现并不均衡。<br>
+<code>fa &lt; fe</code> 且 <code>fa/fe = 0.673</code>，提示一部分家系虽进入体系，但在中间世代并未持续进入下一轮选留。</p></li>
+<li><p>漂变已经成为主导性风险。<br>
+<code>LambdaD</code> 远高于 <code>LambdaE</code> 和 <code>LambdaB</code>，说明多样性损失更多表现为“长期有效留种面偏窄”而非单次剧烈收缩。</p></li>
+<li><p>长尾家系仍然具有恢复潜力。<br>
+<code>feH/fe</code> 与 <code>faH/fa</code> 高于 1，说明仍有部分低频来源存在于谱系尾部，并非完全消失。</p></li>
+<li><p>结构收缩已经转化为近交压力。<br>
+末代平均 <code>F</code> 约为 <code>0.232</code>，而基于近交增量得到的 <code>Ne</code> 约为 <code>92.6</code>，说明“候选数很多”并没有自动转化为“有效遗传贡献足够分散”。</p></li>
+</ol>
+<p>从水产育种学角度，这种结构最常见于以下情形：早期家系数名义上充足，但在候选群构建、成活筛选、表型选留和亲本复用过程中，真正持续进入下一代的家系数逐渐收缩。于是问题并不是“系统里没有家系”，而是“<strong>系统长期在重复使用有限的一部分家系</strong>”。</p>
+</section>
+<section id="对育种决策的直接启示" class="level3">
+<h3 class="anchored" data-anchor-id="对育种决策的直接启示">4.3 对育种决策的直接启示</h3>
+<p>如果把这些结果转化为更接近操作层面的建议，优先级大致如下：</p>
+<ol type="1">
+<li><p><strong>优先扩大有效留种面，而不是只扩大候选个体总数。</strong><br>
+对高繁殖力水产动物而言，增加候选个体数并不自动等于增加有效多样性；真正关键的是提高进入下一轮配种的独立家系数和独立亲本数。</p></li>
+<li><p><strong>控制家系间贡献方差，而不只是限制单个明星亲本。</strong><br>
+仅限制少数高频父母本常常不够，更应关注若干优势家系是否整体持续占据配种与选留资源。</p></li>
+<li><p><strong>把长尾家系管理为“可恢复资源”。</strong><br>
+当 <code>feH/fe</code> 和 <code>faH/fa</code> 仍高于 1 时，说明稀有谱系尚未彻底断裂。此时应通过计划交配、目标留种或关键家系保护，把低频来源重新导入核心群，而不是等其完全消失后再补救。</p></li>
+<li><p><strong>把年度监控重点放在趋势而不是单点数值。</strong><br>
+对家系选育项目而言，更重要的是连续观察 <code>fa/fe</code>、<code>LambdaD</code>、<code>THalf</code>、平均 <code>F</code> 与 <code>Ne</code> 是否同步恶化，而不是孤立解读某一年的绝对值。</p></li>
+</ol>
+</section>
+<section id="vispedigree-在方法学上的合适定位" class="level3">
+<h3 class="anchored" data-anchor-id="vispedigree-在方法学上的合适定位">4.4 <code>visPedigree</code> 在方法学上的合适定位</h3>
+<p>对百万级水产系谱而言，<code>visPedigree</code> 的最佳定位不是“整图绘制工具”，而是一套由三个层次组成的分析框架：</p>
+<ul>
+<li><code>tidyped()</code> 负责把跨年度、跨批次的原始系谱整理成稳定分析对象；</li>
+<li><code>pediv()</code> 负责把多样性问题精确地落到当前参考群体；</li>
+<li><code>pedhalflife()</code> 负责把长期家系收缩过程转化为可监控的趋势指标；</li>
+<li><code>inbreed()</code> 与 <code>pedne()</code> 负责把结构收缩进一步转换为近交累积和有效群体大小的管理解释；</li>
+<li><code>visped()</code> 负责针对焦点个体、关键祖先和局部家系问题提供可解释图形。</li>
+</ul>
+<p>换句话说，<code>visPedigree</code> 在百万系谱中的方法学价值，不是“所有任务都在图上完成”，而是把<strong>结构整理、指标诊断、趋势判断和局部审计</strong>组合成一个连贯流程。</p>
+</section>
+</section>
+<section id="五面向水产家系选育的标准分析与决策流程" class="level2">
+<h2 class="anchored" data-anchor-id="五面向水产家系选育的标准分析与决策流程">五、面向水产家系选育的标准分析与决策流程</h2>
+<p>如果把本文压缩成一套更接近方法学短文的推荐流程，我会建议把百万系谱分析组织为以下 5 步：</p>
+<ol type="1">
+<li><p><strong>冻结年度系谱并建立主分析对象。</strong><br>
+每个育种周期结束后，先将当年亲子鉴定结果、年级群、性别和家系信息并入总系谱，再统一运行 <code>tidyped()</code>。这一步相当于建立全年唯一的分析底座。</p></li>
+<li><p><strong>以当前管理单元定义参考群体。</strong><br>
+参考群体不应笼统定义为“全库”。更合理的做法是分别定义候选留种群、核心群后备群、计划配种群或保种家系群，然后分别运行 <code>pediv()</code>。</p></li>
+<li><p><strong>用 <code>pediv()</code> 做结构诊断，而不是只报一个多样性值。</strong><br>
+重点同时查看 <code>fe</code>、<code>fa</code>、<code>fg</code>、<code>fa/fe</code>、<code>feH/fe</code> 和 <code>faH/fa</code>。其中：</p>
+<ul>
+<li><code>fa/fe</code> 持续下降，提示家系瓶颈加重；</li>
+<li><code>fg</code> 很低，提示漂变累积显著；</li>
+<li><code>feH/fe</code> 或 <code>faH/fa</code> 仍高，提示稀有家系仍有恢复空间。</li>
+</ul></li>
+<li><p><strong>用 <code>pedhalflife()</code>、<code>inbreed()</code> 和 <code>pedne()</code> 做年度趋势监控。</strong><br>
+每年更新一次 <code>LambdaE</code>、<code>LambdaB</code>、<code>LambdaD</code>、<code>THalf</code>、平均 <code>F</code> 与 <code>Ne</code>。如果 <code>LambdaD</code> 长期占主导且 <code>Ne</code> 偏低，应优先检讨有效留种家系数和家系间贡献均衡；如果 <code>LambdaB</code> 抬升，则应回查中间世代是否出现明显家系淘汰或亲本集中。</p></li>
+<li><p><strong>仅针对问题节点做局部可视化与审计。</strong><br>
+当指标提示某些家系或祖先贡献异常时，再通过 <code>visped()</code> 回到局部 pedigree，检查其扩张路径、同胞结构和近几代保留情况。图形在这里承担的是“结构审计”角色，而不是代替指标分析。</p></li>
+</ol>
+<p>这套流程特别适合水产动物家系选育项目中的年度复盘、配种前评估和核心群多样性监控。</p>
+</section>
+<section id="六总结" class="level2">
+<h2 class="anchored" data-anchor-id="六总结">六、总结</h2>
+<p>从水产动物家系选育的理论出发，百万系谱分析的关键并不在于“能否处理一百万个体”，而在于<strong>能否把家系贡献、亲本利用和多样性流失过程转化为可解释、可追踪、可干预的管理信息</strong>。</p>
+<p>对这份包含 1,000,150 个体、50 个世代的示例数据，<code>visPedigree</code> 1.8.0 给出的核心结论是：</p>
+<ul>
+<li>当前参考群体的始祖基础并非主要矛盾；</li>
+<li>家系在中间世代的实现存在明显瓶颈；</li>
+<li>多样性损失的主导来源是持续漂变，而不是单纯的建群失衡；</li>
+<li>这种结构收缩已经转化为持续近交累积，且 pedigree-based <code>Ne</code> 仍处于百以内量级；</li>
+<li>低频始祖和祖先仍部分保留，说明长尾家系并非没有恢复空间。</li>
+</ul>
+<p>因此，对育种方案最有意义的建议不是泛泛地“增加种群规模”，而是更具体地：</p>
+<ol type="1">
+<li>扩大进入下一轮配种的独立家系数和独立亲本数；</li>
+<li>控制家系间贡献方差，避免优势家系长期垄断后续世代；</li>
+<li>针对仍有残余贡献的低频家系开展计划续留；</li>
+<li>将 <code>pediv()</code>、<code>pedhalflife()</code>、<code>inbreed()</code> 与 <code>pedne()</code> 作为年度固定监控环节，而不是临时分析工具。</li>
+</ol>
+<p>如果说百万系谱真正能为水产育种者带来的价值是什么，那么答案不是“看见更大的图”，而是<strong>更早地识别家系收缩、更准确地定位风险来源，并把这些信号转化为下一轮配种和留种的实际约束条件</strong>。这也是 <code>visPedigree</code> 1.8.0 在大规模水产系谱分析中的方法学意义。</p>
+
+
+</section>
+
+ ]]></description>
+  <category>Breeding</category>
+  <category>Pedigree Analysis</category>
+  <category>visPedigree</category>
+  <guid>https://luansheng.github.io/lsblog/posts/million_ped-20260324/</guid>
+  <pubDate>Mon, 23 Mar 2026 16:00:00 GMT</pubDate>
+</item>
 <item>
   <title>系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析</title>
   <dc:creator>Sheng Luan</dc:creator>
