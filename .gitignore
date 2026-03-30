@@ -5,7 +5,7 @@
 .DS_Store
 /_freeze/
 **/*.quarto_ipynb
-/*_files/
-/*_cache/
+**/*_files/
+**/*_cache/
 posts/faHfeH-20260320/G09_prunedPed.csv
 posts/million_ped-20260324/pedigree_mixed_founder_to_G50.csv

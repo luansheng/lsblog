@@ -2,6 +2,9 @@
 
 # freeze computational output
 # (see https://quarto.org/docs/projects/code-execution.html#freeze)
+# Important: when code / figures / sampled outputs change, refresh the post
+# before publishing, otherwise `quarto publish gh-pages` may reuse stale
+# frozen results. See repository SOP: PUBLISH-SOP.md
 freeze: true
 
 # Enable banner style title blocks
