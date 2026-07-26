@@ -42,6 +42,13 @@
     "text": "A pedigree of ten individuals fits on a napkin. A pedigree of ten thousand is a spreadsheet you cannot read. In animal breeding, conservation genetics, and genealogy, pedigrees routinely span hundreds or thousands of records — yet they are almost always stored the same way: three columns, Ind, Sire, Dam, repeated row after row.\nThis tutorial shows how to go from that raw table to publication-ready pedigree graphs in R, using visPedigree."
   },
   {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#getting-started",
+    "href": "posts/vispedigree-viz-20260725/index.html#getting-started",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Getting started",
+    "text": "Getting started\nInstall visPedigree from CRAN and load it:\ninstall.packages(\"visPedigree\")\nlibrary(visPedigree)\nYou are now ready to work with pedigree data."
+  },
+  {
     "objectID": "posts/vispedigree-viz-20260725/index.html#what-does-a-pedigree-look-like",
     "href": "posts/vispedigree-viz-20260725/index.html#what-does-a-pedigree-look-like",
     "title": "Visualizing complex pedigrees in R with visPedigree",

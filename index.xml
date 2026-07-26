@@ -23,16 +23,29 @@
 
 <p>A pedigree of ten individuals fits on a napkin. A pedigree of ten thousand is a spreadsheet you cannot read. In animal breeding, conservation genetics, and genealogy, pedigrees routinely span hundreds or thousands of records — yet they are almost always stored the same way: three columns, <code>Ind</code>, <code>Sire</code>, <code>Dam</code>, repeated row after row.</p>
 <p>This tutorial shows how to go from that raw table to publication-ready pedigree graphs in R, using <a href="https://github.com/luansheng/visPedigree">visPedigree</a>.</p>
+<section id="getting-started" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started">Getting started</h2>
+<p>Install visPedigree from CRAN and load it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"visPedigree"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(visPedigree)</span></code></pre></div></div>
+<p>You are now ready to work with pedigree data.</p>
+</section>
 <section id="what-does-a-pedigree-look-like" class="level2">
 <h2 class="anchored" data-anchor-id="what-does-a-pedigree-look-like">What does a pedigree look like?</h2>
 <p>A pedigree is fundamentally a parent-offspring table. Every row names one individual and, if known, its sire and dam. Here is a tiny example with six individuals across three generations:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">tiny_ped <span class="ot" style="color: #003B4F;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">tiny_ped <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">data.frame</span>(</span>
-<span id="cb1-2">  <span class="at" style="color: #657422;
+<span id="cb2-2">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">Ind  =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -49,7 +62,7 @@ background-color: null;
 font-style: inherit;">"Offspring1"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Offspring2"</span>),</span>
-<span id="cb1-3">  <span class="at" style="color: #657422;
+<span id="cb2-3">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">Sire =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -66,7 +79,7 @@ background-color: null;
 font-style: inherit;">"Sire2"</span>,     <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Sire2"</span>),</span>
-<span id="cb1-4">  <span class="at" style="color: #657422;
+<span id="cb2-4">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">Dam  =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -83,7 +96,7 @@ background-color: null;
 font-style: inherit;">"Dam2"</span>,      <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Dam2"</span>),</span>
-<span id="cb1-5">  <span class="at" style="color: #657422;
+<span id="cb2-5">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">Sex  =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -100,8 +113,8 @@ background-color: null;
 font-style: inherit;">"male"</span>,     <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"female"</span>)</span>
-<span id="cb1-6">)</span>
-<span id="cb1-7">tiny_ped</span></code></pre></div></div>
+<span id="cb2-6">)</span>
+<span id="cb2-7">tiny_ped</span></code></pre></div></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>         Ind  Sire  Dam    Sex
 1      Sire1  &lt;NA&gt; &lt;NA&gt;   male
@@ -114,12 +127,12 @@ font-style: inherit;">"female"</span>)</span>
 </div>
 <p>The table tells you who the parents are, but it gives no visual sense of relationships, generations, or family structure. Now let visPedigree turn it into a graph:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">tiny_tidy <span class="ot" style="color: #003B4F;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">tiny_tidy <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">tidyped</span>(tiny_ped)</span>
-<span id="cb3-2"><span class="fu" style="color: #4758AB;
+<span id="cb4-2"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tiny_tidy, <span class="at" style="color: #657422;
 background-color: null;
@@ -155,13 +168,13 @@ Figure&nbsp;1: The same pedigree drawn by visped(). Each row is a generation. Ci
 <h2 class="anchored" data-anchor-id="preparing-pedigree-data-with-tidyped">Preparing pedigree data with <code>tidyped()</code></h2>
 <p><code>tidyped()</code> validates, orders, and enriches your pedigree. Let us prepare a slightly larger pedigree that ships with the package:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">tidy_small <span class="ot" style="color: #003B4F;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">tidy_small <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">tidyped</span>(</span>
-<span id="cb4-2">  small_ped,</span>
-<span id="cb4-3">  <span class="at" style="color: #657422;
+<span id="cb5-2">  small_ped,</span>
+<span id="cb5-3">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">cand =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -172,12 +185,12 @@ background-color: null;
 font-style: inherit;">"Z1"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Z2"</span>)</span>
-<span id="cb4-4">)</span>
-<span id="cb4-5"></span>
-<span id="cb4-6"><span class="co" style="color: #5E5E5E;
+<span id="cb5-4">)</span>
+<span id="cb5-5"></span>
+<span id="cb5-6"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># What did tidyped() produce?</span></span>
-<span id="cb4-7"><span class="fu" style="color: #4758AB;
+<span id="cb5-7"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">summary</span>(tidy_small)</span></code></pre></div></div>
 <div class="cell-output cell-output-stdout">
@@ -238,7 +251,7 @@ Candidates Traced:  3
 <h2 class="anchored" data-anchor-id="your-first-pedigree-graph">Your first pedigree graph</h2>
 <p>Once the pedigree is tidied, one line of code produces the plot:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
 background-color: null;
@@ -264,7 +277,7 @@ Figure&nbsp;2: The small_ped pedigree, tidied with candidate individuals Y, Z1, 
 </div>
 <p>The default visual encoding (<code>shapeby = "sex"</code>) uses circles for females, squares for males, and diamonds for unknown sex. Each row of connected nodes is a generation, aligned for easy comparison.</p>
 <p>To save the graph as a publication-ready vector file, add a filename:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
 background-color: null;
@@ -273,7 +286,7 @@ background-color: null;
 font-style: inherit;">"my_pedigree.pdf"</span>)   <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># PDF</span></span>
-<span id="cb7-2"><span class="fu" style="color: #4758AB;
+<span id="cb8-2"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
 background-color: null;
@@ -284,15 +297,15 @@ background-color: null;
 font-style: inherit;"># SVG (editable in Illustrator)</span></span></code></pre></div></div>
 <p>For deep pedigrees, generation labels help readers navigate the graph. Use <code>genlab = TRUE</code> for default <code>G1, G2, ...</code> labels, or a character vector for custom text:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">tidy_simple <span class="ot" style="color: #003B4F;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">tidy_simple <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">tidyped</span>(simple_ped)</span>
-<span id="cb8-2"><span class="fu" style="color: #4758AB;
+<span id="cb9-2"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_simple,</span>
-<span id="cb8-3">       <span class="at" style="color: #657422;
+<span id="cb9-3">       <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">genlab =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -309,7 +322,7 @@ background-color: null;
 font-style: inherit;">"G4"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"G5"</span>),</span>
-<span id="cb8-4">       <span class="at" style="color: #657422;
+<span id="cb9-4">       <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
 background-color: null;
@@ -337,7 +350,7 @@ Figure&nbsp;3: Custom generation labels on the simple_ped pedigree.
 <h2 class="anchored" data-anchor-id="focusing-on-individuals-highlight-and-trace">Focusing on individuals — highlight and trace</h2>
 <p>In a large pedigree, you often need to draw attention to specific individuals: breeding candidates, genotyped animals, or carriers of a particular allele. The <code>highlight</code> argument does exactly that:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
 background-color: null;
@@ -367,10 +380,10 @@ Figure&nbsp;4: Individual Y is highlighted with a purple border and light purple
 </div>
 <p>You can highlight multiple individuals and customize the colors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_small,</span>
-<span id="cb10-2">  <span class="at" style="color: #657422;
+<span id="cb11-2">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">highlight =</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -383,7 +396,7 @@ background-color: null;
 font-style: inherit;">"Y"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Z1"</span>),</span>
-<span id="cb10-3">                   <span class="at" style="color: #657422;
+<span id="cb11-3">                   <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">frame.color =</span> <span class="st" style="color: #20794D;
 background-color: null;
@@ -392,7 +405,7 @@ background-color: null;
 font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"#81c784"</span>),</span>
-<span id="cb10-4">  <span class="at" style="color: #657422;
+<span id="cb11-4">  <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
 background-color: null;
@@ -416,7 +429,7 @@ Figure&nbsp;5: Y and Z1 highlighted with a custom green color scheme.
 </div>
 <p>More useful still is tracing — showing only an individual and its ancestors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
 background-color: null;
@@ -455,33 +468,33 @@ Figure&nbsp;6: Tracing Y’s ancestors with trace = “up”. Only Y and its dir
 <p>Real-world pedigrees often contain large full-sib families. In aquatic species like shrimp and fish, a single mating can produce dozens of full siblings. Plotting every individual creates an unreadable wall of nodes.</p>
 <p>Here we extract three full-sib families from a real breeding program — 1,120 offspring across three sire–dam pairs — and trace their ancestry through nine generations:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">data</span>(big_family_size_ped)</span>
-<span id="cb12-2">tp <span class="ot" style="color: #003B4F;
+<span id="cb13-2">tp <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">tidyped</span>(big_family_size_ped)</span>
-<span id="cb12-3"></span>
-<span id="cb12-4"><span class="co" style="color: #5E5E5E;
+<span id="cb13-3"></span>
+<span id="cb13-4"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Select offspring from three sire–dam pairs in the most recent generation</span></span>
-<span id="cb12-5">maxgen <span class="ot" style="color: #003B4F;
+<span id="cb13-5">maxgen <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">max</span>(tp<span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">$</span>Gen)</span>
-<span id="cb12-6">cand_offspring <span class="ot" style="color: #003B4F;
+<span id="cb13-6">cand_offspring <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> tp[Gen <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> maxgen <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">&amp;</span> (</span>
-<span id="cb12-7">  (Sire <span class="sc" style="color: #5E5E5E;
+<span id="cb13-7">  (Sire <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> <span class="st" style="color: #20794D;
 background-color: null;
@@ -494,7 +507,7 @@ background-color: null;
 font-style: inherit;">"7Z0Y"</span>) <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">|</span></span>
-<span id="cb12-8">  (Sire <span class="sc" style="color: #5E5E5E;
+<span id="cb13-8">  (Sire <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> <span class="st" style="color: #20794D;
 background-color: null;
@@ -507,7 +520,7 @@ background-color: null;
 font-style: inherit;">"7ZZ0"</span>) <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">|</span></span>
-<span id="cb12-9">  (Sire <span class="sc" style="color: #5E5E5E;
+<span id="cb13-9">  (Sire <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> <span class="st" style="color: #20794D;
 background-color: null;
@@ -518,12 +531,12 @@ background-color: null;
 font-style: inherit;">==</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"7093"</span>)</span>
-<span id="cb12-10">), Ind]</span>
-<span id="cb12-11"></span>
-<span id="cb12-12"><span class="co" style="color: #5E5E5E;
+<span id="cb13-10">), Ind]</span>
+<span id="cb13-11"></span>
+<span id="cb13-12"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Trace up through all ancestors</span></span>
-<span id="cb12-13">sub_ped <span class="ot" style="color: #003B4F;
+<span id="cb13-13">sub_ped <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -534,11 +547,11 @@ background-color: null;
 font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"up"</span>)</span>
-<span id="cb12-14"></span>
-<span id="cb12-15"><span class="co" style="color: #5E5E5E;
+<span id="cb13-14"></span>
+<span id="cb13-15"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Shorten labels to last 4 characters to reduce clutter</span></span>
-<span id="cb12-16">sub_ped<span class="sc" style="color: #5E5E5E;
+<span id="cb13-16">sub_ped<span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">$</span>ShortID <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -559,8 +572,8 @@ background-color: null;
 font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>))</span>
-<span id="cb12-17"></span>
-<span id="cb12-18"><span class="fu" style="color: #4758AB;
+<span id="cb13-17"></span>
+<span id="cb13-18"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(sub_ped, <span class="at" style="color: #657422;
 background-color: null;
@@ -571,7 +584,7 @@ background-color: null;
 font-style: inherit;">compact =</span> <span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">TRUE</span>,</span>
-<span id="cb12-19">       <span class="at" style="color: #657422;
+<span id="cb13-19">       <span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
 background-color: null;
@@ -602,7 +615,7 @@ Figure&nbsp;7: Three large full-sib families compacted into FS×N nodes, with ni
 <h2 class="anchored" data-anchor-id="inbreeding-coefficients-on-the-graph">Inbreeding coefficients on the graph</h2>
 <p>Inbreeding is a central concern in breeding programs and conservation genetics. Run <code>tidyped()</code> with <code>inbreed = TRUE</code> to compute inbreeding coefficients, then set <code>showf = TRUE</code> in <code>visped()</code> to display them on the graph:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">tidy_inbred <span class="ot" style="color: #003B4F;
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">tidy_inbred <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
 background-color: null;
@@ -611,7 +624,7 @@ background-color: null;
 font-style: inherit;">inbreed =</span> <span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">TRUE</span>)</span>
-<span id="cb13-2"><span class="fu" style="color: #4758AB;
+<span id="cb14-2"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">visped</span>(tidy_inbred, <span class="at" style="color: #657422;
 background-color: null;
@@ -661,7 +674,7 @@ Figure&nbsp;8: Inbreeding coefficients displayed alongside individual IDs. Indiv
 </ul>
 <p>If you work with pedigree data in R — whether in animal breeding, conservation genetics, or genealogy — visPedigree provides a unified workflow from data preparation to publication-ready output.</p>
 <p>Install from CRAN:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
 background-color: null;

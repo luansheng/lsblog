@@ -206,17 +206,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>A pedigree of ten individuals fits on a napkin. A pedigree of ten thousand is a spreadsheet you cannot read. In animal breeding, conservation genetics, and genealogy, pedigrees routinely span hundreds or thousands of records — yet they are almost always stored the same way: three columns, <code>Ind</code>, <code>Sire</code>, <code>Dam</code>, repeated row after row.</p>
 <p>This tutorial shows how to go from that raw table to publication-ready pedigree graphs in R, using <a href="https://github.com/luansheng/visPedigree">visPedigree</a>.</p>
+<section id="getting-started" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started">Getting started</h2>
+<p>Install visPedigree from CRAN and load it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"visPedigree"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(visPedigree)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>You are now ready to work with pedigree data.</p>
+</section>
 <section id="what-does-a-pedigree-look-like" class="level2">
 <h2 class="anchored" data-anchor-id="what-does-a-pedigree-look-like">What does a pedigree look like?</h2>
 <p>A pedigree is fundamentally a parent-offspring table. Every row names one individual and, if known, its sire and dam. Here is a tiny example with six individuals across three generations:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>tiny_ped <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ind  =</span> <span class="fu">c</span>(<span class="st">"Sire1"</span>, <span class="st">"Dam1"</span>, <span class="st">"Sire2"</span>, <span class="st">"Dam2"</span>, <span class="st">"Offspring1"</span>, <span class="st">"Offspring2"</span>),</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sire =</span> <span class="fu">c</span>(<span class="cn">NA</span>,      <span class="cn">NA</span>,     <span class="st">"Sire1"</span>, <span class="cn">NA</span>,      <span class="st">"Sire2"</span>,     <span class="st">"Sire2"</span>),</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Dam  =</span> <span class="fu">c</span>(<span class="cn">NA</span>,      <span class="cn">NA</span>,     <span class="st">"Dam1"</span>,  <span class="cn">NA</span>,      <span class="st">"Dam2"</span>,      <span class="st">"Dam2"</span>),</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex  =</span> <span class="fu">c</span>(<span class="st">"male"</span>,  <span class="st">"female"</span>, <span class="st">"male"</span>, <span class="st">"female"</span>, <span class="st">"male"</span>,     <span class="st">"female"</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>tiny_ped</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>tiny_ped <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ind  =</span> <span class="fu">c</span>(<span class="st">"Sire1"</span>, <span class="st">"Dam1"</span>, <span class="st">"Sire2"</span>, <span class="st">"Dam2"</span>, <span class="st">"Offspring1"</span>, <span class="st">"Offspring2"</span>),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sire =</span> <span class="fu">c</span>(<span class="cn">NA</span>,      <span class="cn">NA</span>,     <span class="st">"Sire1"</span>, <span class="cn">NA</span>,      <span class="st">"Sire2"</span>,     <span class="st">"Sire2"</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Dam  =</span> <span class="fu">c</span>(<span class="cn">NA</span>,      <span class="cn">NA</span>,     <span class="st">"Dam1"</span>,  <span class="cn">NA</span>,      <span class="st">"Dam2"</span>,      <span class="st">"Dam2"</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex  =</span> <span class="fu">c</span>(<span class="st">"male"</span>,  <span class="st">"female"</span>, <span class="st">"male"</span>, <span class="st">"female"</span>, <span class="st">"male"</span>,     <span class="st">"female"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>tiny_ped</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>         Ind  Sire  Dam    Sex
 1      Sire1  &lt;NA&gt; &lt;NA&gt;   male
@@ -229,8 +236,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>The table tells you who the parents are, but it gives no visual sense of relationships, generations, or family structure. Now let visPedigree turn it into a graph:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>tiny_tidy <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(tiny_ped)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tiny_tidy, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">21</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>tiny_tidy <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(tiny_ped)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tiny_tidy, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">21</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-tiny-visped" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -256,13 +263,13 @@ Figure&nbsp;1: The same pedigree drawn by visped(). Each row is a generation. Ci
 <h2 class="anchored" data-anchor-id="preparing-pedigree-data-with-tidyped">Preparing pedigree data with <code>tidyped()</code></h2>
 <p><code>tidyped()</code> validates, orders, and enriches your pedigree. Let us prepare a slightly larger pedigree that ships with the package:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>tidy_small <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  small_ped,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">cand =</span> <span class="fu">c</span>(<span class="st">"Y"</span>, <span class="st">"Z1"</span>, <span class="st">"Z2"</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># What did tidyped() produce?</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tidy_small)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>tidy_small <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  small_ped,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">cand =</span> <span class="fu">c</span>(<span class="st">"Y"</span>, <span class="st">"Z1"</span>, <span class="st">"Z2"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># What did tidyped() produce?</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tidy_small)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Pedigree Summary
 ================
@@ -321,7 +328,7 @@ Candidates Traced:  3
 <h2 class="anchored" data-anchor-id="your-first-pedigree-graph">Your first pedigree graph</h2>
 <p>Once the pedigree is tidied, one line of code produces the plot:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-smallped" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -337,14 +344,14 @@ Figure&nbsp;2: The small_ped pedigree, tidied with candidate individuals Y, Z1, 
 </div>
 <p>The default visual encoding (<code>shapeby = "sex"</code>) uses circles for females, squares for males, and diamonds for unknown sex. Each row of connected nodes is a generation, aligned for easy comparison.</p>
 <p>To save the graph as a publication-ready vector file, add a filename:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">file =</span> <span class="st">"my_pedigree.pdf"</span>)   <span class="co"># PDF</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">file =</span> <span class="st">"my_pedigree.svg"</span>)   <span class="co"># SVG (editable in Illustrator)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">file =</span> <span class="st">"my_pedigree.pdf"</span>)   <span class="co"># PDF</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">file =</span> <span class="st">"my_pedigree.svg"</span>)   <span class="co"># SVG (editable in Illustrator)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>For deep pedigrees, generation labels help readers navigate the graph. Use <code>genlab = TRUE</code> for default <code>G1, G2, ...</code> labels, or a character vector for custom text:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>tidy_simple <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(simple_ped)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_simple,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">genlab =</span> <span class="fu">c</span>(<span class="st">"Founder"</span>, <span class="st">"G1"</span>, <span class="st">"G2"</span>, <span class="st">"G3"</span>, <span class="st">"G4"</span>, <span class="st">"G5"</span>),</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex =</span> <span class="fl">0.3</span>, <span class="at">symbolsize =</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>tidy_simple <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(simple_ped)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_simple,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">genlab =</span> <span class="fu">c</span>(<span class="st">"Founder"</span>, <span class="st">"G1"</span>, <span class="st">"G2"</span>, <span class="st">"G3"</span>, <span class="st">"G4"</span>, <span class="st">"G5"</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex =</span> <span class="fl">0.3</span>, <span class="at">symbolsize =</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-genlab" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -364,7 +371,7 @@ Figure&nbsp;3: Custom generation labels on the simple_ped pedigree.
 <h2 class="anchored" data-anchor-id="focusing-on-individuals-highlight-and-trace">Focusing on individuals — highlight and trace</h2>
 <p>In a large pedigree, you often need to draw attention to specific individuals: breeding candidates, genotyped animals, or carriers of a particular allele. The <code>highlight</code> argument does exactly that:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">highlight =</span> <span class="st">"Y"</span>, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">highlight =</span> <span class="st">"Y"</span>, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-highlight" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -380,10 +387,10 @@ Figure&nbsp;4: Individual Y is highlighted with a purple border and light purple
 </div>
 <p>You can highlight multiple individuals and customize the colors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small,</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">highlight =</span> <span class="fu">list</span>(<span class="at">ids =</span> <span class="fu">c</span>(<span class="st">"Y"</span>, <span class="st">"Z1"</span>),</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">frame.color =</span> <span class="st">"#4caf50"</span>, <span class="at">color =</span> <span class="st">"#81c784"</span>),</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">highlight =</span> <span class="fu">list</span>(<span class="at">ids =</span> <span class="fu">c</span>(<span class="st">"Y"</span>, <span class="st">"Z1"</span>),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">frame.color =</span> <span class="st">"#4caf50"</span>, <span class="at">color =</span> <span class="st">"#81c784"</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-highlight-custom" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -399,7 +406,7 @@ Figure&nbsp;5: Y and Z1 highlighted with a custom green color scheme.
 </div>
 <p>More useful still is tracing — showing only an individual and its ancestors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">highlight =</span> <span class="st">"Y"</span>, <span class="at">trace =</span> <span class="st">"up"</span>, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_small, <span class="at">highlight =</span> <span class="st">"Y"</span>, <span class="at">trace =</span> <span class="st">"up"</span>, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-trace" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -420,25 +427,25 @@ Figure&nbsp;6: Tracing Y’s ancestors with trace = “up”. Only Y and its dir
 <p>Real-world pedigrees often contain large full-sib families. In aquatic species like shrimp and fish, a single mating can produce dozens of full siblings. Plotting every individual creates an unreadable wall of nodes.</p>
 <p>Here we extract three full-sib families from a real breeding program — 1,120 offspring across three sire–dam pairs — and trace their ancestry through nine generations:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(big_family_size_ped)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>tp <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(big_family_size_ped)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Select offspring from three sire–dam pairs in the most recent generation</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>maxgen <span class="ot">&lt;-</span> <span class="fu">max</span>(tp<span class="sc">$</span>Gen)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>cand_offspring <span class="ot">&lt;-</span> tp[Gen <span class="sc">==</span> maxgen <span class="sc">&amp;</span> (</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  (Sire <span class="sc">==</span> <span class="st">"70Z5"</span> <span class="sc">&amp;</span> Dam <span class="sc">==</span> <span class="st">"7Z0Y"</span>) <span class="sc">|</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  (Sire <span class="sc">==</span> <span class="st">"70YZ"</span> <span class="sc">&amp;</span> Dam <span class="sc">==</span> <span class="st">"7ZZ0"</span>) <span class="sc">|</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  (Sire <span class="sc">==</span> <span class="st">"7009"</span> <span class="sc">&amp;</span> Dam <span class="sc">==</span> <span class="st">"7093"</span>)</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>), Ind]</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Trace up through all ancestors</span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>sub_ped <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(big_family_size_ped, <span class="at">cand =</span> cand_offspring, <span class="at">trace =</span> <span class="st">"up"</span>)</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Shorten labels to last 4 characters to reduce clutter</span></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>sub_ped<span class="sc">$</span>ShortID <span class="ot">&lt;-</span> <span class="fu">substring</span>(sub_ped<span class="sc">$</span>Ind, <span class="fu">pmax</span>(<span class="dv">1</span>, <span class="fu">nchar</span>(sub_ped<span class="sc">$</span>Ind) <span class="sc">-</span> <span class="dv">3</span>))</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(sub_ped, <span class="at">labelvar =</span> <span class="st">"ShortID"</span>, <span class="at">compact =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex =</span> <span class="fl">0.35</span>, <span class="at">symbolsize =</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(big_family_size_ped)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>tp <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(big_family_size_ped)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Select offspring from three sire–dam pairs in the most recent generation</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>maxgen <span class="ot">&lt;-</span> <span class="fu">max</span>(tp<span class="sc">$</span>Gen)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>cand_offspring <span class="ot">&lt;-</span> tp[Gen <span class="sc">==</span> maxgen <span class="sc">&amp;</span> (</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  (Sire <span class="sc">==</span> <span class="st">"70Z5"</span> <span class="sc">&amp;</span> Dam <span class="sc">==</span> <span class="st">"7Z0Y"</span>) <span class="sc">|</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  (Sire <span class="sc">==</span> <span class="st">"70YZ"</span> <span class="sc">&amp;</span> Dam <span class="sc">==</span> <span class="st">"7ZZ0"</span>) <span class="sc">|</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  (Sire <span class="sc">==</span> <span class="st">"7009"</span> <span class="sc">&amp;</span> Dam <span class="sc">==</span> <span class="st">"7093"</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>), Ind]</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Trace up through all ancestors</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>sub_ped <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(big_family_size_ped, <span class="at">cand =</span> cand_offspring, <span class="at">trace =</span> <span class="st">"up"</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Shorten labels to last 4 characters to reduce clutter</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>sub_ped<span class="sc">$</span>ShortID <span class="ot">&lt;-</span> <span class="fu">substring</span>(sub_ped<span class="sc">$</span>Ind, <span class="fu">pmax</span>(<span class="dv">1</span>, <span class="fu">nchar</span>(sub_ped<span class="sc">$</span>Ind) <span class="sc">-</span> <span class="dv">3</span>))</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(sub_ped, <span class="at">labelvar =</span> <span class="st">"ShortID"</span>, <span class="at">compact =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex =</span> <span class="fl">0.35</span>, <span class="at">symbolsize =</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-compact" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -461,8 +468,8 @@ Figure&nbsp;7: Three large full-sib families compacted into FS×N nodes, with ni
 <h2 class="anchored" data-anchor-id="inbreeding-coefficients-on-the-graph">Inbreeding coefficients on the graph</h2>
 <p>Inbreeding is a central concern in breeding programs and conservation genetics. Run <code>tidyped()</code> with <code>inbreed = TRUE</code> to compute inbreeding coefficients, then set <code>showf = TRUE</code> in <code>visped()</code> to display them on the graph:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>tidy_inbred <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(inbred_ped, <span class="at">inbreed =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_inbred, <span class="at">showf =</span> <span class="cn">TRUE</span>, <span class="at">cex =</span> <span class="fl">0.7</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>tidy_inbred <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(inbred_ped, <span class="at">inbreed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">visped</span>(tidy_inbred, <span class="at">showf =</span> <span class="cn">TRUE</span>, <span class="at">cex =</span> <span class="fl">0.7</span>, <span class="at">symbolsize =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div id="fig-showf" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -498,7 +505,7 @@ Figure&nbsp;8: Inbreeding coefficients displayed alongside individual IDs. Indiv
 </ul>
 <p>If you work with pedigree data in R — whether in animal breeding, conservation genetics, or genealogy — visPedigree provides a unified workflow from data preparation to publication-ready output.</p>
 <p>Install from CRAN:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"visPedigree"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"visPedigree"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Full documentation at <a href="https://luansheng.github.io/visPedigree/">luansheng.github.io/visPedigree</a>.</p>
 
 
