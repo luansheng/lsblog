@@ -1,5 +1,6 @@
 project:
   type: website
+  post-render: scripts/filter-rss.R
 
 website:
   description: "A blog built with Quarto"
