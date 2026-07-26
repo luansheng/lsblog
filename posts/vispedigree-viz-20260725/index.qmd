@@ -3,7 +3,7 @@ title: "Visualizing complex pedigrees in R with visPedigree"
 description: "Turn raw pedigree tables into publication-ready graphs in R. From simple family trees to compact views of thousands of individuals."
 author: "Sheng Luan"
 date: "2026-07-26"
-categories: [R, Visualization, Pedigree, Breeding]
+categories: [R, Visualization, Pedigree, Breeding, r-bloggers]
 image: cover.png
 format:
   html:
