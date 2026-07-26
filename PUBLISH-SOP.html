@@ -6,11 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Sheng Luan">
-<meta name="dcterms.date" content="2026-01-03">
-<meta name="description" content="大模型编程世代到来了">
 
-<title>Vibe coding – metabreeding</title>
+<title>publish-sop – metabreeding</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,27 +20,62 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
-<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../../">
-<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="../../site_libs/quarto-html/popper.min.js"></script>
-<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a1c87f40015067c62c82f3c4ff3d1ad4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a1c87f40015067c62c82f3c4ff3d1ad4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -73,17 +105,17 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="nav-fixed fullcontent quarto-light">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+  <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../index.html">
+    <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">metabreeding</span>
     </a>
   </div>
@@ -94,11 +126,11 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../../about.html"> 
+    <a class="nav-link" href="./about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../publication.html"> 
+    <a class="nav-link" href="./publication.html"> 
 <span class="menu-text">Publication</span></a>
   </li>  
   <li class="nav-item compact">
@@ -119,113 +151,150 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
-  <div class="quarto-title-banner page-columns page-full">
-    <div class="quarto-title column-body">
-      <h1 class="title">Vibe coding</h1>
-                  <div>
-        <div class="description">
-          大模型编程世代到来了
-        </div>
-      </div>
-                          <div class="quarto-categories">
-                <div class="quarto-category">code</div>
-                <div class="quarto-category">AI</div>
-              </div>
-                  </div>
-  </div>
-    
-  
-  <div class="quarto-title-meta">
-
-      <div>
-      <div class="quarto-title-meta-heading">Author</div>
-      <div class="quarto-title-meta-contents">
-               <p>Sheng Luan </p>
-            </div>
-    </div>
-      
-      <div>
-      <div class="quarto-title-meta-heading">Published</div>
-      <div class="quarto-title-meta-contents">
-        <p class="date">January 3, 2026</p>
-      </div>
-    </div>
-    
-      
-    </div>
-    
-  
-  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     
 <!-- main -->
-<main class="content quarto-banner-title-block" id="quarto-document-content">
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
 
-
-<p>目前<code>Vibe coding</code>很火。关于他的解释，Gemini 3 Pro是这么说的：</p>
+<section id="quarto-发布-sop" class="level1">
+<h1>Quarto 发布 SOP</h1>
+<p>适用仓库：<code>lsblog</code></p>
+<section id="背景" class="level2">
+<h2 class="anchored" data-anchor-id="背景">背景</h2>
+<p>当前 <a href="posts/_metadata.yml">posts/_metadata.yml</a> 设置了 <code>freeze: true</code>。</p>
+<p>这意味着：</p>
+<ul>
+<li><code>quarto publish gh-pages</code> 可能直接复用已有冻结结果；</li>
+<li>只改了代码块、图、随机抽样结果或执行输出时，<strong>源文件已变，但发布页可能还是旧内容</strong>；</li>
+<li>最常见的症状就是：本地 <code>.qmd</code> 看起来已更新，但线上页面仍停留在几小时前的旧版本。</li>
+</ul>
+<p>因此，发布前要先判断这次修改属于哪一类。</p>
+<hr>
+</section>
+<section id="一标准判断" class="level2">
+<h2 class="anchored" data-anchor-id="一标准判断">一、标准判断</h2>
+<section id="a.-只改正文不改代码执行结果" class="level3">
+<h3 class="anchored" data-anchor-id="a.-只改正文不改代码执行结果">A. 只改正文，不改代码执行结果</h3>
+<p>例如：</p>
+<ul>
+<li>改文字</li>
+<li>改标题</li>
+<li>改表述</li>
+<li>改不依赖代码执行的说明段落</li>
+</ul>
+<p>这类修改通常可以直接发布：</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="b.-改了代码图随机抽样表格输出" class="level3">
+<h3 class="anchored" data-anchor-id="b.-改了代码图随机抽样表格输出">B. 改了代码、图、随机抽样、表格输出</h3>
+<p>例如：</p>
+<ul>
+<li>改 R 代码块</li>
+<li>改 <code>sample()</code>、<code>set.seed()</code></li>
+<li>改图参数</li>
+<li>改 <code>visped()</code>、<code>ggplot()</code> 输出</li>
+<li>改统计结果或数据路径</li>
+<li>改任何会影响 <code>_freeze</code> / <code>_site</code> 输出的内容</li>
+</ul>
+<p>这类修改必须先刷新冻结结果，再发布：</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render posts/your-post/index.qmd <span class="at">--cache-refresh</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="c.-同时改了多篇带执行结果的文章" class="level3">
+<h3 class="anchored" data-anchor-id="c.-同时改了多篇带执行结果的文章">C. 同时改了多篇带执行结果的文章</h3>
+<p>这类情况直接全站刷新后再发布：</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render <span class="at">--cache-refresh</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="二固定发布流程" class="level2">
+<h2 class="anchored" data-anchor-id="二固定发布流程">二、固定发布流程</h2>
+<p>建议以后固定使用下面的 5 步。</p>
+<section id="确认当前在源码分支" class="level3">
+<h3 class="anchored" data-anchor-id="确认当前在源码分支">1. 确认当前在源码分支</h3>
+<p>推荐在 <code>main</code> 上编辑和发布，不要把 <code>gh-pages</code> 当作主写作分支。</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> branch <span class="at">--show-current</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="判断是否涉及冻结输出" class="level3">
+<h3 class="anchored" data-anchor-id="判断是否涉及冻结输出">2. 判断是否涉及冻结输出</h3>
+<p>只要修改包含以下任一项，都按“需要刷新 freeze”处理：</p>
+<ul>
+<li>代码块</li>
+<li>图形</li>
+<li>随机抽样</li>
+<li>表格结果</li>
+<li>计算输出</li>
+<li>依赖数据</li>
+</ul>
+</section>
+<section id="先-render再-publish" class="level3">
+<h3 class="anchored" data-anchor-id="先-render再-publish">3. 先 render，再 publish</h3>
+<ul>
+<li>单篇变动：刷新单篇</li>
+<li>多篇变动：刷新全站</li>
+</ul>
+</section>
+<section id="发布到-gh-pages" class="level3">
+<h3 class="anchored" data-anchor-id="发布到-gh-pages">4. 发布到 <code>gh-pages</code></h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="发布后做一次核对" class="level3">
+<h3 class="anchored" data-anchor-id="发布后做一次核对">5. 发布后做一次核对</h3>
+<p>至少检查三件事：</p>
+<ul>
+<li>本地生成页 <code>_site/.../index.html</code> 是否已更新</li>
+<li>冻结结果 <code>_freeze/.../html.json</code> 是否已更新</li>
+<li>发布分支 <code>gh-pages</code> 上对应 HTML 是否已包含新文字</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="三推荐的日常用法" class="level2">
+<h2 class="anchored" data-anchor-id="三推荐的日常用法">三、推荐的日常用法</h2>
+<section id="情形-1只改文字" class="level3">
+<h3 class="anchored" data-anchor-id="情形-1只改文字">情形 1：只改文字</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="情形-2只改一篇带代码的文章" class="level3">
+<h3 class="anchored" data-anchor-id="情形-2只改一篇带代码的文章">情形 2：只改一篇带代码的文章</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render posts/million_ped-20260324/index.qmd <span class="at">--cache-refresh</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="情形-3改了多篇文章或不确定哪些输出受影响" class="level3">
+<h3 class="anchored" data-anchor-id="情形-3改了多篇文章或不确定哪些输出受影响">情形 3：改了多篇文章或不确定哪些输出受影响</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render <span class="at">--cache-refresh</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+</section>
+<section id="四出问题时先检查什么" class="level2">
+<h2 class="anchored" data-anchor-id="四出问题时先检查什么">四、出问题时先检查什么</h2>
+<p>如果线上页面没有更新，按这个顺序排查：</p>
+<ol type="1">
+<li><strong>先看源文件是否真的改了</strong></li>
+<li><strong>再看 <code>_freeze</code> 是否还是旧结果</strong></li>
+<li><strong>再看 <code>_site</code> 是否仍是旧 HTML</strong></li>
+<li><strong>再看 <code>gh-pages</code> 分支上的 HTML 是否更新</strong></li>
+<li><strong>最后再怀疑 GitHub Pages 缓存</strong></li>
+</ol>
+<p>经验上，大多数问题都不是 <code>publish</code> 失败，而是 <strong><code>freeze: true</code> 复用了旧执行结果</strong>。</p>
+<hr>
+</section>
+<section id="五一个最稳妥的原则" class="level2">
+<h2 class="anchored" data-anchor-id="五一个最稳妥的原则">五、一个最稳妥的原则</h2>
 <blockquote class="blockquote">
-<p>Vibe coding是一种利用人工智能技术辅助编程的方法。它通过<strong>自然语言处理</strong>和机器学习算法，帮助开发者更高效地编写代码、调试程序和优化性能。Vibe coding可以理解开发者的意图，自动生成代码片段，提供实时的代码建议，从而提高编程效率和代码质量。</p>
+<p>只要这次修改会影响代码执行结果，就不要直接 <code>quarto publish gh-pages</code>，而要先 <code>quarto render ... --cache-refresh</code>。</p>
 </blockquote>
-<p>最近想试一下，<code>Vibe coding</code>能不能帮我更新之前的一个R包visPedigree包的相关功能。说实话，年龄大了，很多R的语法都记不清楚了。特别是原来一直搞不清楚的S3等高级写法。这次visPedigree包更新，主要是增加了2功能：</p>
-<ol type="1">
-<li><p>高亮某些个体。通过跟大模型的互动，添加了<code>highlight</code>及<code>trace</code>两个参数，控制高亮哪些个体。</p></li>
-<li><p>显示近交系数。在<code>tidyped()</code>中添加了<code>inbreed</code>参数，在<code>visped()</code>函数中添加了<code>showf</code>参数。</p></li>
-<li><p>优化了<code>visped()</code> 函数结构，拆解为4个逻辑性更强的函数。</p></li>
-<li><p>新加参数相关文档的编写和优化。这个很大程度解放了开发者。文档编写实在是太繁琐。</p></li>
-<li><p>为cran包发布进行检查和优化。</p></li>
-</ol>
-<p>上述都是工作量很大的工作。通过<code>Vibe coding</code>真的是解放了开发者。对于我来说，相当于聘用了一个专业的编程助手，我有什么想法，都可以帮我实现。之前卡在<strong>不知道怎么做</strong>上，现在<strong>知道做什么</strong>就可以了。代码编写和性能优化交给大模型。真的是令人振奋。只要你有想法，做好规划，你可以同时跑多个项目。</p>
-<p>两个重要链接：</p>
-<ol type="1">
-<li><p><strong>Vibe Coding 中文指南</strong> <a href="https://github.com/tukuaiai/vibe-coding-cn" class="uri">https://github.com/tukuaiai/vibe-coding-cn</a></p></li>
-<li><p><strong>Vibe Coding 英文指南</strong> <a href="https://github.com/EnzeD/vibe-coding" class="uri">https://github.com/EnzeD/vibe-coding</a></p></li>
-</ol>
-<p>以下内容均为Gemini 3 Pro大模型自动生成，谨慎阅读。</p>
-<section id="智能编程简介" class="level2">
-<h2 class="anchored" data-anchor-id="智能编程简介">智能编程简介</h2>
-<p>智能编程是利用人工智能技术来辅助或自动化编程过程的技术。它可以帮助开发者提高代码质量、减少错误、加快开发速度。智能编程工具通常包括代码自动补全、代码生成、错误检测和修复等功能。</p>
-</section>
-<section id="智能编程的应用" class="level2">
-<h2 class="anchored" data-anchor-id="智能编程的应用">智能编程的应用</h2>
-<ol type="1">
-<li>代码自动补全：智能编程工具可以根据上下文自动补全代码，提高编写效率。</li>
-<li>代码生成：通过自然语言描述，智能编程工具可以生成相应的代码片段。</li>
-<li>错误检测和修复：智能编程工具可以检测代码中的错误，并提供修复建议。</li>
-<li>代码优化：智能编程工具可以分析代码性能，并提出优化建议。</li>
-</ol>
-</section>
-<section id="智能编程的优势" class="level2">
-<h2 class="anchored" data-anchor-id="智能编程的优势">智能编程的优势</h2>
-<ol type="1">
-<li>提高开发效率：智能编程工具可以减少重复劳动，提高代码编写速度。</li>
-<li>提升代码质量：通过自动检测和修复错误，智能编程工具可以提高代码的质量。</li>
-<li>降低学习曲线：智能编程工具可以帮助新手开发者更快地掌握编程技能。</li>
-<li>促进创新：智能编程工具可以激发开发者的创造力，推动技术创新。</li>
-</ol>
-</section>
-<section id="未来展望" class="level2">
-<h2 class="anchored" data-anchor-id="未来展望">未来展望</h2>
-<p>随着人工智能技术的不断发展，智能编程有望在未来发挥更大的作用。未来的智能编程工具可能会更加智能化，能够理解更复杂的需求，并生成更高质量的代码。此外，智能编程还可能与其他技术（如自动化测试、持续集成等）结合，形成更加完整的开发生态系统。</p>
-</section>
-<section id="结论" class="level2">
-<h2 class="anchored" data-anchor-id="结论">结论</h2>
-<p>智能编程作为一种新兴技术，正在逐渐改变传统的编程方式。 通过利用人工智能技术，智能编程工具可以帮助开发者提高效率、提升代码质量，并促进技术创新。随着技术的不断进步，智能编程有望在未来发挥更大的作用，成为软件开发的重要组成部分。</p>
-</section>
-<section id="参考文献" class="level2">
-<h2 class="anchored" data-anchor-id="参考文献">参考文献</h2>
-<ol type="1">
-<li>Smith, J. (2020). “The Future of Intelligent Programming”. Journal of Software Development, 15(3), 45-60.</li>
-<li>Doe, A., &amp; Brown, B. (2019). “AI-Powered Code Generation: A Review”. International Conference on Artificial Intelligence in Software Engineering, 120-130.</li>
-<li>Lee, C. (2021). “Improving Code Quality with Intelligent Tools”. Software Engineering Today, 10(2), 25-35.</li>
-<li>Zhang, Y., &amp; Wang, L. (2018). “Automated Error Detection in Programming”. Proceedings of the 2018 IEEE International Conference on Software Testing, Verification and Validation, 200-210.</li>
-</ol>
+<p>这是这个仓库最重要的发布规则。</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

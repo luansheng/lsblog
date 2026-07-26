@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://luansheng.github.io/lsblog/about.html</loc>
-    <lastmod>2026-02-24T03:36:19.441Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/CLAUDE.html</loc>
+    <lastmod>2026-07-25T13:51:21.750Z</lastmod>
   </url>
   <url>
-    <loc>https://luansheng.github.io/lsblog/publication.html</loc>
-    <lastmod>2026-02-24T03:36:19.457Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/index.html</loc>
+    <lastmod>2026-07-26T00:54:10.889Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index.html</loc>
+    <lastmod>2026-07-26T04:37:27.342Z</lastmod>
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/EDA-20260104/index.html</loc>
@@ -14,11 +18,15 @@
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/faHfeH-20260320/index.html</loc>
-    <lastmod>2026-03-30T03:13:59.643Z</lastmod>
+    <lastmod>2026-03-30T10:31:20.608Z</lastmod>
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/missing-yang/index.html</loc>
     <lastmod>2026-03-08T14:00:31.290Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/PUBLISH-SOP.html</loc>
+    <lastmod>2026-03-30T10:31:20.614Z</lastmod>
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/vib-coding/index.html</loc>
@@ -30,14 +38,18 @@
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/million_ped-20260324/index.html</loc>
-    <lastmod>2026-03-30T05:05:33.031Z</lastmod>
+    <lastmod>2026-03-30T10:31:20.587Z</lastmod>
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/fafe-20260307/index.html</loc>
     <lastmod>2026-03-11T00:14:09.818Z</lastmod>
   </url>
   <url>
-    <loc>https://luansheng.github.io/lsblog/index.html</loc>
-    <lastmod>2026-03-21T07:32:44.149Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/publication.html</loc>
+    <lastmod>2026-02-24T03:36:19.457Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/about.html</loc>
+    <lastmod>2026-02-24T03:36:19.441Z</lastmod>
   </url>
 </urlset>

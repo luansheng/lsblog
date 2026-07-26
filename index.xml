@@ -9,8 +9,677 @@
 <link>https://luansheng.github.io/lsblog/</link>
 <atom:link href="https://luansheng.github.io/lsblog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A blog built with Quarto</description>
-<generator>quarto-1.8.24</generator>
-<lastBuildDate>Mon, 23 Mar 2026 16:00:00 GMT</lastBuildDate>
+<generator>quarto-1.8.27</generator>
+<lastBuildDate>Sat, 25 Jul 2026 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>Visualizing complex pedigrees in R with visPedigree</title>
+  <dc:creator>Sheng Luan</dc:creator>
+  <link>https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>A pedigree of ten individuals fits on a napkin. A pedigree of ten thousand is a spreadsheet you cannot read. In animal breeding, conservation genetics, and genealogy, pedigrees routinely span hundreds or thousands of records — yet they are almost always stored the same way: three columns, <code>Ind</code>, <code>Sire</code>, <code>Dam</code>, repeated row after row.</p>
+<p>This tutorial shows how to go from that raw table to publication-ready pedigree graphs in R, using <a href="https://github.com/luansheng/visPedigree">visPedigree</a>.</p>
+<section id="what-does-a-pedigree-look-like" class="level2">
+<h2 class="anchored" data-anchor-id="what-does-a-pedigree-look-like">What does a pedigree look like?</h2>
+<p>A pedigree is fundamentally a parent-offspring table. Every row names one individual and, if known, its sire and dam. Here is a tiny example with six individuals across three generations:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">tiny_ped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb1-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Ind  =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sire1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dam1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sire2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dam2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Offspring1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Offspring2"</span>),</span>
+<span id="cb1-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Sire =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,      <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,     <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sire1"</span>, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,      <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sire2"</span>,     <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Sire2"</span>),</span>
+<span id="cb1-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Dam  =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,      <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,     <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dam1"</span>,  <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>,      <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dam2"</span>,      <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dam2"</span>),</span>
+<span id="cb1-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Sex  =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"male"</span>,  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"female"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"male"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"female"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"male"</span>,     <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"female"</span>)</span>
+<span id="cb1-6">)</span>
+<span id="cb1-7">tiny_ped</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         Ind  Sire  Dam    Sex
+1      Sire1  &lt;NA&gt; &lt;NA&gt;   male
+2       Dam1  &lt;NA&gt; &lt;NA&gt; female
+3      Sire2 Sire1 Dam1   male
+4       Dam2  &lt;NA&gt; &lt;NA&gt; female
+5 Offspring1 Sire2 Dam2   male
+6 Offspring2 Sire2 Dam2 female</code></pre>
+</div>
+</div>
+<p>The table tells you who the parents are, but it gives no visual sense of relationships, generations, or family structure. Now let visPedigree turn it into a graph:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">tiny_tidy <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(tiny_ped)</span>
+<span id="cb3-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tiny_tidy, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">21</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-tiny-visped" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-tiny-visped-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-tiny-visped-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tiny-visped-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The same pedigree drawn by visped(). Each row is a generation. Circles: females. Squares: males. Parents connect to offspring via grey lines.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>A few things are happening automatically:</p>
+<ul>
+<li><strong>Generations</strong> are inferred and arranged top-to-bottom.</li>
+<li><strong>Sex</strong> can be supplied explicitly, as in the example above, or inferred from whether an individual appears as a sire or a dam.</li>
+<li><strong>Founders</strong> — individuals without recorded parents — sit at the top.</li>
+</ul>
+<p>This two-step workflow — <code>tidyped()</code> then <code>visped()</code> — is the core pattern you will use for every pedigree.</p>
+</section>
+<section id="preparing-pedigree-data-with-tidyped" class="level2">
+<h2 class="anchored" data-anchor-id="preparing-pedigree-data-with-tidyped">Preparing pedigree data with <code>tidyped()</code></h2>
+<p><code>tidyped()</code> validates, orders, and enriches your pedigree. Let us prepare a slightly larger pedigree that ships with the package:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">tidy_small <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(</span>
+<span id="cb4-2">  small_ped,</span>
+<span id="cb4-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cand =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Z1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Z2"</span>)</span>
+<span id="cb4-4">)</span>
+<span id="cb4-5"></span>
+<span id="cb4-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># What did tidyped() produce?</span></span>
+<span id="cb4-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(tidy_small)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pedigree Summary
+================
+
+Total Individuals:  24 
+  - Males:    10 (41.7%) 
+  - Females:  11 (45.8%) 
+  - Unknown:  3 (12.5%) 
+
+Pedigree Structure:
+  - Founders (no parents):   9 
+  - Both parents known:      15 
+
+Generation:
+  - Maximum:  6 
+  - Distribution:
+      Gen 1: 9 individuals
+      Gen 2: 3 individuals
+      Gen 3: 5 individuals
+      Gen 4: 3 individuals
+      Gen 5: 2 individuals
+      Gen 6: 2 individuals
+
+Reproduction:
+  - Individuals with offspring:  21 
+  - Sires:  10  (Mean=1.5, Max=3 offspring)
+  - Dams:   11  (Mean=1.4, Max=2 offspring)
+
+Full-sibling Families:
+  - Number of families:      11 
+  - Mean family size:        1.36
+  - Maximum family size:     2 
+  - Top families by size:
+      AxB: 2
+      ExF: 2
+      J2xC: 2
+      NxX: 2
+      HxI: 1
+
+Candidates Traced:  3 
+
+================</code></pre>
+</div>
+</div>
+<p><code>tidyped()</code> does several things in one call:</p>
+<ol type="1">
+<li><strong>Validates</strong> that every sire and dam exists as an individual (or is <code>NA</code> for founders).</li>
+<li><strong>Orders</strong> individuals so that parents always appear before their offspring.</li>
+<li><strong>Infers generations</strong> (the <code>Gen</code> column) from the pedigree structure.</li>
+<li><strong>Detects</strong> and reports pedigree loops — circular parentage that would make the pedigree invalid.</li>
+<li><strong>Prunes</strong> to the relevant sub-pedigree when you specify <code>cand</code>.</li>
+</ol>
+<p>The <code>cand</code> argument tells <code>tidyped()</code> which individuals you care about; it trims unrelated branches so your plot stays focused.</p>
+</section>
+<section id="your-first-pedigree-graph" class="level2">
+<h2 class="anchored" data-anchor-id="your-first-pedigree-graph">Your first pedigree graph</h2>
+<p>Once the pedigree is tidied, one line of code produces the plot:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-smallped" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-smallped-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-smallped-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-smallped-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The small_ped pedigree, tidied with candidate individuals Y, Z1, and Z2.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The default visual encoding (<code>shapeby = "sex"</code>) uses circles for females, squares for males, and diamonds for unknown sex. Each row of connected nodes is a generation, aligned for easy comparison.</p>
+<p>To save the graph as a publication-ready vector file, add a filename:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"my_pedigree.pdf"</span>)   <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># PDF</span></span>
+<span id="cb7-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">file =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"my_pedigree.svg"</span>)   <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># SVG (editable in Illustrator)</span></span></code></pre></div></div>
+<p>For deep pedigrees, generation labels help readers navigate the graph. Use <code>genlab = TRUE</code> for default <code>G1, G2, ...</code> labels, or a character vector for custom text:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">tidy_simple <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(simple_ped)</span>
+<span id="cb8-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_simple,</span>
+<span id="cb8-3">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">genlab =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Founder"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"G1"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"G2"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"G3"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"G4"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"G5"</span>),</span>
+<span id="cb8-4">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.3</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-genlab" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-genlab-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-genlab-1.png" class="img-fluid figure-img" width="3000">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-genlab-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Custom generation labels on the simple_ped pedigree.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>If labels appear too small, <code>genlabcex</code> adjusts them independently of <code>cex</code>.</p>
+</section>
+<section id="focusing-on-individuals-highlight-and-trace" class="level2">
+<h2 class="anchored" data-anchor-id="focusing-on-individuals-highlight-and-trace">Focusing on individuals — highlight and trace</h2>
+<p>In a large pedigree, you often need to draw attention to specific individuals: breeding candidates, genotyped animals, or carriers of a particular allele. The <code>highlight</code> argument does exactly that:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-highlight" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-highlight-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-highlight-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-highlight-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Individual Y is highlighted with a purple border and light purple fill.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>You can highlight multiple individuals and customize the colors:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_small,</span>
+<span id="cb10-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ids =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Z1"</span>),</span>
+<span id="cb10-3">                   <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">frame.color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#4caf50"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#81c784"</span>),</span>
+<span id="cb10-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-highlight-custom" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-highlight-custom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-highlight-custom-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-highlight-custom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Y and Z1 highlighted with a custom green color scheme.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>More useful still is tracing — showing only an individual and its ancestors:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_small, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">highlight =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Y"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"up"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.6</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-trace" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-trace-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-trace-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-trace-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Tracing Y’s ancestors with trace = “up”. Only Y and its direct ancestral line are shown.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Set <code>trace = "down"</code> for descendants, or <code>trace = "all"</code> for both. This is invaluable when you need to answer: <em>Where did this breeding candidate come from?</em></p>
+</section>
+<section id="compact-mode-for-large-full-sib-families" class="level2">
+<h2 class="anchored" data-anchor-id="compact-mode-for-large-full-sib-families">Compact mode for large full-sib families</h2>
+<p>Real-world pedigrees often contain large full-sib families. In aquatic species like shrimp and fish, a single mating can produce dozens of full siblings. Plotting every individual creates an unreadable wall of nodes.</p>
+<p>Here we extract three full-sib families from a real breeding program — 1,120 offspring across three sire–dam pairs — and trace their ancestry through nine generations:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(big_family_size_ped)</span>
+<span id="cb12-2">tp <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(big_family_size_ped)</span>
+<span id="cb12-3"></span>
+<span id="cb12-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Select offspring from three sire–dam pairs in the most recent generation</span></span>
+<span id="cb12-5">maxgen <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(tp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen)</span>
+<span id="cb12-6">cand_offspring <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp[Gen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> maxgen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> (</span>
+<span id="cb12-7">  (Sire <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"70Z5"</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> Dam <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7Z0Y"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|</span></span>
+<span id="cb12-8">  (Sire <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"70YZ"</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> Dam <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7ZZ0"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|</span></span>
+<span id="cb12-9">  (Sire <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7009"</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> Dam <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7093"</span>)</span>
+<span id="cb12-10">), Ind]</span>
+<span id="cb12-11"></span>
+<span id="cb12-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Trace up through all ancestors</span></span>
+<span id="cb12-13">sub_ped <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(big_family_size_ped, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cand =</span> cand_offspring, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">trace =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"up"</span>)</span>
+<span id="cb12-14"></span>
+<span id="cb12-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Shorten labels to last 4 characters to reduce clutter</span></span>
+<span id="cb12-16">sub_ped<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ShortID <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">substring</span>(sub_ped<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pmax</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nchar</span>(sub_ped<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>))</span>
+<span id="cb12-17"></span>
+<span id="cb12-18"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(sub_ped, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labelvar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ShortID"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">compact =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb12-19">       <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.35</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-compact" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-compact-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-compact-1.png" class="img-fluid figure-img" width="4200">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-compact-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Three large full-sib families compacted into FS×N nodes, with nine generations of ancestry. Without compact mode, the bottom row would contain 1,120 individual nodes.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Each green-grey rectangle represents an entire family — <code>FS×378</code>, <code>FS×367</code>, and <code>FS×375</code> for the three selected families. Without <code>compact = TRUE</code>, the bottom row alone would contain 1,120 individual nodes, making the graph unreadable. With compact mode, the pedigree structure is clear at a glance.</p>
+<p>The <code>labelvar</code> argument tells <code>visped()</code> to display a different column as node labels — here, the last four characters of each ID instead of the full string. Compact family nodes (<code>FS×N</code>) are unaffected and continue to show family size.</p>
+<p>For extremely large pedigrees, <code>outline = TRUE</code> draws the pedigree in silhouette mode — no individual labels, just the population shape — useful for quick visual inspection of population construction over generations.</p>
+<p>This is what makes visPedigree different from a generic plotting wrapper — it understands pedigree structure and uses it to produce readable graphs at any scale. Core algorithms (inbreeding calculation, topological sorting, ancestry tracing) are implemented in C++ and scale to over one million individuals.</p>
+</section>
+<section id="inbreeding-coefficients-on-the-graph" class="level2">
+<h2 class="anchored" data-anchor-id="inbreeding-coefficients-on-the-graph">Inbreeding coefficients on the graph</h2>
+<p>Inbreeding is a central concern in breeding programs and conservation genetics. Run <code>tidyped()</code> with <code>inbreed = TRUE</code> to compute inbreeding coefficients, then set <code>showf = TRUE</code> in <code>visped()</code> to display them on the graph:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">tidy_inbred <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(inbred_ped, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">inbreed =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb13-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">visped</span>(tidy_inbred, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">showf =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.7</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">symbolsize =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-showf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-showf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index_files/figure-html/fig-showf-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-showf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Inbreeding coefficients displayed alongside individual IDs. Individual G, the product of several generations of close mating within a small population, has F = 0.4375.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Each node now shows both the ID and its inbreeding coefficient (<code>f</code>), making it easy to spot individuals with elevated inbreeding at a glance.</p>
+</section>
+<section id="real-world-applications" class="level2">
+<h2 class="anchored" data-anchor-id="real-world-applications">Real-world applications</h2>
+<p>visPedigree is used in peer-reviewed research across livestock breeding, conservation genetics, and human genealogy:</p>
+<ul>
+<li>🐖 <strong>Gochu Asturcelta pig</strong> — pedigree visualization of 471 individuals from 51 families (<a href="https://doi.org/10.1186/s12864-024-10407-x">BMC Genomics, 2024</a>).</li>
+<li>🦏 <strong>Eastern black rhinoceros</strong> — observational pedigree construction to classify ancestry cohorts for inbreeding depression analysis (<a href="https://doi.org/10.1073/pnas.2414412122">PNAS, 2025</a>).</li>
+<li>🐕 <strong>Labrador Retriever</strong> — pedigree quality control on 1,486,764 records, helping locate pedigree loops that were traced to incorrect sire assignments (<a href="https://doi.org/10.1186/s12711-025-00994-y">Genetics Selection Evolution, 2025</a>).</li>
+</ul>
+<p>More verified applications are listed on the <a href="https://luansheng.github.io/visPedigree/articles/applications.html">Applications page</a>.</p>
+</section>
+<section id="where-to-go-from-here" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-go-from-here">Where to go from here</h2>
+<p>Visualization is the entry point, but the same tidied pedigree object powers a complete analysis pipeline:</p>
+<ul>
+<li><strong>Population genetic summaries</strong> — pedigree completeness, generation intervals, and inbreeding statistics (<code>pedstats()</code>).</li>
+<li><strong>Genetic diversity analysis</strong> — founder and ancestor contributions, effective population size, and diversity half-life modelling (<code>pedcontrib()</code>, <code>pediv()</code>, <code>pedne()</code>, <code>pedhalflife()</code>).</li>
+<li><strong>Relationship matrices and matrix-free computation</strong> — additive, dominance, and epistatic relationship matrices, plus <code>pedprod()</code> for computing <em>Ax</em> and <em>A⁻¹x</em> without constructing the dense matrix (<code>pedmat()</code>, <code>pedprod()</code>, <code>vismat()</code>).</li>
+</ul>
+<p>If you work with pedigree data in R — whether in animal breeding, conservation genetics, or genealogy — visPedigree provides a unified workflow from data preparation to publication-ready output.</p>
+<p>Install from CRAN:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
+<p>Full documentation at <a href="https://luansheng.github.io/visPedigree/">luansheng.github.io/visPedigree</a>.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>Visualization</category>
+  <category>Pedigree</category>
+  <category>Breeding</category>
+  <guid>https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/</guid>
+  <pubDate>Sat, 25 Jul 2026 16:00:00 GMT</pubDate>
+  <media:content url="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/cover.png" medium="image" type="image/png" height="108" width="144"/>
+</item>
 <item>
   <title>面向水产动物家系选育的百万系谱分析：visPedigree 1.8.1 的工作流与方法学解释</title>
   <dc:creator>Sheng Luan</dc:creator>

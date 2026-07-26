@@ -6,11 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Sheng Luan">
-<meta name="dcterms.date" content="2026-01-03">
-<meta name="description" content="大模型编程世代到来了">
 
-<title>Vibe coding – metabreeding</title>
+<title>claude – metabreeding</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,27 +20,62 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
-<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../../">
-<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="../../site_libs/quarto-html/popper.min.js"></script>
-<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a1c87f40015067c62c82f3c4ff3d1ad4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a1c87f40015067c62c82f3c4ff3d1ad4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -73,17 +105,17 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="nav-fixed fullcontent quarto-light">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+  <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../index.html">
+    <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">metabreeding</span>
     </a>
   </div>
@@ -94,11 +126,11 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../../about.html"> 
+    <a class="nav-link" href="./about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../publication.html"> 
+    <a class="nav-link" href="./publication.html"> 
 <span class="menu-text">Publication</span></a>
   </li>  
   <li class="nav-item compact">
@@ -119,113 +151,91 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
-  <div class="quarto-title-banner page-columns page-full">
-    <div class="quarto-title column-body">
-      <h1 class="title">Vibe coding</h1>
-                  <div>
-        <div class="description">
-          大模型编程世代到来了
-        </div>
-      </div>
-                          <div class="quarto-categories">
-                <div class="quarto-category">code</div>
-                <div class="quarto-category">AI</div>
-              </div>
-                  </div>
-  </div>
-    
-  
-  <div class="quarto-title-meta">
-
-      <div>
-      <div class="quarto-title-meta-heading">Author</div>
-      <div class="quarto-title-meta-contents">
-               <p>Sheng Luan </p>
-            </div>
-    </div>
-      
-      <div>
-      <div class="quarto-title-meta-heading">Published</div>
-      <div class="quarto-title-meta-contents">
-        <p class="date">January 3, 2026</p>
-      </div>
-    </div>
-    
-      
-    </div>
-    
-  
-  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     
 <!-- main -->
-<main class="content quarto-banner-title-block" id="quarto-document-content">
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
 
-
-<p>目前<code>Vibe coding</code>很火。关于他的解释，Gemini 3 Pro是这么说的：</p>
+<section id="claude.md" class="level1">
+<h1>CLAUDE.md</h1>
+<p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
+<section id="project-overview" class="level2">
+<h2 class="anchored" data-anchor-id="project-overview">Project overview</h2>
+<p>A <a href="https://quarto.org/">Quarto</a> blog about animal breeding and quantitative genetics, written by Professor Sheng Luan. Published to GitHub Pages at <code>https://luansheng.github.io/lsblog</code>.</p>
+</section>
+<section id="commands" class="level2">
+<h2 class="anchored" data-anchor-id="commands">Commands</h2>
+<section id="preview-locally" class="level3">
+<h3 class="anchored" data-anchor-id="preview-locally">Preview locally</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> preview</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="render-full-site-refreshing-cached-outputs" class="level3">
+<h3 class="anchored" data-anchor-id="render-full-site-refreshing-cached-outputs">Render (full site, refreshing cached outputs)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render <span class="at">--cache-refresh</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="render-a-single-post" class="level3">
+<h3 class="anchored" data-anchor-id="render-a-single-post">Render a single post</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render posts/<span class="op">&lt;</span>post-dir<span class="op">&gt;</span>/index.qmd <span class="at">--cache-refresh</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="publish-to-github-pages" class="level3">
+<h3 class="anchored" data-anchor-id="publish-to-github-pages">Publish to GitHub Pages</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'Y\n'</span> <span class="kw">|</span> <span class="ex">quarto</span> publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Or use the bundled safe-publish script (render + publish in one step):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/publish-gh-pages-safe.sh                     <span class="co"># full site</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/publish-gh-pages-safe.sh posts/<span class="op">&lt;</span>dir<span class="op">&gt;</span>/index.qmd  <span class="co"># single post</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="architecture" class="level2">
+<h2 class="anchored" data-anchor-id="architecture">Architecture</h2>
+<section id="post-structure" class="level3">
+<h3 class="anchored" data-anchor-id="post-structure">Post structure</h3>
+<p>Each post lives in <code>posts/&lt;slug&gt;/</code> as <code>index.qmd</code>. Posts use Quarto’s <a href="https://quarto.org/docs/projects/code-execution.html#freeze">freeze</a> feature (<code>posts/_metadata.yml</code> sets <code>freeze: true</code>), which caches computational outputs in <code>_freeze/</code>. Example post layout:</p>
+<pre><code>posts/million_ped-20260324/
+  index.qmd          # Quarto markdown with R code chunks
+  data.csv           # Optional attached data files
+  image.png          # Optional cover / inline images
+  index_cache/       # R cache (gitignored)
+  index_files/       # Rendering intermediates (gitignored)</code></pre>
+</section>
+<section id="publishing-and-the-freeze-trap" class="level3">
+<h3 class="anchored" data-anchor-id="publishing-and-the-freeze-trap">Publishing and the freeze trap</h3>
+<p><code>posts/_metadata.yml</code> sets <code>freeze: true</code> for all posts. This means <code>quarto publish gh-pages</code> <strong>reuses previously frozen execution results</strong> — if a post’s R code, figures, or sampling outputs changed, the published page will still show the old results.</p>
+<p>See <code>PUBLISH-SOP.md</code> for the full decision tree. The critical rule is:</p>
 <blockquote class="blockquote">
-<p>Vibe coding是一种利用人工智能技术辅助编程的方法。它通过<strong>自然语言处理</strong>和机器学习算法，帮助开发者更高效地编写代码、调试程序和优化性能。Vibe coding可以理解开发者的意图，自动生成代码片段，提供实时的代码建议，从而提高编程效率和代码质量。</p>
+<p>When code, figures, random sampling, or data outputs change, run <code>quarto render --cache-refresh</code> <strong>before</strong> <code>quarto publish gh-pages</code>. Text-only changes can publish directly.</p>
 </blockquote>
-<p>最近想试一下，<code>Vibe coding</code>能不能帮我更新之前的一个R包visPedigree包的相关功能。说实话，年龄大了，很多R的语法都记不清楚了。特别是原来一直搞不清楚的S3等高级写法。这次visPedigree包更新，主要是增加了2功能：</p>
-<ol type="1">
-<li><p>高亮某些个体。通过跟大模型的互动，添加了<code>highlight</code>及<code>trace</code>两个参数，控制高亮哪些个体。</p></li>
-<li><p>显示近交系数。在<code>tidyped()</code>中添加了<code>inbreed</code>参数，在<code>visped()</code>函数中添加了<code>showf</code>参数。</p></li>
-<li><p>优化了<code>visped()</code> 函数结构，拆解为4个逻辑性更强的函数。</p></li>
-<li><p>新加参数相关文档的编写和优化。这个很大程度解放了开发者。文档编写实在是太繁琐。</p></li>
-<li><p>为cran包发布进行检查和优化。</p></li>
-</ol>
-<p>上述都是工作量很大的工作。通过<code>Vibe coding</code>真的是解放了开发者。对于我来说，相当于聘用了一个专业的编程助手，我有什么想法，都可以帮我实现。之前卡在<strong>不知道怎么做</strong>上，现在<strong>知道做什么</strong>就可以了。代码编写和性能优化交给大模型。真的是令人振奋。只要你有想法，做好规划，你可以同时跑多个项目。</p>
-<p>两个重要链接：</p>
-<ol type="1">
-<li><p><strong>Vibe Coding 中文指南</strong> <a href="https://github.com/tukuaiai/vibe-coding-cn" class="uri">https://github.com/tukuaiai/vibe-coding-cn</a></p></li>
-<li><p><strong>Vibe Coding 英文指南</strong> <a href="https://github.com/EnzeD/vibe-coding" class="uri">https://github.com/EnzeD/vibe-coding</a></p></li>
-</ol>
-<p>以下内容均为Gemini 3 Pro大模型自动生成，谨慎阅读。</p>
-<section id="智能编程简介" class="level2">
-<h2 class="anchored" data-anchor-id="智能编程简介">智能编程简介</h2>
-<p>智能编程是利用人工智能技术来辅助或自动化编程过程的技术。它可以帮助开发者提高代码质量、减少错误、加快开发速度。智能编程工具通常包括代码自动补全、代码生成、错误检测和修复等功能。</p>
 </section>
-<section id="智能编程的应用" class="level2">
-<h2 class="anchored" data-anchor-id="智能编程的应用">智能编程的应用</h2>
-<ol type="1">
-<li>代码自动补全：智能编程工具可以根据上下文自动补全代码，提高编写效率。</li>
-<li>代码生成：通过自然语言描述，智能编程工具可以生成相应的代码片段。</li>
-<li>错误检测和修复：智能编程工具可以检测代码中的错误，并提供修复建议。</li>
-<li>代码优化：智能编程工具可以分析代码性能，并提出优化建议。</li>
-</ol>
+<section id="post-frontmatter-conventions" class="level3">
+<h3 class="anchored" data-anchor-id="post-frontmatter-conventions">Post frontmatter conventions</h3>
+<p>Posts use categories (e.g., <code>Breeding</code>, <code>Pedigree Analysis</code>, <code>visPedigree</code>, <code>R</code>, <code>code</code>, <code>AI</code>), descriptions, and optional TOC. Code-heavy posts typically disable warnings/messages in YAML:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">execute</span><span class="kw">:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">warning</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">message</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="智能编程的优势" class="level2">
-<h2 class="anchored" data-anchor-id="智能编程的优势">智能编程的优势</h2>
-<ol type="1">
-<li>提高开发效率：智能编程工具可以减少重复劳动，提高代码编写速度。</li>
-<li>提升代码质量：通过自动检测和修复错误，智能编程工具可以提高代码的质量。</li>
-<li>降低学习曲线：智能编程工具可以帮助新手开发者更快地掌握编程技能。</li>
-<li>促进创新：智能编程工具可以激发开发者的创造力，推动技术创新。</li>
-</ol>
+<section id="git" class="level3">
+<h3 class="anchored" data-anchor-id="git">Git</h3>
+<ul>
+<li><strong>Source branch</strong>: <code>main</code> — all writing and editing happens here</li>
+<li><strong>Publish branch</strong>: <code>gh-pages</code> — managed by <code>quarto publish</code>, never edited directly</li>
+<li><strong>Ignored</strong>: <code>_site/</code>, <code>_freeze/</code>, <code>.quarto/</code>, <code>*_files/</code>, <code>*_cache/</code>, and large CSV data files tracked outside git</li>
+</ul>
 </section>
-<section id="未来展望" class="level2">
-<h2 class="anchored" data-anchor-id="未来展望">未来展望</h2>
-<p>随着人工智能技术的不断发展，智能编程有望在未来发挥更大的作用。未来的智能编程工具可能会更加智能化，能够理解更复杂的需求，并生成更高质量的代码。此外，智能编程还可能与其他技术（如自动化测试、持续集成等）结合，形成更加完整的开发生态系统。</p>
+<section id="r-package-dependency" class="level3">
+<h3 class="anchored" data-anchor-id="r-package-dependency">R package dependency</h3>
+<p>Several posts use the <a href="https://github.com/luansheng/visPedigree">visPedigree</a> R package (also authored by the blog owner) for pedigree analysis and visualization. Posts that run R code require the package and its dependencies installed in the local R environment.</p>
 </section>
-<section id="结论" class="level2">
-<h2 class="anchored" data-anchor-id="结论">结论</h2>
-<p>智能编程作为一种新兴技术，正在逐渐改变传统的编程方式。 通过利用人工智能技术，智能编程工具可以帮助开发者提高效率、提升代码质量，并促进技术创新。随着技术的不断进步，智能编程有望在未来发挥更大的作用，成为软件开发的重要组成部分。</p>
-</section>
-<section id="参考文献" class="level2">
-<h2 class="anchored" data-anchor-id="参考文献">参考文献</h2>
-<ol type="1">
-<li>Smith, J. (2020). “The Future of Intelligent Programming”. Journal of Software Development, 15(3), 45-60.</li>
-<li>Doe, A., &amp; Brown, B. (2019). “AI-Powered Code Generation: A Review”. International Conference on Artificial Intelligence in Software Engineering, 120-130.</li>
-<li>Lee, C. (2021). “Improving Code Quality with Intelligent Tools”. Software Engineering Today, 10(2), 25-35.</li>
-<li>Zhang, Y., &amp; Wang, L. (2018). “Automated Error Detection in Programming”. Proceedings of the 2018 IEEE International Conference on Software Testing, Verification and Validation, 200-210.</li>
-</ol>
+<section id="theme" class="level3">
+<h3 class="anchored" data-anchor-id="theme">Theme</h3>
+<p>Uses <a href="https://bootswatch.com/simplex/">simplex</a> Bootswatch theme with a custom brand override and <code>styles.css</code> for additional CSS.</p>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
