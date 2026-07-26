@@ -28,6 +28,17 @@ graphs in R, using [visPedigree](https://github.com/luansheng/visPedigree).
 library(visPedigree)
 ```
 
+## Getting started
+
+Install visPedigree from CRAN and load it:
+
+```r
+install.packages("visPedigree")
+library(visPedigree)
+```
+
+You are now ready to work with pedigree data.
+
 ## What does a pedigree look like?
 
 A pedigree is fundamentally a parent-offspring table. Every row names one
