@@ -68,7 +68,7 @@ visPedigree 在部分计算中支持不显式构建完整矩阵，而是直接�
 - **人类谱系研究**：用于追踪 10 个世代的历史人类群体后代延续情况（Young et al., *Proceedings of the Royal Society B* 2023）。
 - **犬系谱质控**：在拉布拉多犬研究中，用于辅助定位超过 148 万条系谱记录中的循环和亲本错误（Lee et al., *Genetics Selection Evolution* 2025）。
 
-此外，遗传育种模拟软件 **MoBPS** 已将 visPedigree 的 `tidyped()` 和 `visped()` 直接整合进其系谱可视化模块，CRAN Task View: Agricultural Science 也将 visPedigree 列入动物科学推荐工具。自2026年1月在cran发布以来，累计下载量已超过3000次。
+此外，遗传育种模拟软件 **MoBPS** 已将 visPedigree 的 `tidyped()` 和 `visped()` 直接整合进其系谱可视化模块，CRAN Task View: Agricultural Science 也将 visPedigree 列入动物科学推荐工具。自2026年1月在cran发布以来，累计下载量已2900余次。
 
 更多应用案例详见：<https://luansheng.github.io/visPedigree/articles/applications.html>
 
