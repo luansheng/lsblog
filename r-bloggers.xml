@@ -6,7 +6,7 @@
     <atom:link href="https://luansheng.github.io/lsblog/r-bloggers.xml" rel="self" type="application/rss+xml"/>
     <description>R-related posts from metabreeding</description>
     <generator>quarto-1.8.27</generator>
-    <lastBuildDate>Sat, 25 Jul 2026 16:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 29 Jul 2026 16:00:00 GMT</lastBuildDate>
     <item>
       <title>Visualizing complex pedigrees in R with visPedigree</title>
       <dc:creator>Sheng Luan</dc:creator>

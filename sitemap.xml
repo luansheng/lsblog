@@ -1,16 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://luansheng.github.io/lsblog/CLAUDE.html</loc>
-    <lastmod>2026-07-25T13:51:21.750Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/CLAUDE.html</loc>
+    <lastmod>2026-07-26T05:33:33.027Z</lastmod>
   </url>
   <url>
-    <loc>https://luansheng.github.io/lsblog/index.html</loc>
-    <lastmod>2026-07-26T00:54:10.889Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/about.html</loc>
+    <lastmod>2026-07-26T05:33:33.131Z</lastmod>
   </url>
   <url>
-    <loc>https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index.html</loc>
-    <lastmod>2026-07-26T05:07:51.699Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/CONTRIBUTING.html</loc>
+    <lastmod>2026-07-26T05:33:33.027Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/more.html</loc>
+    <lastmod>2026-07-26T05:33:33.202Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/CODE_OF_CONDUCT.html</loc>
+    <lastmod>2026-07-26T05:33:33.027Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/about.html</loc>
+    <lastmod>2026-02-24T03:36:19.441Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/publication.html</loc>
+    <lastmod>2026-02-24T03:36:19.457Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/posts/vispedigree-paper-20260730/index.html</loc>
+    <lastmod>2026-07-30T03:25:07.386Z</lastmod>
   </url>
   <url>
     <loc>https://luansheng.github.io/lsblog/posts/EDA-20260104/index.html</loc>
@@ -45,11 +65,31 @@
     <lastmod>2026-03-11T00:14:09.818Z</lastmod>
   </url>
   <url>
-    <loc>https://luansheng.github.io/lsblog/publication.html</loc>
-    <lastmod>2026-02-24T03:36:19.457Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/index.html</loc>
+    <lastmod>2026-07-26T05:07:51.699Z</lastmod>
   </url>
   <url>
-    <loc>https://luansheng.github.io/lsblog/about.html</loc>
-    <lastmod>2026-02-24T03:36:19.441Z</lastmod>
+    <loc>https://luansheng.github.io/lsblog/index.html</loc>
+    <lastmod>2026-07-26T00:54:10.889Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/CLAUDE.html</loc>
+    <lastmod>2026-07-25T13:51:21.750Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/archive.html</loc>
+    <lastmod>2026-07-26T05:33:33.131Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/draft.html</loc>
+    <lastmod>2026-07-26T05:33:33.132Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/scripts/curinator_system_prompt.html</loc>
+    <lastmod>2026-07-26T05:33:33.206Z</lastmod>
+  </url>
+  <url>
+    <loc>https://luansheng.github.io/lsblog/rweekly.org/curatinator_latest.html</loc>
+    <lastmod>2026-07-26T05:33:33.132Z</lastmod>
   </url>
 </urlset>

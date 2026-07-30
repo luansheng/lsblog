@@ -1,108 +1,339 @@
 [
   {
-    "objectID": "CLAUDE.html",
-    "href": "CLAUDE.html",
+    "objectID": "rweekly.org/CLAUDE.html",
+    "href": "rweekly.org/CLAUDE.html",
     "title": "CLAUDE.md",
     "section": "",
-    "text": "This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n\nA Quarto blog about animal breeding and quantitative genetics, written by Professor Sheng Luan. Published to GitHub Pages at https://luansheng.github.io/lsblog.\n\n\n\n\n\nquarto preview\n\n\n\nquarto render --cache-refresh\n\n\n\nquarto render posts/&lt;post-dir&gt;/index.qmd --cache-refresh\n\n\n\nprintf 'Y\\n' | quarto publish gh-pages\nOr use the bundled safe-publish script (render + publish in one step):\nbash scripts/publish-gh-pages-safe.sh                     # full site\nbash scripts/publish-gh-pages-safe.sh posts/&lt;dir&gt;/index.qmd  # single post\n\n\n\n\n\n\nEach post lives in posts/&lt;slug&gt;/ as index.qmd. Posts use Quarto’s freeze feature (posts/_metadata.yml sets freeze: true), which caches computational outputs in _freeze/. Example post layout:\nposts/million_ped-20260324/\n  index.qmd          # Quarto markdown with R code chunks\n  data.csv           # Optional attached data files\n  image.png          # Optional cover / inline images\n  index_cache/       # R cache (gitignored)\n  index_files/       # Rendering intermediates (gitignored)\n\n\n\nposts/_metadata.yml sets freeze: true for all posts. This means quarto publish gh-pages reuses previously frozen execution results — if a post’s R code, figures, or sampling outputs changed, the published page will still show the old results.\nSee PUBLISH-SOP.md for the full decision tree. The critical rule is:\n\nWhen code, figures, random sampling, or data outputs change, run quarto render --cache-refresh before quarto publish gh-pages. Text-only changes can publish directly.\n\n\n\n\nPosts use categories (e.g., Breeding, Pedigree Analysis, visPedigree, R, code, AI), descriptions, and optional TOC. Code-heavy posts typically disable warnings/messages in YAML:\nexecute:\n  warning: false\n  message: false\n\n\n\n\nSource branch: main — all writing and editing happens here\nPublish branch: gh-pages — managed by quarto publish, never edited directly\nIgnored: _site/, _freeze/, .quarto/, *_files/, *_cache/, and large CSV data files tracked outside git\n\n\n\n\nSeveral posts use the visPedigree R package (also authored by the blog owner) for pedigree analysis and visualization. Posts that run R code require the package and its dependencies installed in the local R environment.\n\n\n\nUses simplex Bootswatch theme with a custom brand override and styles.css for additional CSS."
+    "text": "This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n\nThis is the source for rweekly.org, a weekly community-curated newsletter about the R programming language. It is a Jekyll-based static site hosted on GitHub Pages (gh-pages branch is the main branch).\n\n\n\n\nJekyll site: _config.yml configures the site, _layouts/ holds HTML templates, _includes/ holds partials and static assets (CSS/JS vendored inline).\nPublished posts: _posts/ — one Markdown file per weekly issue, named YYYY-MM-DD-&lt;issue&gt;.md.\nCurrent draft: draft.md — the live working draft for the next issue. Contributors submit PRs adding links here.\nRSS feed list: rss_feeds.csv — CSV with columns URL, ENABLE, TWITTER. New blog feeds are added here (set ENABLE=1).\nR scripts: scripts/ — automation scripts for content collection and processing.\n\n\n\n\nLinks in draft.md (and posts) use this format:\n+ [Title](URL) - optional description\n\n![Optional image alt text](image-URL)\nSections in the draft: Highlight, Insights, R in the Real World, R in Organizations, R in Academia, Tutorials, Resources, New Packages, Updated Packages, Videos and Podcasts, Gist & Cookbook, Shiny Apps, Upcoming Events. Editors vote for the Highlight section — contributors should not add content there.\nWhen populating the Highlight section, copy links from their original sections — do not remove them. A highlight link should appear in both the ### Highlight section and its original section.\nImages must be HTTPS and hosted at https://raw.githubusercontent.com/. Do not add images directly to this repo (keeps repo size small).\n\n\nThe ### rtistry and ### Quotes of the Week sections use raw social embed HTML — not + [Title](URL) links. Paste the full embed blockquote code from Bluesky, Mastodon, or Twitter directly into the section. Each platform uses a different blockquote class:\n\nBluesky: &lt;blockquote class=\"bluesky-embed\" ...&gt; with &lt;script async src=\"https://embed.bsky.app/static/embed.js\"&gt;\nMastodon: &lt;blockquote class=\"mastodon-embed\" ...&gt; with &lt;script data-allowed-prefixes=\"https://fosstodon.org/\" async src=\"https://fosstodon.org/embed.js\"&gt;\n\n\n\n\n\nAll scripts are run from the repo root directory.\n\n\n\n\n\n\n\nScript\nPurpose\n\n\n\n\nscripts/curatinator.R\nScrapes enabled RSS feeds (rss_feeds.csv) for posts from the last 6 days, fetches new/updated CRAN packages from CRANberries, and writes curatinator_latest.md\n\n\nscripts/get_rss.R\nHelper used by curatinator.R — fetches and filters RSS posts by date and reachability\n\n\nscripts/find_duplicates.R\nChecks draft.md for links already present in the last ~20 published posts\n\n\nscripts/parse_curinator.R\nParses curatinator_latest.md into a tidy data frame\n\n\nscripts/process_curinator.R\nUses ellmer + OpenAI to classify RSS posts as R-related\n\n\nscripts/gen_json.R\nParses _posts/ into JSON files in temp_json/ for the live index\n\n\ncheck_url.R\nURL health check — used by Travis CI to verify links in posts and draft\n\n\nscripts/build.R\nGenerates default.nix via the rix package for a Nix-based dev environment\n\n\n\nRun the curatinator to collect content for a new issue:\nRscript -e 'source(\"scripts/curatinator.R\")'\nCheck for duplicate links before publishing:\nRscript -e 'source(\"scripts/find_duplicates.R\"); get_dups()'\n\n\n\n.github/workflows/actions.yml — runs curatinator.R automatically every Saturday at 09:00 UTC, commits the result to curatinator_latest.md.\n\n\n\nA default.nix is generated by scripts/build.R using the rix package (R 4.5.1). It includes all R package dependencies and system packages (quarto, chromium, curl, imagemagick), plus two GitHub-only packages: rweekly.tools and rweekly.highlights.\n\n\n\nBuild and serve locally with standard Jekyll:\nbundle install\nbundle exec jekyll serve\nCI (Travis) runs Rscript check_url.R on gh-pages branch commits to validate links. Fails if more than 300 broken links are found.\n\n\n\nTo read a webpage as clean text (e.g. to inspect a linked article), use any of these:\n\nWebFetch tool — built-in Claude Code tool; use it directly.\nJina Reader — curl https://r.jina.ai/https://www.example.com — fallback if WebFetch fails.\nDefuddle — curl https://defuddle.md/example.com — second fallback.\n\n\n\n\nWhen committing, do not add Claude co-authorship (Co-Authored-By: trailers). Commits should appear under the user’s name only.\n\n\n\n\nAdd links to draft.md under the appropriate section.\nSubmit a PR against gh-pages.\nThe PR template asks contributors to identify which section(s) the content belongs to.\nEditors merge PRs and handle the weekly release (freeze on Sunday, publish Monday).\nTo add an RSS feed permanently, add a row to rss_feeds.csv with ENABLE=1."
   },
   {
-    "objectID": "CLAUDE.html#project-overview",
-    "href": "CLAUDE.html#project-overview",
+    "objectID": "rweekly.org/CLAUDE.html#what-this-repository-is",
+    "href": "rweekly.org/CLAUDE.html#what-this-repository-is",
     "title": "CLAUDE.md",
     "section": "",
-    "text": "A Quarto blog about animal breeding and quantitative genetics, written by Professor Sheng Luan. Published to GitHub Pages at https://luansheng.github.io/lsblog."
+    "text": "This is the source for rweekly.org, a weekly community-curated newsletter about the R programming language. It is a Jekyll-based static site hosted on GitHub Pages (gh-pages branch is the main branch)."
   },
   {
-    "objectID": "CLAUDE.html#commands",
-    "href": "CLAUDE.html#commands",
+    "objectID": "rweekly.org/CLAUDE.html#site-architecture",
+    "href": "rweekly.org/CLAUDE.html#site-architecture",
     "title": "CLAUDE.md",
     "section": "",
-    "text": "quarto preview\n\n\n\nquarto render --cache-refresh\n\n\n\nquarto render posts/&lt;post-dir&gt;/index.qmd --cache-refresh\n\n\n\nprintf 'Y\\n' | quarto publish gh-pages\nOr use the bundled safe-publish script (render + publish in one step):\nbash scripts/publish-gh-pages-safe.sh                     # full site\nbash scripts/publish-gh-pages-safe.sh posts/&lt;dir&gt;/index.qmd  # single post"
+    "text": "Jekyll site: _config.yml configures the site, _layouts/ holds HTML templates, _includes/ holds partials and static assets (CSS/JS vendored inline).\nPublished posts: _posts/ — one Markdown file per weekly issue, named YYYY-MM-DD-&lt;issue&gt;.md.\nCurrent draft: draft.md — the live working draft for the next issue. Contributors submit PRs adding links here.\nRSS feed list: rss_feeds.csv — CSV with columns URL, ENABLE, TWITTER. New blog feeds are added here (set ENABLE=1).\nR scripts: scripts/ — automation scripts for content collection and processing."
   },
   {
-    "objectID": "CLAUDE.html#architecture",
-    "href": "CLAUDE.html#architecture",
+    "objectID": "rweekly.org/CLAUDE.html#draft-post-format",
+    "href": "rweekly.org/CLAUDE.html#draft-post-format",
     "title": "CLAUDE.md",
     "section": "",
-    "text": "Each post lives in posts/&lt;slug&gt;/ as index.qmd. Posts use Quarto’s freeze feature (posts/_metadata.yml sets freeze: true), which caches computational outputs in _freeze/. Example post layout:\nposts/million_ped-20260324/\n  index.qmd          # Quarto markdown with R code chunks\n  data.csv           # Optional attached data files\n  image.png          # Optional cover / inline images\n  index_cache/       # R cache (gitignored)\n  index_files/       # Rendering intermediates (gitignored)\n\n\n\nposts/_metadata.yml sets freeze: true for all posts. This means quarto publish gh-pages reuses previously frozen execution results — if a post’s R code, figures, or sampling outputs changed, the published page will still show the old results.\nSee PUBLISH-SOP.md for the full decision tree. The critical rule is:\n\nWhen code, figures, random sampling, or data outputs change, run quarto render --cache-refresh before quarto publish gh-pages. Text-only changes can publish directly.\n\n\n\n\nPosts use categories (e.g., Breeding, Pedigree Analysis, visPedigree, R, code, AI), descriptions, and optional TOC. Code-heavy posts typically disable warnings/messages in YAML:\nexecute:\n  warning: false\n  message: false\n\n\n\n\nSource branch: main — all writing and editing happens here\nPublish branch: gh-pages — managed by quarto publish, never edited directly\nIgnored: _site/, _freeze/, .quarto/, *_files/, *_cache/, and large CSV data files tracked outside git\n\n\n\n\nSeveral posts use the visPedigree R package (also authored by the blog owner) for pedigree analysis and visualization. Posts that run R code require the package and its dependencies installed in the local R environment.\n\n\n\nUses simplex Bootswatch theme with a custom brand override and styles.css for additional CSS."
+    "text": "Links in draft.md (and posts) use this format:\n+ [Title](URL) - optional description\n\n![Optional image alt text](image-URL)\nSections in the draft: Highlight, Insights, R in the Real World, R in Organizations, R in Academia, Tutorials, Resources, New Packages, Updated Packages, Videos and Podcasts, Gist & Cookbook, Shiny Apps, Upcoming Events. Editors vote for the Highlight section — contributors should not add content there.\nWhen populating the Highlight section, copy links from their original sections — do not remove them. A highlight link should appear in both the ### Highlight section and its original section.\nImages must be HTTPS and hosted at https://raw.githubusercontent.com/. Do not add images directly to this repo (keeps repo size small).\n\n\nThe ### rtistry and ### Quotes of the Week sections use raw social embed HTML — not + [Title](URL) links. Paste the full embed blockquote code from Bluesky, Mastodon, or Twitter directly into the section. Each platform uses a different blockquote class:\n\nBluesky: &lt;blockquote class=\"bluesky-embed\" ...&gt; with &lt;script async src=\"https://embed.bsky.app/static/embed.js\"&gt;\nMastodon: &lt;blockquote class=\"mastodon-embed\" ...&gt; with &lt;script data-allowed-prefixes=\"https://fosstodon.org/\" async src=\"https://fosstodon.org/embed.js\"&gt;"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Simple living, high thinking",
+    "objectID": "rweekly.org/CLAUDE.html#r-scripts",
+    "href": "rweekly.org/CLAUDE.html#r-scripts",
+    "title": "CLAUDE.md",
     "section": "",
-    "text": "Visualizing complex pedigrees in R with visPedigree\n\n\n\nR\n\nVisualization\n\nPedigree\n\nBreeding\n\nr-bloggers\n\n\n\nTurn raw pedigree tables into publication-ready graphs in R. From simple family trees to compact views of thousands of individuals.\n\n\n\n\n\nJul 26, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n面向水产动物家系选育的百万系谱分析：visPedigree 1.8.1 的工作流与方法学解释\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n以一个包含 1,000,150 个体、50 个世代的模拟系谱为例，从水产动物家系选育的理论与技术体系出发，说明如何用 visPedigree 1.8.1 完成百万级系谱整理、参考群体多样性诊断、半衰期监控与局部可视化，并将结果转化为可执行的育种管理建议。\n\n\n\n\n\nMar 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在育种管理中，仅看某一时点的有效始祖数或有效祖先数，往往不足以判断多样性流失的速度与来源。本文在经典有效数基础上，引入基于香农信息熵的有效始祖数（feH）与有效祖先数（faH），说明其原理、公式与“长尾”遗传贡献的解释方式；并结合 visPedigree::pedhalflife() 和真实群体数据集 G09_prunedPed.csv，演示如何评估多样性半衰期、拆解始祖效应/瓶颈/漂变三类衰减来源，以及如何建立 pediv() 与 pedhalflife() 联合使用的年度育种监控流程。\n\n\n\n\n\nMar 20, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。\n\n\n\n\n\nMar 8, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n廿载罗虾育种路，斯人已逝，深切缅怀\n\n\n\nBreeding\n\nMemorial\n\n\n\n记录参与罗虾育种20年的零碎感悟，以及对杨国梁研究员的深切怀念。\n\n\n\n\n\nMar 3, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nvisPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案\n\n\n\nR\n\nVisualization\n\nPedigree\n\nBreeding\n\n\n\nvisPedigree 1.0.1 cran正式发布。新版本通过 C++ 加速与图论优化重构核心架构，新增高亮追踪、近交系数可视化及矩阵分析工具，显著提升大规模系谱数据处理效率。\n\n\n\n\n\nFeb 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n家系育种数据的探索性数据分析（EDA）\n\n\n\nR\n\nEDA\n\nBreeding\n\nDataExplorer\n\n\n\n利用 DataExplorer 和 Tidyverse 进行高效的数据清理与可视化\n\n\n\n\n\nJan 5, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nVibe coding\n\n\n\ncode\n\nAI\n\n\n\n大模型编程世代到来了\n\n\n\n\n\nJan 3, 2026\n\n\nSheng Luan\n\n\n\n\n\nNo matching items"
+    "text": "All scripts are run from the repo root directory.\n\n\n\n\n\n\n\nScript\nPurpose\n\n\n\n\nscripts/curatinator.R\nScrapes enabled RSS feeds (rss_feeds.csv) for posts from the last 6 days, fetches new/updated CRAN packages from CRANberries, and writes curatinator_latest.md\n\n\nscripts/get_rss.R\nHelper used by curatinator.R — fetches and filters RSS posts by date and reachability\n\n\nscripts/find_duplicates.R\nChecks draft.md for links already present in the last ~20 published posts\n\n\nscripts/parse_curinator.R\nParses curatinator_latest.md into a tidy data frame\n\n\nscripts/process_curinator.R\nUses ellmer + OpenAI to classify RSS posts as R-related\n\n\nscripts/gen_json.R\nParses _posts/ into JSON files in temp_json/ for the live index\n\n\ncheck_url.R\nURL health check — used by Travis CI to verify links in posts and draft\n\n\nscripts/build.R\nGenerates default.nix via the rix package for a Nix-based dev environment\n\n\n\nRun the curatinator to collect content for a new issue:\nRscript -e 'source(\"scripts/curatinator.R\")'\nCheck for duplicate links before publishing:\nRscript -e 'source(\"scripts/find_duplicates.R\"); get_dups()'"
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html",
-    "href": "posts/vispedigree-viz-20260725/index.html",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "objectID": "rweekly.org/CLAUDE.html#github-actions",
+    "href": "rweekly.org/CLAUDE.html#github-actions",
+    "title": "CLAUDE.md",
     "section": "",
-    "text": "A pedigree of ten individuals fits on a napkin. A pedigree of ten thousand is a spreadsheet you cannot read. In animal breeding, conservation genetics, and genealogy, pedigrees routinely span hundreds or thousands of records — yet they are almost always stored the same way: three columns, Ind, Sire, Dam, repeated row after row.\nThis tutorial shows how to go from that raw table to publication-ready pedigree graphs in R, using visPedigree."
+    "text": ".github/workflows/actions.yml — runs curatinator.R automatically every Saturday at 09:00 UTC, commits the result to curatinator_latest.md."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#getting-started",
-    "href": "posts/vispedigree-viz-20260725/index.html#getting-started",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Getting started",
-    "text": "Getting started\nInstall visPedigree from CRAN and load it:\ninstall.packages(\"visPedigree\")\nlibrary(visPedigree)\nYou are now ready to work with pedigree data."
+    "objectID": "rweekly.org/CLAUDE.html#nix-dev-environment",
+    "href": "rweekly.org/CLAUDE.html#nix-dev-environment",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "A default.nix is generated by scripts/build.R using the rix package (R 4.5.1). It includes all R package dependencies and system packages (quarto, chromium, curl, imagemagick), plus two GitHub-only packages: rweekly.tools and rweekly.highlights."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#what-does-a-pedigree-look-like",
-    "href": "posts/vispedigree-viz-20260725/index.html#what-does-a-pedigree-look-like",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "What does a pedigree look like?",
-    "text": "What does a pedigree look like?\nA pedigree is fundamentally a parent-offspring table. Every row names one individual and, if known, its sire and dam. Here is a tiny example with six individuals across three generations:\n\ntiny_ped &lt;- data.frame(\n  Ind  = c(\"Sire1\", \"Dam1\", \"Sire2\", \"Dam2\", \"Offspring1\", \"Offspring2\"),\n  Sire = c(NA,      NA,     \"Sire1\", NA,      \"Sire2\",     \"Sire2\"),\n  Dam  = c(NA,      NA,     \"Dam1\",  NA,      \"Dam2\",      \"Dam2\"),\n  Sex  = c(\"male\",  \"female\", \"male\", \"female\", \"male\",     \"female\")\n)\ntiny_ped\n\n         Ind  Sire  Dam    Sex\n1      Sire1  &lt;NA&gt; &lt;NA&gt;   male\n2       Dam1  &lt;NA&gt; &lt;NA&gt; female\n3      Sire2 Sire1 Dam1   male\n4       Dam2  &lt;NA&gt; &lt;NA&gt; female\n5 Offspring1 Sire2 Dam2   male\n6 Offspring2 Sire2 Dam2 female\n\n\nThe table tells you who the parents are, but it gives no visual sense of relationships, generations, or family structure. Now let visPedigree turn it into a graph:\n\ntiny_tidy &lt;- tidyped(tiny_ped)\nvisped(tiny_tidy, cex = 0.6, symbolsize = 21)\n\n\n\n\n\n\n\nFigure 1: The same pedigree drawn by visped(). Each row is a generation. Circles: females. Squares: males. Parents connect to offspring via grey lines.\n\n\n\n\n\nA few things are happening automatically:\n\nGenerations are inferred and arranged top-to-bottom.\nSex can be supplied explicitly, as in the example above, or inferred from whether an individual appears as a sire or a dam.\nFounders — individuals without recorded parents — sit at the top.\n\nThis two-step workflow — tidyped() then visped() — is the core pattern you will use for every pedigree."
+    "objectID": "rweekly.org/CLAUDE.html#jekyll-site-build",
+    "href": "rweekly.org/CLAUDE.html#jekyll-site-build",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "Build and serve locally with standard Jekyll:\nbundle install\nbundle exec jekyll serve\nCI (Travis) runs Rscript check_url.R on gh-pages branch commits to validate links. Fails if more than 300 broken links are found."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#preparing-pedigree-data-with-tidyped",
-    "href": "posts/vispedigree-viz-20260725/index.html#preparing-pedigree-data-with-tidyped",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Preparing pedigree data with tidyped()",
-    "text": "Preparing pedigree data with tidyped()\ntidyped() validates, orders, and enriches your pedigree. Let us prepare a slightly larger pedigree that ships with the package:\n\ntidy_small &lt;- tidyped(\n  small_ped,\n  cand = c(\"Y\", \"Z1\", \"Z2\")\n)\n\n# What did tidyped() produce?\nsummary(tidy_small)\n\nPedigree Summary\n================\n\nTotal Individuals:  24 \n  - Males:    10 (41.7%) \n  - Females:  11 (45.8%) \n  - Unknown:  3 (12.5%) \n\nPedigree Structure:\n  - Founders (no parents):   9 \n  - Both parents known:      15 \n\nGeneration:\n  - Maximum:  6 \n  - Distribution:\n      Gen 1: 9 individuals\n      Gen 2: 3 individuals\n      Gen 3: 5 individuals\n      Gen 4: 3 individuals\n      Gen 5: 2 individuals\n      Gen 6: 2 individuals\n\nReproduction:\n  - Individuals with offspring:  21 \n  - Sires:  10  (Mean=1.5, Max=3 offspring)\n  - Dams:   11  (Mean=1.4, Max=2 offspring)\n\nFull-sibling Families:\n  - Number of families:      11 \n  - Mean family size:        1.36\n  - Maximum family size:     2 \n  - Top families by size:\n      AxB: 2\n      ExF: 2\n      J2xC: 2\n      NxX: 2\n      HxI: 1\n\nCandidates Traced:  3 \n\n================\n\n\ntidyped() does several things in one call:\n\nValidates that every sire and dam exists as an individual (or is NA for founders).\nOrders individuals so that parents always appear before their offspring.\nInfers generations (the Gen column) from the pedigree structure.\nDetects and reports pedigree loops — circular parentage that would make the pedigree invalid.\nPrunes to the relevant sub-pedigree when you specify cand.\n\nThe cand argument tells tidyped() which individuals you care about; it trims unrelated branches so your plot stays focused."
+    "objectID": "rweekly.org/CLAUDE.html#fetching-website-content",
+    "href": "rweekly.org/CLAUDE.html#fetching-website-content",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "To read a webpage as clean text (e.g. to inspect a linked article), use any of these:\n\nWebFetch tool — built-in Claude Code tool; use it directly.\nJina Reader — curl https://r.jina.ai/https://www.example.com — fallback if WebFetch fails.\nDefuddle — curl https://defuddle.md/example.com — second fallback."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#your-first-pedigree-graph",
-    "href": "posts/vispedigree-viz-20260725/index.html#your-first-pedigree-graph",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Your first pedigree graph",
-    "text": "Your first pedigree graph\nOnce the pedigree is tidied, one line of code produces the plot:\n\nvisped(tidy_small, cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 2: The small_ped pedigree, tidied with candidate individuals Y, Z1, and Z2.\n\n\n\n\n\nThe default visual encoding (shapeby = \"sex\") uses circles for females, squares for males, and diamonds for unknown sex. Each row of connected nodes is a generation, aligned for easy comparison.\nTo save the graph as a publication-ready vector file, add a filename:\nvisped(tidy_small, file = \"my_pedigree.pdf\")   # PDF\nvisped(tidy_small, file = \"my_pedigree.svg\")   # SVG (editable in Illustrator)\nFor deep pedigrees, generation labels help readers navigate the graph. Use genlab = TRUE for default G1, G2, ... labels, or a character vector for custom text:\n\ntidy_simple &lt;- tidyped(simple_ped)\nvisped(tidy_simple,\n       genlab = c(\"Founder\", \"G1\", \"G2\", \"G3\", \"G4\", \"G5\"),\n       cex = 0.3, symbolsize = 8)\n\n\n\n\n\n\n\nFigure 3: Custom generation labels on the simple_ped pedigree.\n\n\n\n\n\nIf labels appear too small, genlabcex adjusts them independently of cex."
+    "objectID": "rweekly.org/CLAUDE.html#git-commits",
+    "href": "rweekly.org/CLAUDE.html#git-commits",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "When committing, do not add Claude co-authorship (Co-Authored-By: trailers). Commits should appear under the user’s name only."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#focusing-on-individuals-highlight-and-trace",
-    "href": "posts/vispedigree-viz-20260725/index.html#focusing-on-individuals-highlight-and-trace",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Focusing on individuals — highlight and trace",
-    "text": "Focusing on individuals — highlight and trace\nIn a large pedigree, you often need to draw attention to specific individuals: breeding candidates, genotyped animals, or carriers of a particular allele. The highlight argument does exactly that:\n\nvisped(tidy_small, highlight = \"Y\", cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 4: Individual Y is highlighted with a purple border and light purple fill.\n\n\n\n\n\nYou can highlight multiple individuals and customize the colors:\n\nvisped(tidy_small,\n  highlight = list(ids = c(\"Y\", \"Z1\"),\n                   frame.color = \"#4caf50\", color = \"#81c784\"),\n  cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 5: Y and Z1 highlighted with a custom green color scheme.\n\n\n\n\n\nMore useful still is tracing — showing only an individual and its ancestors:\n\nvisped(tidy_small, highlight = \"Y\", trace = \"up\", cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 6: Tracing Y’s ancestors with trace = “up”. Only Y and its direct ancestral line are shown.\n\n\n\n\n\nSet trace = \"down\" for descendants, or trace = \"all\" for both. This is invaluable when you need to answer: Where did this breeding candidate come from?"
+    "objectID": "rweekly.org/CLAUDE.html#contributing-workflow",
+    "href": "rweekly.org/CLAUDE.html#contributing-workflow",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "Add links to draft.md under the appropriate section.\nSubmit a PR against gh-pages.\nThe PR template asks contributors to identify which section(s) the content belongs to.\nEditors merge PRs and handle the weekly release (freeze on Sunday, publish Monday).\nTo add an RSS feed permanently, add a row to rss_feeds.csv with ENABLE=1."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#compact-mode-for-large-full-sib-families",
-    "href": "posts/vispedigree-viz-20260725/index.html#compact-mode-for-large-full-sib-families",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Compact mode for large full-sib families",
-    "text": "Compact mode for large full-sib families\nReal-world pedigrees often contain large full-sib families. In aquatic species like shrimp and fish, a single mating can produce dozens of full siblings. Plotting every individual creates an unreadable wall of nodes.\nHere we extract three full-sib families from a real breeding program — 1,120 offspring across three sire–dam pairs — and trace their ancestry through nine generations:\n\ndata(big_family_size_ped)\ntp &lt;- tidyped(big_family_size_ped)\n\n# Select offspring from three sire–dam pairs in the most recent generation\nmaxgen &lt;- max(tp$Gen)\ncand_offspring &lt;- tp[Gen == maxgen & (\n  (Sire == \"70Z5\" & Dam == \"7Z0Y\") |\n  (Sire == \"70YZ\" & Dam == \"7ZZ0\") |\n  (Sire == \"7009\" & Dam == \"7093\")\n), Ind]\n\n# Trace up through all ancestors\nsub_ped &lt;- tidyped(big_family_size_ped, cand = cand_offspring, trace = \"up\")\n\n# Shorten labels to last 4 characters to reduce clutter\nsub_ped$ShortID &lt;- substring(sub_ped$Ind, pmax(1, nchar(sub_ped$Ind) - 3))\n\nvisped(sub_ped, labelvar = \"ShortID\", compact = TRUE,\n       cex = 0.35, symbolsize = 8)\n\n\n\n\n\n\n\nFigure 7: Three large full-sib families compacted into FS×N nodes, with nine generations of ancestry. Without compact mode, the bottom row would contain 1,120 individual nodes.\n\n\n\n\n\nEach green-grey rectangle represents an entire family — FS×378, FS×367, and FS×375 for the three selected families. Without compact = TRUE, the bottom row alone would contain 1,120 individual nodes, making the graph unreadable. With compact mode, the pedigree structure is clear at a glance.\nThe labelvar argument tells visped() to display a different column as node labels — here, the last four characters of each ID instead of the full string. Compact family nodes (FS×N) are unaffected and continue to show family size.\nFor extremely large pedigrees, outline = TRUE draws the pedigree in silhouette mode — no individual labels, just the population shape — useful for quick visual inspection of population construction over generations.\nThis is what makes visPedigree different from a generic plotting wrapper — it understands pedigree structure and uses it to produce readable graphs at any scale. Core algorithms (inbreeding calculation, topological sorting, ancestry tracing) are implemented in C++ and scale to over one million individuals."
+    "objectID": "rweekly.org/about.html",
+    "href": "rweekly.org/about.html",
+    "title": "About",
+    "section": "",
+    "text": "Weekly Updates from the Entire R Community"
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#inbreeding-coefficients-on-the-graph",
-    "href": "posts/vispedigree-viz-20260725/index.html#inbreeding-coefficients-on-the-graph",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Inbreeding coefficients on the graph",
-    "text": "Inbreeding coefficients on the graph\nInbreeding is a central concern in breeding programs and conservation genetics. Run tidyped() with inbreed = TRUE to compute inbreeding coefficients, then set showf = TRUE in visped() to display them on the graph:\n\ntidy_inbred &lt;- tidyped(inbred_ped, inbreed = TRUE)\nvisped(tidy_inbred, showf = TRUE, cex = 0.7, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 8: Inbreeding coefficients displayed alongside individual IDs. Individual G, the product of several generations of close mating within a small population, has F = 0.4375.\n\n\n\n\n\nEach node now shows both the ID and its inbreeding coefficient (f), making it easy to spot individuals with elevated inbreeding at a glance."
+    "objectID": "rweekly.org/about.html#about-us",
+    "href": "rweekly.org/about.html#about-us",
+    "title": "About",
+    "section": "About Us",
+    "text": "About Us\nR Weekly was founded on May 20, 2016. R is growing very quickly, and there are lots of great blogs, tutorials and other formats of resources coming out every day. R Weekly wants to keep track of these great things in the R community and make it more accessible to everyone.\nThis is a warm and welcoming place. The team welcomes everyone who wants to contribute to the R community.\nMail R Weekly - mail at rweekly.org\nTeam Members (alphabet order)\nBatool Almarzouq, Colin Fay, Eric Nantz, Jon Calder, Jonathan Carroll, Kelly N. Bodwin, Miles McBain, Robert Hickman, Ryo Nakagawara, Sam Parmar, Tony ElHabr, Wolfram Qin"
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#real-world-applications",
-    "href": "posts/vispedigree-viz-20260725/index.html#real-world-applications",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Real-world applications",
-    "text": "Real-world applications\nvisPedigree is used in peer-reviewed research across livestock breeding, conservation genetics, and human genealogy:\n\n🐖 Gochu Asturcelta pig — pedigree visualization of 471 individuals from 51 families (BMC Genomics, 2024).\n🦏 Eastern black rhinoceros — observational pedigree construction to classify ancestry cohorts for inbreeding depression analysis (PNAS, 2025).\n🐕 Labrador Retriever — pedigree quality control on 1,486,764 records, helping locate pedigree loops that were traced to incorrect sire assignments (Genetics Selection Evolution, 2025).\n\nMore verified applications are listed on the Applications page."
+    "objectID": "rweekly.org/about.html#social-medias",
+    "href": "rweekly.org/about.html#social-medias",
+    "title": "About",
+    "section": "Social Medias",
+    "text": "Social Medias\nR Weekly @\nFacebook, Twitter\nYouTube Channel\nLinkedIn, dev.to()\nSupport with Patreon\n\nSubmit\nGo to https://rweekly.org/submit\nSubmit your links and scripts for R Weekly posts and podcasts.\n💡 Use W3C Feed Validation Service to checks the syntax of Atom or RSS feeds.\n\n\nPull Requests\nUpdate the draft post, and create a pull request.\n\n\nCommunication\nDo you enjoy R Weekly?\n5 stars for R Weekly fans! 😍\n\n☆☆☆☆☆\n\n\n\nThanks for your feedback!\n\n\n    &lt;textarea id=\"submit-desc-1\" required=\"\" style=\"width: 90%\" class=\"pure-input-1 submit-form-90 \" placeholder=\"More ideas about R Weekly\"&gt;&lt;/textarea&gt;\n    &lt;input id=\"submit-email-1\" style=\"width: 90%\" class=\"pure-input-1 submit-form-90\" placeholder=\"contact\"&gt;\n&lt;/fieldset&gt;\n\n&lt;button id=\"link-submit-1\" type=\"submit\" class=\"pure-button pure-input pure-button-primary\" style=\"width:90%;display: inline-block;\"&gt;Submit&lt;/button&gt;\n\n\n\n\n\n\nHave a question or great idea about this website?\nTalk with us on Twitter, dev.to() or Google Groups.\nThanks for reading!\n\n\nName\nR Weekly for the name, and RWeekly.org for the URL."
   },
   {
-    "objectID": "posts/vispedigree-viz-20260725/index.html#where-to-go-from-here",
-    "href": "posts/vispedigree-viz-20260725/index.html#where-to-go-from-here",
-    "title": "Visualizing complex pedigrees in R with visPedigree",
-    "section": "Where to go from here",
-    "text": "Where to go from here\nVisualization is the entry point, but the same tidied pedigree object powers a complete analysis pipeline:\n\nPopulation genetic summaries — pedigree completeness, generation intervals, and inbreeding statistics (pedstats()).\nGenetic diversity analysis — founder and ancestor contributions, effective population size, and diversity half-life modelling (pedcontrib(), pediv(), pedne(), pedhalflife()).\nRelationship matrices and matrix-free computation — additive, dominance, and epistatic relationship matrices, plus pedprod() for computing Ax and A⁻¹x without constructing the dense matrix (pedmat(), pedprod(), vismat()).\n\nIf you work with pedigree data in R — whether in animal breeding, conservation genetics, or genealogy — visPedigree provides a unified workflow from data preparation to publication-ready output.\nInstall from CRAN:\ninstall.packages(\"visPedigree\")\nFull documentation at luansheng.github.io/visPedigree."
+    "objectID": "rweekly.org/about.html#more-on-r-weekly",
+    "href": "rweekly.org/about.html#more-on-r-weekly",
+    "title": "About",
+    "section": "More on R Weekly",
+    "text": "More on R Weekly\n\n\nBlog\nhttps://blog.rweekly.org\nUpdates and changes on R Weekly.\n\n\nSearch\nhttps://rweekly.org/search\nSearch interesting R posts.\n\n\nRandom\nhttps://rweekly.org/random\nRead random R posts."
+  },
+  {
+    "objectID": "rweekly.org/about.html#options",
+    "href": "rweekly.org/about.html#options",
+    "title": "About",
+    "section": "Options",
+    "text": "Options\n\nShow Origin\nShow hostnames of URLs. Status: On\n\n\n\nPodcast Corner\nPodcast Corner. Status: On\n\n\n\nTOC\nDisplay TOC. Status: On\n\n\n\nShow Support\nShow how to support R Weekly team. Status: On\n\n\n\nLike - Testing Feature\nKeep a reading list in the browser with the posts you like. Status: Off"
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html",
+    "href": "rweekly.org/CONTRIBUTING.html",
+    "title": "Update",
+    "section": "",
+    "text": "The draft post is in https://github.com/rweekly/rweekly.org/blob/gh-pages/draft.md\nPut new updates to the draft post. Add links to the bottom of each section.\nSeparate each item with a blank line. This layout will have a better view on most RSS readers.\nDoing is better than talking. If you find a bug which is easy to fix, just click the edit button.\n+ [item one](link) - text\n\n+ [item two](link) - text\n\n![item two image alt text](link)"
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#tutorials",
+    "href": "rweekly.org/CONTRIBUTING.html#tutorials",
+    "title": "Update",
+    "section": "Tutorials",
+    "text": "Tutorials\nR tutorials for how to use certain packages and tools (usually code is embedded)."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#insights",
+    "href": "rweekly.org/CONTRIBUTING.html#insights",
+    "title": "Update",
+    "section": "Insights",
+    "text": "Insights\nArticles that talks about R and data science in general (usually no code embedded)."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#r-in-the-real-world",
+    "href": "rweekly.org/CONTRIBUTING.html#r-in-the-real-world",
+    "title": "Update",
+    "section": "R in the Real World",
+    "text": "R in the Real World\nAnalyses that use R to analyze real-world data sets."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#r-in-organization",
+    "href": "rweekly.org/CONTRIBUTING.html#r-in-organization",
+    "title": "Update",
+    "section": "R in Organization",
+    "text": "R in Organization\nR use cases/events that showcase how organizations are utilizing or integrating to R."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#r-in-academia",
+    "href": "rweekly.org/CONTRIBUTING.html#r-in-academia",
+    "title": "Update",
+    "section": "R in Academia",
+    "text": "R in Academia\nR use cases that showcase how Academia is utilizing R."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#international-r",
+    "href": "rweekly.org/CONTRIBUTING.html#international-r",
+    "title": "Update",
+    "section": "International R",
+    "text": "International R\nNon-English R related content."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#videos-and-podcasts",
+    "href": "rweekly.org/CONTRIBUTING.html#videos-and-podcasts",
+    "title": "Update",
+    "section": "Videos and Podcasts",
+    "text": "Videos and Podcasts\nVideos and Podcasts about R."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#resources",
+    "href": "rweekly.org/CONTRIBUTING.html#resources",
+    "title": "Update",
+    "section": "Resources",
+    "text": "Resources\nLong posts, websites, books, slides, list, cheat sheets, or other learning resources in general that are more officially aggregated as a guide material."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#connect",
+    "href": "rweekly.org/CONTRIBUTING.html#connect",
+    "title": "Update",
+    "section": "Connect",
+    "text": "Connect\nR Jobs and Communities."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#new-packages-and-tools",
+    "href": "rweekly.org/CONTRIBUTING.html#new-packages-and-tools",
+    "title": "Update",
+    "section": "New Packages and Tools",
+    "text": "New Packages and Tools\nNew packages and tools that are created or published in the past 2 weeks."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#new-releases",
+    "href": "rweekly.org/CONTRIBUTING.html#new-releases",
+    "title": "Update",
+    "section": "New Releases",
+    "text": "New Releases\nNew releases (i.e. recent version updates) of pre-existing tools and packages for R."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#call-for-participation",
+    "href": "rweekly.org/CONTRIBUTING.html#call-for-participation",
+    "title": "Update",
+    "section": "Call for Participation",
+    "text": "Call for Participation\nNew R groups, communities or competitions here."
+  },
+  {
+    "objectID": "rweekly.org/CONTRIBUTING.html#upcoming-events",
+    "href": "rweekly.org/CONTRIBUTING.html#upcoming-events",
+    "title": "Update",
+    "section": "Upcoming Events",
+    "text": "Upcoming Events\nAt most three links about big events for the upcoming months. This section repeats every issue. If there are some big interesting events, we can also add more than three links.\nEvents can also be in Call for Participation section."
+  },
+  {
+    "objectID": "rweekly.org/more.html",
+    "href": "rweekly.org/more.html",
+    "title": "More on R Weekly",
+    "section": "",
+    "text": "Blog\nhttps://blog.rweekly.org\nUpdates and changes on R Weekly."
+  },
+  {
+    "objectID": "rweekly.org/CODE_OF_CONDUCT.html",
+    "href": "rweekly.org/CODE_OF_CONDUCT.html",
+    "title": "Contributor Code of Conduct",
+    "section": "",
+    "text": "Contributor Code of Conduct\nAs contributors and maintainers of this project, we pledge to respect all people who contribute through reporting issues, posting feature requests, updating documentation, submitting pull requests or patches, and other activities.\nWe are committed to making participation in this project a harassment-free experience for everyone, regardless of level of experience, gender, gender identity and expression, sexual orientation, disability, personal appearance, body size, race, ethnicity, age, or religion.\nExamples of unacceptable behavior by participants include the use of sexual language or imagery, derogatory comments or personal attacks, trolling, public or private harassment, insults, or other unprofessional conduct.\nProject maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct. Project maintainers who do not follow the Code of Conduct may be removed from the project team.\nInstances of abusive, harassing, or otherwise unacceptable behavior may be reported by opening an issue or contacting one or more of the project maintainers.\nThis Code of Conduct is adapted from the Contributor Covenant (http://contributor-covenant.org), version 1.0.0, available at http://contributor-covenant.org/version/1/0/0/"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "Sheng Luan, Professor of YSFRI\nluansheng@gmail.com\nNanjing Road 106#, Qingdao, 266071, Shandong, China"
+  },
+  {
+    "objectID": "about.html#contact",
+    "href": "about.html#contact",
+    "title": "About",
+    "section": "",
+    "text": "Sheng Luan, Professor of YSFRI\nluansheng@gmail.com\nNanjing Road 106#, Qingdao, 266071, Shandong, China"
+  },
+  {
+    "objectID": "about.html#biography",
+    "href": "about.html#biography",
+    "title": "About",
+    "section": "Biography",
+    "text": "Biography\nMy research is on the areas of shrimp and fish selective breeding. I am interested in design of genetic improvement programs, development of breeding objectives, selection strategies, and genetic evaluation systems. Currently, my research is focused on estimating genetic parameters for additive, non-additive and indirect genetic effects, predicting selection response, and designing mating scheme for economically important traits in shrimp and fish."
+  },
+  {
+    "objectID": "about.html#interests",
+    "href": "about.html#interests",
+    "title": "About",
+    "section": "Interests",
+    "text": "Interests\n\nDesign the selective breeding program for shrimp and fish\nGenomic selection and GWAS for important economic traits in shrimp\nIndirect genetic effect for target traits in shrimp\nGenetic evaluation for uniformity in shrimp\nApplication of optimum contribution in shrimp and fish"
+  },
+  {
+    "objectID": "about.html#education",
+    "href": "about.html#education",
+    "title": "About",
+    "section": "Education",
+    "text": "Education\n\nPhD in marine biology, 2006\nOcean University of China"
+  },
+  {
+    "objectID": "publication.html",
+    "href": "publication.html",
+    "title": "Publication",
+    "section": "",
+    "text": "Kang Ziyi, Kong Jie, Li Qi, Sui Juan, Dai Ping, Luo Kun, Meng Xianhong, Chen Baolong, Cao Jiawang, Tan Jian, Fu Qiang, Xing Qun, Luan Sheng. Genomic selection strategies to overcome genotype by environment interactions in biosecurity-based aquaculture breeding programs. Genet Sel Evol., 2025, 57, 2. https://doi.org/10.1186/s12711-025-00949-3.\nKang Ziyi, Kong Jie, Li Qi, Sui Juan, Dai Ping, Luo Kun, Meng Xianhong, Chen Baolong, Cao Jiawang, Tan Jian, Fu Qiang, Wang Zhaoxin, Luan Sheng. Genomic selection for hard-to-measure traits in aquaculture: Challenges in balancing genetic gain and diversity. Aquaculture, 2025, 606, 742576. https://doi.org/10.1016/j.aquaculture.2025.742576.\nZhou Hao, Qiang Guangfeng, Xia Yan, Tan Jian, Fu Qiang, Luo Kun, Meng Xianhong, Chen Baolong, Chen Meiijia, Sui Juan, Dai Ping, Li Xupeng, Liu Mianyu, Xing Qun, Kong Jie, Luan Sheng. Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid Shrimp Through Neighboring Gene Regulation. Animals, 2025, 15, 262. https://doi.org/10.3390/ani15020262.\n张士薇，代平，高广春，孟宪红，罗坤，隋娟，谭建，傅强，曹家旺，陈宝龙，李旭鹏，强光峰，邢群，戚云辉，孔杰，栾生. 基于深度学习算法的凡纳滨对虾生长表型测定系统研发及应用. 水产学报, 2025, 49, 059117–059117. https://doi.org/10.11964/jfc.20240714612.\nKang Ziyi, Kong Jie, Sui Juan, Dai Ping, Luo Kun, Meng Xianhong, Liu Junyu, Chen Baolong, Cao Jiawang, Tan Jian, Fu Qiang, Li Qi, Luan Sheng. Optimal open nucleus breeding system for long-term genetic gain in the Pacific white shrimp using genomic selection. Aquaculture, 2024, 586, 740760. https://doi.org/10.1016/j.aquaculture.2024.740760.\nLiu Mianyu, Dai Ping, Kong Jie, Meng Xianhong, Sui Juan, Luo Kun, Chen Baolong, Fu Qiang, Cao Baoxiang, Cao Jiawang, Luan Sheng. Assessing accuracy of genomic breeding values of selection candidates under biosecurity restrictions by progeny testing in Chinese shrimp Fenneropenaeus chinensis. Aquaculture, 2023, 566, 739181. https://doi.org/10.1016/j.aquaculture.2022.739181.\nLuan Sheng, Qiang Guangfeng, Cao Baoxiang, Luo Kun, Meng Xianhong, Chen Baolong, Kong Jie. Feed competition reduces heritable variation for body weight in Litopenaeus vannamei. Genetics Selection Evolution, 2020, 52:45. https://doi.org/10.1186/s12711-020-00565-3.\nKong Zhangwei, Kong Jie, Hao Dengchun, Lu Xia, Tan Jian, Meng Xianhong, Luo Kun, Cao Baoxiang, Li Xupeng, Luan Sheng. Reducing the Common Environmental Effect on Litopenaeus vannamei Body Weight by Rearing Communally at Early Developmental Stages and Using a Reconstructed Pedigree. J. Ocean Univ. China, 2020, 19(4): 923–930 (2020). https://doi.org/10.1007/s11802-020-4324-5.\nLiu Junyu, Yang Guoliang, Kong Jie, Xia Zhenglong, Sui Juan, Tang Qiongying, Luo Kun, Dai Ping, Lu Xia, Meng Xianhong, Luan Sheng. Using single-step genomic best linear unbiased prediction to improve the efficiency of genetic evaluation on body weight in Macrobrachium rosenbergii. Aquaculture, 2020, https://doi.org/10.1016/j.aquaculture.2020.735577.\nDai Ping, Liu Junyu, Sui Juan, Meng Xianhong, Kong Jie, Luan Sheng. Evaluation of the utility of genomic information to improve genetic evaluation of feed efficiency traits of the Pacific white shrimp Litopenaeus vannamei. Aquaculture, 2020, 527. https://doi.org/10.1016/j.aquaculture.2020.735421.\n孙犁, 卢霞, 孔杰, 孟宪红, 闫允君, 李波波, 仲伟鹏, 陈宝龙, 曹宝祥, 罗坤, 栾生. 中国明对虾calcineurin B基因的克隆及其在竞争行为中作用的初探. 水产学报, 2020, 44(1):11~20.\n刘峻宇, 杨国梁, 孔杰, 夏正龙, 罗坤, 唐琼英, 卢霞, 孟宪红, 李景芬, 栾生. 罗氏沼虾开放和闭锁核心育种群生长和存活性能分析. 中国水产科学, 2019, 26(5):861-868.\n刘峻宇, 刘均辉, 孔杰, 代平, 于洋, 孟宪红, 罗坤, 曹宝祥, 陈宝龙, 栾生, 高焕. 凡纳滨对虾SNP标记开发与家系亲缘关系验证分析. 渔业科学进展, 2019, https://doi.org/10.19663/j.issn2095-9869.20191022001.\nSui Juan, Luan Sheng, Yang Guoliang, Xia Zhenglong, Luo Kun, Tang Qiongying, Lu Xia, Meng Xianhong, Kong Jie. Genetic parameters and selection response for the harvest body weight of the giant freshwater prawn (Macrobrachium rosenbergii) in a breeding program in China. PLOS ONE, 2019, 14(8): e0218379. https://doi.org/10.1371/journal.pone.0218379.\nDai Ping, Kong Jie, Meng Xianhong, Luo Kun, Lu Xia, Chen Baolong, Cao Baoxiang, Luan Sheng. Genotype by environment interaction for feed efficiency trait of the juvenile Pacific white shrimp Litopenaeus vannamei held in individuals vs. in groups. Aquaculture, 2019, 500:506-513.\nLu Xia, Kong Jie, Meng Xianhong, Cao Baoxiang, Luo Kun, Dai Ping, Luan Sheng. Identification of SNP markers associated with tolerance to ammonia toxicity by selective genotyping from de novo assembled transcriptome in Litopenaeus vannamei. Fish & Shellfish Immunology, 2018, 73: 158-166.\nDai Ping, Kong Jie , Wang Sen, Lu Xia, Luo Kun, Cao Baoxiang, Meng Xianhong, Luan Sheng. Identiﬁcation of SNPs Associated With Residual Feed Intake From the Muscle of Litopenaeus vannamei Using Bulk Segregant RNA Seq. Aquaculture, 2018, 497:56-63.\nLuan Sheng, Luo Kun, Chai Zhan, Cao Baoxiang, Meng Xianhong, Lu Xia, Liu Ning, Xu Shengyu, Kong Jie. An analysis of indirect genetic effects on adult body weight of the Pacific white shrimp Litopenaeus vannamei at low rearing density. Genetics Selection Evolution, 2015, 47:95, DOI:10.1186/s12711-015-0164-y.\nLuan Sheng, Yang Guoliang, Wang Junyi, Luo Kun, Zhang Yufei, Gao Qiang, Hu Honglang, Kong Jie. Genetic parameters and response to selection for harvest body weight of the giant freshwater prawn Macrobrachium rosenbergii. Aquaculture, 2012, 362-363(1-4):88-96.\nLuan Sheng, Wang Junyi, Yang Guoliang, Luo Kun, Chen Xuefeng, Gao Qiang, Hu Honglang, Kong Jie. Genetic parameters of survival for six generations in the giant freshwater prawn Macrobrachium rosenbergii. Aquaculture Research, 2015, 46(6):1345-1355.\nLuan Sheng, Yang Guoliang, Wang Junyi, Luo Kun, Chen Xuefeng, Gao Qiang, Hu Honglang, Kong Jie. Selection responses in survival of Macrobrachium rosenbergii after performing five generations of multi-trait selection for growth and survival. Aquaculture International, 2014, 22(3):993-1007.\nLuan Sheng, Kong Jie, Wang Qinyin. Genetic variation of wild and cultured populations of the Kuruma prawn Marsupenaeus japonicus (Bate 1888) using microsatellites. Aquaculture Research, 2006, 37(8):785-792.\nTAN Jian, KONG Jie, LUO Kun, CAO Baoxiang, LIU Ning, MENG Xianghong, GUO Zhaojia, XU Shengyu, and Luan Sheng. Genetic parameter estimation of reproductive traits of Litopenaeus vannamei. Journal of Ocean University of China. 2017, 16(1): 161-167.\nSui Juan, Luan Sheng, Luo Kun, Meng Xianhong, Lu Xia, Cao Baoxiang, Li Wenjia, Chai Zhan, Liu Ning, Xu Shengyu, Kong Jie. Genetic parameters and response to selection for harvest body weight of pacific white shrimp, Litopenaeus vannamei. Aquaculture Research, 2015, 1-9. DOI:10.1111/are.12729.\nSui Juan, Luan Sheng, Luo Kun, Meng Xianhong, Cao Baoxiang, Liu Ning, Li Wenjia, Lu Xia, Chai Zhan, Kong Jie. Genetic parameters and response to selection of harvest body weight of the Chinese shrimp Fenneropenaeus chinensis after five generations of multi-trait selection. Aquaculture, 2016, 452: 134–141.\nSui Juan, Luan Sheng, Yang Guoliang, Chen Xuefeng, Luo Kun, Gao Qiang, Wang Junyi, Hu Honglang, Kong Jie. Impact of pedigree depth and inclusion of historical data in the estimation of variance components and breeding values in Macrobrachium rosenbergii. Aquaculture, 2016, 464:80-86.\nLu Xia, Luan Sheng, Hu LongYang, Mao Yong, Tao Ye, Zhong ShengPing, Kong Jie. High resolution genetic linkage mapping, high temperature tolerance and growth related quantitative trait locus (QTL) identification in Marsupenaeus japonicus. Molecular Genetics and Genomics, 2016, DOI:10.1007/S00438-016-1192-1.\nLu Xia, Luan Sheng, Hu Longyang, Mao Yong, Kongjie. Genome-wide mining, characterization, and development of microsatellite markers in Marsupenaeus japonicus by genome survey sequencing. Chinese Journal of Oceanology and limnology, 2015, DOI: 10.1007/s00343-016-5250-7.\n栾生, 仲伟鹏, 谭健, 罗坤, 陈宝龙, 孔杰. 凡纳滨对虾收获体重大规模家系选择效果的计算机模拟分析. 水产学报, 2018, 42(10): 1582-1588.\n仲伟鹏, 罗坤, 孟宪红, 陈宝龙, 隋娟, 孔杰, 曹宝祥, 邢群, 栾生. 限制投喂环境下中国对虾体重的间接遗传效应分析. 中国水产科学, 2018, 25(6):1245-1251.\n强光峰, 杨国梁, 陈雪峰, 孔杰, 夏正龙, 高强, 罗坤, 栾生. 罗氏沼虾高世代育种群体收获体重加性和显性遗传效应. 中国水产科学, 2017, 24(5):1027-1034.\n栾生, 边文冀, 邓伟, 胡红浪, 孔杰, 秦钦, 陈校辉, 钟立强, 黄太寿. 斑点叉尾鮰基础群体生长和存活性状遗传参数估计. 水产学报, 2012, 36(9): 1313-1321.\n栾生, 罗坤, 阮晓红, 曹宝祥, 王浩, 杜学芳, 张凯, 孔杰. 凡纳滨对虾体重、存活性状的遗传参数和基因型与环境互作效应. 海洋与湖沼, 2013, 44(2): 445-452.\n栾生, 金武, 孔杰, 罗坤, 孟宪红, 张天时, 王清印. 中国对虾(Fenneropenaeus chinensis)多性状复合育种方案的遗传和经济评估. 海洋学报, 2013, 35(2):133-142.\n栾生, 隋娟, 孟宪红, 罗坤, 曹宝祥, 孔杰. 最佳遗传贡献理论及其在水产动物选择育种中的应用前景. 渔业科学进展, 2014, 6(35):133-140.\n栾生, 孔杰, 王清印. 日本囊对虾三个地理群体的多元异速生长分析. 海洋与湖沼, 2006, 38(Supp.):60-65.\n栾生, 孔杰, 王清印, 高 焕, 王伟继, 张庆文.日本囊对虾(Marsupenaeus japonicus)基因组微卫星特征分析.自然科学进展, 2007, 17(6):731-740\n栾生, 孔杰, 王清印, 高 焕, 王伟继, 张庆文. 日本囊对虾基因组小卫星特征分析. 水产学报, 2007, 31(2) :88-95.\n栾生, 孔杰, 张天时, 罗坤, 杨翠华, 田燚, 王清印.基于表型值和育种值的中国对虾生长、抗逆性状相关分析.海洋水产研究, 2008, 29(3):14-20.\n栾生, 孙慧玲, 孔杰. 刺参耳状幼体体长遗传力的估计. 中国水产科学, 2006, 13(3):378-383."
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html",
+    "href": "posts/vispedigree-paper-20260730/index.html",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "",
+    "text": "近日，visPedigree 的软件论文 “visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees” 在 Bioinformatics Advances 发表（DOI: 10.1093/bioadv/vbag210）。visPedigree 是一款面向动物、植物及水产育种的 R 软件包，聚焦于复杂系谱数据的整理、分析和可视化。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#面向育种实践中的复杂系谱数据问题",
+    "href": "posts/vispedigree-paper-20260730/index.html#面向育种实践中的复杂系谱数据问题",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "面向育种实践中的复杂系谱数据问题",
+    "text": "面向育种实践中的复杂系谱数据问题\n系谱数据是遗传育种中的基础数据，支撑着亲缘关系控制、选配方案制定、近交监测和遗传多样性评估等关键环节。然而，在实际育种工作中，大型群体的系谱数据往往需要用不同的工具和数据结构分别完成整理、分析和可视化，这种碎片化使常规分析流程变得繁琐且容易出错。\n更具体地说，真实育种系谱具有三个常被忽视的结构复杂性：其一，水产和植物育种中常见的高繁殖力物种，单对亲本可产生大量全同胞后代，导致系谱结构极不平衡；其二，育种群体世代深度参差不齐——并非所有个体都能追溯至相同世代；其三，多批次、多世代的重复评估使得系谱数据持续增长且结构不断变化。传统的手工整理方式或通用数据处理工具难以有效应对这些特点。\nvisPedigree 正是围绕上述实际问题持续开发的解决方案。它通过设计统一的 tidyped 对象模型，将系谱整理、结构校验、可视化、近交分析和群体遗传评估整合在同一框架内，避免数据在不同工具间反复转换。该软件最早于 2018 年在 GitHub 发布，经过多年使用和完善，近期完成了系统整理、CRAN 发布和同行评议论文发表，为后续推广应用、结果复现和规范引用提供了基础。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#构建标准化的-tidyped-系谱对象",
+    "href": "posts/vispedigree-paper-20260730/index.html#构建标准化的-tidyped-系谱对象",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "构建标准化的 tidyped 系谱对象",
+    "text": "构建标准化的 tidyped 系谱对象\n针对实际系谱数据来源复杂、格式不统一、父母本信息不完整、个体排序混乱等问题，visPedigree 设计了标准化的 tidyped 系谱对象。\n通过 tidyped() 函数，用户可以将原始系谱表整理为结构规范、可直接用于后续分析的对象。在这一过程中，软件可完成个体排序、父母本关系检查、世代推断、缺失亲本处理、候选个体追踪和循环系谱检测等操作。\n这一设计使系谱整理、结构校验、可视化、近交分析、遗传多样性分析和关系矩阵相关计算能够基于统一数据对象完成，有助于减少重复数据整理和不同分析流程之间的格式转换，提高分析流程的规范性和可复用性。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#支持复杂系谱追踪与可视化",
+    "href": "posts/vispedigree-paper-20260730/index.html#支持复杂系谱追踪与可视化",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "支持复杂系谱追踪与可视化",
+    "text": "支持复杂系谱追踪与可视化\n在育种研究中，研究人员经常需要追溯候选个体的祖先来源，分析某一家系在后续世代中的延续情况，或展示多世代育种群体的亲缘结构。\nvisPedigree 支持候选个体的祖先追踪、后代追踪和双向追踪，并可将追踪结果绘制为多世代系谱图。软件可根据世代信息自动排列个体，并支持根据性别、角色或用户自定义信息设置节点样式，便于研究人员直观展示复杂群体结构。\n针对育种群体中常见的大型全同胞家系，特别是对虾、鱼类等高繁殖力水产动物中一个家系后代数量大的特点，visPedigree 提供了紧凑展示方式。该功能可以将同一父母本组合产生的大量全同胞个体压缩为家系节点（图中 FS×N 矩形节点），在保留主要系谱结构信息的同时，提高复杂系谱图的可读性和展示效果。\n\n\n\nFigure 1: visPedigree 在大型水产系谱中的应用。(A) pedhalflife() 生成的多样性半衰期诊断图，展示参考群体中有效 founder、ancestor 和 founder-genome 多样性的世代衰减轨迹，并标注半衰期估计值及各组分贡献；(B) 候选个体为中心的紧凑系谱图，选取罗氏沼虾育种群体最新世代 5 个家系进行祖先追溯，节点形状区分性别，FS×N 矩形节点表示紧凑化的全同胞家系（标注家系规模），可直观展示世代深度、外来血源注入和家系集中度。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#拓展系谱群体遗传分析功能",
+    "href": "posts/vispedigree-paper-20260730/index.html#拓展系谱群体遗传分析功能",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "拓展系谱群体遗传分析功能",
+    "text": "拓展系谱群体遗传分析功能\nvisPedigree 不仅用于系谱图绘制，也整合了多种基于系谱的群体遗传分析功能。\n软件支持计算近交系数、系谱完整性、等效完整世代、世代间隔，以及有效 founder 数、有效 ancestor 数和有效群体大小等经典群体遗传指标，可用于评估育种群体的近交积累、祖先贡献不均衡和遗传多样性损失情况。\n在此基础上，visPedigree 进一步引入了基于 Shannon 信息熵的有效 founder 数和有效 ancestor 数（记为 feH 和 faH）。与经典指标相比，feH 和 faH 对低频始祖和祖先贡献更为敏感，能够反映群体中是否存在尚未完全丢失、仍可通过计划选配恢复的”长尾”遗传多样性。\n此外，软件提供了多样性半衰期（diversity half-life）分析工具，可在时间序列上追踪群体遗传多样性的衰减趋势，并将其分解为始祖贡献不均、世代瓶颈传递和世代内随机漂变三个组分的贡献。这有助于育种管理者判断多样性下降的主要来源——是建群基础不够均衡、中间世代收缩过快，还是长期闭锁导致的逐代漂变——从而有针对性地调整选配策略。\n对于长期闭锁或半闭锁选育群体，上述分析可为亲本选择、近交控制、群体结构优化和种质资源管理提供辅助决策依据。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#提升大规模系谱数据处理能力",
+    "href": "posts/vispedigree-paper-20260730/index.html#提升大规模系谱数据处理能力",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "提升大规模系谱数据处理能力",
+    "text": "提升大规模系谱数据处理能力\n随着育种规模扩大和长期系谱数据积累，育种群体中的个体数量可能达到十万级甚至百万级。在大规模系谱分析中，传统关系矩阵相关计算往往需要显式构建完整的 \\(n \\times n\\) 矩阵，容易带来较高的内存和计算压力。\nvisPedigree 在部分计算中支持不显式构建完整矩阵，而是直接进行矩阵向量乘法等操作，例如计算 \\(\\mathbf{A}\\mathbf{x}\\) 或 \\(\\mathbf{A}^{-1}\\mathbf{x}\\)。这一设计为大规模系谱数据处理提供了更加灵活的实现方式，有助于提高大型育种群体分析效率。\n\n\n\nFigure 2: visPedigree 工作流的可扩展性评估。四组端到端工作流（tidyped() + inbreed()、tidyped() + pedstats()、tidyped() + pediv() 和免矩阵的 tidyped() + pedprod()）在约 10 万、50 万和 100 万个体模拟系谱上的耗时对比。模拟系谱包含 150 个始祖，每世代 20,000 个体，共 50 个世代。测试环境：macOS 26.3，Apple M2，16 GB RAM，R 4.5.2。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#已在多个研究场景中得到应用",
+    "href": "posts/vispedigree-paper-20260730/index.html#已在多个研究场景中得到应用",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "已在多个研究场景中得到应用",
+    "text": "已在多个研究场景中得到应用\n在正式软件论文发表之前，visPedigree 已被多个外部研究团队在论文中使用或引用，应用场景涵盖畜禽育种、保护遗传、人类谱系研究和大规模系谱质量控制等方向。\n\n畜禽育种：在 Gochu Asturcelta 猪的单倍型分析和孟德尔错误研究中用于系谱可视化（Arias et al., BMC Genomics 2024; Scientific Reports 2022）；在泽西牛面部畸形研究中用于追溯共同祖先（Vander Jagt et al., AAABG 2023）；在 Silla Argentino 马的群体遗传分析中用于系谱数据整理（León Rubio et al., SPERMOVA 2021）。\n保护遗传：在东非黑犀牛保护研究中，用于构建观测系谱并分析近交水平，比较自然扩散与人工转移的遗传效果（Mellya et al., PNAS 2025）；在野生驯鹿亲缘关系研究中用于系谱构建（Jones et al., Global Ecology and Conservation 2023）。\n人类谱系研究：用于追踪 10 个世代的历史人类群体后代延续情况（Young et al., Proceedings of the Royal Society B 2023）。\n犬系谱质控：在拉布拉多犬研究中，用于辅助定位超过 148 万条系谱记录中的循环和亲本错误（Lee et al., Genetics Selection Evolution 2025）。\n\n此外，遗传育种模拟软件 MoBPS 已将 visPedigree 的 tidyped() 和 visped() 直接整合进其系谱可视化模块，CRAN Task View: Agricultural Science 也将 visPedigree 列入动物科学推荐工具。自2026年1月在cran发布以来，累计下载量已2900余次。\n更多应用案例详见：https://luansheng.github.io/visPedigree/articles/applications.html\n这些应用表明，visPedigree 虽然源于水产育种实践需求，但其功能可扩展至更广泛的亲缘关系分析、谱系追溯和群体遗传研究场景。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#为智能化精准育种提供基础工具支撑",
+    "href": "posts/vispedigree-paper-20260730/index.html#为智能化精准育种提供基础工具支撑",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "为智能化精准育种提供基础工具支撑",
+    "text": "为智能化精准育种提供基础工具支撑\n当前，水产种业正由传统表型和系谱选择，逐步向基因组选择、智能表型测定、多源数据融合和智能化育种决策方向发展。在这一过程中，规范、可靠、可复用的数据分析工具是提高育种效率的重要基础。\nvisPedigree 可作为家系选育、基因组选育、遗传多样性监测和智能育种分析流程中的基础模块，用于支撑系谱数据整理、群体结构检查、候选个体追踪、近交控制和群体遗传状态评估等工作。未来，团队将继续围绕水产遗传育种中的实际需求，完善系谱分析、基因组选育、智能表型和育种数据管理等工具，推动育种数据分析流程更加标准化、自动化和可复用。"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#软件获取与相关信息",
+    "href": "posts/vispedigree-paper-20260730/index.html#软件获取与相关信息",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "软件获取与相关信息",
+    "text": "软件获取与相关信息\n\n\n\n项目\n信息\n\n\n\n\n软件名称\nvisPedigree\n\n\n功能定位\n复杂育种系谱数据整理、分析和可视化 R 软件包\n\n\nCRAN\ninstall.packages(\"visPedigree\")\n\n\nGitHub\nhttps://github.com/luansheng/visPedigree\n\n\n文档\nhttps://luansheng.github.io/visPedigree/\n\n\n软件论文\nBioinformatics Advances, DOI: 10.1093/bioadv/vbag210"
+  },
+  {
+    "objectID": "posts/vispedigree-paper-20260730/index.html#小结",
+    "href": "posts/vispedigree-paper-20260730/index.html#小结",
+    "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
+    "section": "小结",
+    "text": "小结\n从 2018 年在 GitHub 上发布第一个版本，到如今完成 CRAN 发布和同行评议论文发表，visPedigree 的每一步改进都来自实际育种数据分析中的真实需求。如果你在处理系谱数据时遇到整理、分析或可视化方面的问题，欢迎尝试 visPedigree，也欢迎通过 GitHub Issues 提交反馈和建议。"
   },
   {
     "objectID": "posts/EDA-20260104/index.html",
@@ -469,45 +700,171 @@
     "text": "六. 结语\n使用 visPedigree 包对系谱信息的深度挖掘，有助于极大地方便育种团队在全基因组选择或是常规家系繁育过程中掌握群体的实际遗传动态：\n\n\\(f_e\\) (Effective Founders, 有效始祖数)：通过评估最上层建群亲本的影响系数，暴露起始遗传结构的不平衡和瓶颈效应；\n\\(f_a\\) (Effective Ancestors, 有效祖先数)：采用 Boichard 的边际贡献迭代折减，完美捕获并量化了“代际繁育过程中的漏斗效应”及超级采种亲本带来的强连锁血统锁定。\n\n\n# 检查群体的大体结果：\nstr(res_small$summary)\n\nList of 7\n $ n_ref          : int 4\n $ n_founder      : int 9\n $ n_founder_show : int 9\n $ f_e            : num 6.59\n $ n_ancestor     : int 3\n $ n_ancestor_show: int 3\n $ f_a            : num 2.67\n\n\n对于日常分析，我们极力推荐使用集成的 pediv() 取代所有的单步繁琐调用：\n\npediv_res &lt;- pediv(\n  ped = tp,\n  reference = ref_small,\n  top = 10,\n  nsamples=1000,\n  ncores = 4,\n  seed =123\n)\nprint(pediv_res$summary)\n\n    NRef NFounder       fe NAncestor       fa     fafe       fg  MeanCoan\n   &lt;int&gt;    &lt;int&gt;    &lt;num&gt;     &lt;int&gt;    &lt;num&gt;    &lt;num&gt;    &lt;num&gt;     &lt;num&gt;\n1:     4        9 6.585209         3 2.666667 0.404948 2.074975 0.2409668\n   NSampledCoan NeCoancestry NeInbreeding NeDemographic\n          &lt;int&gt;        &lt;num&gt;        &lt;num&gt;         &lt;num&gt;\n1:            4     9.003717     29.42403             6\n\n\n通过这套成熟算法，visPedigree 可以完美还原那些极难被手工计算或理论推导所捕捉的非对称繁殖体系中的深刻遗传变化趋势。"
   },
   {
-    "objectID": "publication.html",
-    "href": "publication.html",
-    "title": "Publication",
+    "objectID": "posts/vispedigree-viz-20260725/index.html",
+    "href": "posts/vispedigree-viz-20260725/index.html",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
     "section": "",
-    "text": "Kang Ziyi, Kong Jie, Li Qi, Sui Juan, Dai Ping, Luo Kun, Meng Xianhong, Chen Baolong, Cao Jiawang, Tan Jian, Fu Qiang, Xing Qun, Luan Sheng. Genomic selection strategies to overcome genotype by environment interactions in biosecurity-based aquaculture breeding programs. Genet Sel Evol., 2025, 57, 2. https://doi.org/10.1186/s12711-025-00949-3.\nKang Ziyi, Kong Jie, Li Qi, Sui Juan, Dai Ping, Luo Kun, Meng Xianhong, Chen Baolong, Cao Jiawang, Tan Jian, Fu Qiang, Wang Zhaoxin, Luan Sheng. Genomic selection for hard-to-measure traits in aquaculture: Challenges in balancing genetic gain and diversity. Aquaculture, 2025, 606, 742576. https://doi.org/10.1016/j.aquaculture.2025.742576.\nZhou Hao, Qiang Guangfeng, Xia Yan, Tan Jian, Fu Qiang, Luo Kun, Meng Xianhong, Chen Baolong, Chen Meiijia, Sui Juan, Dai Ping, Li Xupeng, Liu Mianyu, Xing Qun, Kong Jie, Luan Sheng. Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid Shrimp Through Neighboring Gene Regulation. Animals, 2025, 15, 262. https://doi.org/10.3390/ani15020262.\n张士薇，代平，高广春，孟宪红，罗坤，隋娟，谭建，傅强，曹家旺，陈宝龙，李旭鹏，强光峰，邢群，戚云辉，孔杰，栾生. 基于深度学习算法的凡纳滨对虾生长表型测定系统研发及应用. 水产学报, 2025, 49, 059117–059117. https://doi.org/10.11964/jfc.20240714612.\nKang Ziyi, Kong Jie, Sui Juan, Dai Ping, Luo Kun, Meng Xianhong, Liu Junyu, Chen Baolong, Cao Jiawang, Tan Jian, Fu Qiang, Li Qi, Luan Sheng. Optimal open nucleus breeding system for long-term genetic gain in the Pacific white shrimp using genomic selection. Aquaculture, 2024, 586, 740760. https://doi.org/10.1016/j.aquaculture.2024.740760.\nLiu Mianyu, Dai Ping, Kong Jie, Meng Xianhong, Sui Juan, Luo Kun, Chen Baolong, Fu Qiang, Cao Baoxiang, Cao Jiawang, Luan Sheng. Assessing accuracy of genomic breeding values of selection candidates under biosecurity restrictions by progeny testing in Chinese shrimp Fenneropenaeus chinensis. Aquaculture, 2023, 566, 739181. https://doi.org/10.1016/j.aquaculture.2022.739181.\nLuan Sheng, Qiang Guangfeng, Cao Baoxiang, Luo Kun, Meng Xianhong, Chen Baolong, Kong Jie. Feed competition reduces heritable variation for body weight in Litopenaeus vannamei. Genetics Selection Evolution, 2020, 52:45. https://doi.org/10.1186/s12711-020-00565-3.\nKong Zhangwei, Kong Jie, Hao Dengchun, Lu Xia, Tan Jian, Meng Xianhong, Luo Kun, Cao Baoxiang, Li Xupeng, Luan Sheng. Reducing the Common Environmental Effect on Litopenaeus vannamei Body Weight by Rearing Communally at Early Developmental Stages and Using a Reconstructed Pedigree. J. Ocean Univ. China, 2020, 19(4): 923–930 (2020). https://doi.org/10.1007/s11802-020-4324-5.\nLiu Junyu, Yang Guoliang, Kong Jie, Xia Zhenglong, Sui Juan, Tang Qiongying, Luo Kun, Dai Ping, Lu Xia, Meng Xianhong, Luan Sheng. Using single-step genomic best linear unbiased prediction to improve the efficiency of genetic evaluation on body weight in Macrobrachium rosenbergii. Aquaculture, 2020, https://doi.org/10.1016/j.aquaculture.2020.735577.\nDai Ping, Liu Junyu, Sui Juan, Meng Xianhong, Kong Jie, Luan Sheng. Evaluation of the utility of genomic information to improve genetic evaluation of feed efficiency traits of the Pacific white shrimp Litopenaeus vannamei. Aquaculture, 2020, 527. https://doi.org/10.1016/j.aquaculture.2020.735421.\n孙犁, 卢霞, 孔杰, 孟宪红, 闫允君, 李波波, 仲伟鹏, 陈宝龙, 曹宝祥, 罗坤, 栾生. 中国明对虾calcineurin B基因的克隆及其在竞争行为中作用的初探. 水产学报, 2020, 44(1):11~20.\n刘峻宇, 杨国梁, 孔杰, 夏正龙, 罗坤, 唐琼英, 卢霞, 孟宪红, 李景芬, 栾生. 罗氏沼虾开放和闭锁核心育种群生长和存活性能分析. 中国水产科学, 2019, 26(5):861-868.\n刘峻宇, 刘均辉, 孔杰, 代平, 于洋, 孟宪红, 罗坤, 曹宝祥, 陈宝龙, 栾生, 高焕. 凡纳滨对虾SNP标记开发与家系亲缘关系验证分析. 渔业科学进展, 2019, https://doi.org/10.19663/j.issn2095-9869.20191022001.\nSui Juan, Luan Sheng, Yang Guoliang, Xia Zhenglong, Luo Kun, Tang Qiongying, Lu Xia, Meng Xianhong, Kong Jie. Genetic parameters and selection response for the harvest body weight of the giant freshwater prawn (Macrobrachium rosenbergii) in a breeding program in China. PLOS ONE, 2019, 14(8): e0218379. https://doi.org/10.1371/journal.pone.0218379.\nDai Ping, Kong Jie, Meng Xianhong, Luo Kun, Lu Xia, Chen Baolong, Cao Baoxiang, Luan Sheng. Genotype by environment interaction for feed efficiency trait of the juvenile Pacific white shrimp Litopenaeus vannamei held in individuals vs. in groups. Aquaculture, 2019, 500:506-513.\nLu Xia, Kong Jie, Meng Xianhong, Cao Baoxiang, Luo Kun, Dai Ping, Luan Sheng. Identification of SNP markers associated with tolerance to ammonia toxicity by selective genotyping from de novo assembled transcriptome in Litopenaeus vannamei. Fish & Shellfish Immunology, 2018, 73: 158-166.\nDai Ping, Kong Jie , Wang Sen, Lu Xia, Luo Kun, Cao Baoxiang, Meng Xianhong, Luan Sheng. Identiﬁcation of SNPs Associated With Residual Feed Intake From the Muscle of Litopenaeus vannamei Using Bulk Segregant RNA Seq. Aquaculture, 2018, 497:56-63.\nLuan Sheng, Luo Kun, Chai Zhan, Cao Baoxiang, Meng Xianhong, Lu Xia, Liu Ning, Xu Shengyu, Kong Jie. An analysis of indirect genetic effects on adult body weight of the Pacific white shrimp Litopenaeus vannamei at low rearing density. Genetics Selection Evolution, 2015, 47:95, DOI:10.1186/s12711-015-0164-y.\nLuan Sheng, Yang Guoliang, Wang Junyi, Luo Kun, Zhang Yufei, Gao Qiang, Hu Honglang, Kong Jie. Genetic parameters and response to selection for harvest body weight of the giant freshwater prawn Macrobrachium rosenbergii. Aquaculture, 2012, 362-363(1-4):88-96.\nLuan Sheng, Wang Junyi, Yang Guoliang, Luo Kun, Chen Xuefeng, Gao Qiang, Hu Honglang, Kong Jie. Genetic parameters of survival for six generations in the giant freshwater prawn Macrobrachium rosenbergii. Aquaculture Research, 2015, 46(6):1345-1355.\nLuan Sheng, Yang Guoliang, Wang Junyi, Luo Kun, Chen Xuefeng, Gao Qiang, Hu Honglang, Kong Jie. Selection responses in survival of Macrobrachium rosenbergii after performing five generations of multi-trait selection for growth and survival. Aquaculture International, 2014, 22(3):993-1007.\nLuan Sheng, Kong Jie, Wang Qinyin. Genetic variation of wild and cultured populations of the Kuruma prawn Marsupenaeus japonicus (Bate 1888) using microsatellites. Aquaculture Research, 2006, 37(8):785-792.\nTAN Jian, KONG Jie, LUO Kun, CAO Baoxiang, LIU Ning, MENG Xianghong, GUO Zhaojia, XU Shengyu, and Luan Sheng. Genetic parameter estimation of reproductive traits of Litopenaeus vannamei. Journal of Ocean University of China. 2017, 16(1): 161-167.\nSui Juan, Luan Sheng, Luo Kun, Meng Xianhong, Lu Xia, Cao Baoxiang, Li Wenjia, Chai Zhan, Liu Ning, Xu Shengyu, Kong Jie. Genetic parameters and response to selection for harvest body weight of pacific white shrimp, Litopenaeus vannamei. Aquaculture Research, 2015, 1-9. DOI:10.1111/are.12729.\nSui Juan, Luan Sheng, Luo Kun, Meng Xianhong, Cao Baoxiang, Liu Ning, Li Wenjia, Lu Xia, Chai Zhan, Kong Jie. Genetic parameters and response to selection of harvest body weight of the Chinese shrimp Fenneropenaeus chinensis after five generations of multi-trait selection. Aquaculture, 2016, 452: 134–141.\nSui Juan, Luan Sheng, Yang Guoliang, Chen Xuefeng, Luo Kun, Gao Qiang, Wang Junyi, Hu Honglang, Kong Jie. Impact of pedigree depth and inclusion of historical data in the estimation of variance components and breeding values in Macrobrachium rosenbergii. Aquaculture, 2016, 464:80-86.\nLu Xia, Luan Sheng, Hu LongYang, Mao Yong, Tao Ye, Zhong ShengPing, Kong Jie. High resolution genetic linkage mapping, high temperature tolerance and growth related quantitative trait locus (QTL) identification in Marsupenaeus japonicus. Molecular Genetics and Genomics, 2016, DOI:10.1007/S00438-016-1192-1.\nLu Xia, Luan Sheng, Hu Longyang, Mao Yong, Kongjie. Genome-wide mining, characterization, and development of microsatellite markers in Marsupenaeus japonicus by genome survey sequencing. Chinese Journal of Oceanology and limnology, 2015, DOI: 10.1007/s00343-016-5250-7.\n栾生, 仲伟鹏, 谭健, 罗坤, 陈宝龙, 孔杰. 凡纳滨对虾收获体重大规模家系选择效果的计算机模拟分析. 水产学报, 2018, 42(10): 1582-1588.\n仲伟鹏, 罗坤, 孟宪红, 陈宝龙, 隋娟, 孔杰, 曹宝祥, 邢群, 栾生. 限制投喂环境下中国对虾体重的间接遗传效应分析. 中国水产科学, 2018, 25(6):1245-1251.\n强光峰, 杨国梁, 陈雪峰, 孔杰, 夏正龙, 高强, 罗坤, 栾生. 罗氏沼虾高世代育种群体收获体重加性和显性遗传效应. 中国水产科学, 2017, 24(5):1027-1034.\n栾生, 边文冀, 邓伟, 胡红浪, 孔杰, 秦钦, 陈校辉, 钟立强, 黄太寿. 斑点叉尾鮰基础群体生长和存活性状遗传参数估计. 水产学报, 2012, 36(9): 1313-1321.\n栾生, 罗坤, 阮晓红, 曹宝祥, 王浩, 杜学芳, 张凯, 孔杰. 凡纳滨对虾体重、存活性状的遗传参数和基因型与环境互作效应. 海洋与湖沼, 2013, 44(2): 445-452.\n栾生, 金武, 孔杰, 罗坤, 孟宪红, 张天时, 王清印. 中国对虾(Fenneropenaeus chinensis)多性状复合育种方案的遗传和经济评估. 海洋学报, 2013, 35(2):133-142.\n栾生, 隋娟, 孟宪红, 罗坤, 曹宝祥, 孔杰. 最佳遗传贡献理论及其在水产动物选择育种中的应用前景. 渔业科学进展, 2014, 6(35):133-140.\n栾生, 孔杰, 王清印. 日本囊对虾三个地理群体的多元异速生长分析. 海洋与湖沼, 2006, 38(Supp.):60-65.\n栾生, 孔杰, 王清印, 高 焕, 王伟继, 张庆文.日本囊对虾(Marsupenaeus japonicus)基因组微卫星特征分析.自然科学进展, 2007, 17(6):731-740\n栾生, 孔杰, 王清印, 高 焕, 王伟继, 张庆文. 日本囊对虾基因组小卫星特征分析. 水产学报, 2007, 31(2) :88-95.\n栾生, 孔杰, 张天时, 罗坤, 杨翠华, 田燚, 王清印.基于表型值和育种值的中国对虾生长、抗逆性状相关分析.海洋水产研究, 2008, 29(3):14-20.\n栾生, 孙慧玲, 孔杰. 刺参耳状幼体体长遗传力的估计. 中国水产科学, 2006, 13(3):378-383."
+    "text": "A pedigree of ten individuals fits on a napkin. A pedigree of ten thousand is a spreadsheet you cannot read. In animal breeding, conservation genetics, and genealogy, pedigrees routinely span hundreds or thousands of records — yet they are almost always stored the same way: three columns, Ind, Sire, Dam, repeated row after row.\nThis tutorial shows how to go from that raw table to publication-ready pedigree graphs in R, using visPedigree."
   },
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
+    "objectID": "posts/vispedigree-viz-20260725/index.html#getting-started",
+    "href": "posts/vispedigree-viz-20260725/index.html#getting-started",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Getting started",
+    "text": "Getting started\nInstall visPedigree from CRAN and load it:\ninstall.packages(\"visPedigree\")\nlibrary(visPedigree)\nYou are now ready to work with pedigree data."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#what-does-a-pedigree-look-like",
+    "href": "posts/vispedigree-viz-20260725/index.html#what-does-a-pedigree-look-like",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "What does a pedigree look like?",
+    "text": "What does a pedigree look like?\nA pedigree is fundamentally a parent-offspring table. Every row names one individual and, if known, its sire and dam. Here is a tiny example with six individuals across three generations:\n\ntiny_ped &lt;- data.frame(\n  Ind  = c(\"Sire1\", \"Dam1\", \"Sire2\", \"Dam2\", \"Offspring1\", \"Offspring2\"),\n  Sire = c(NA,      NA,     \"Sire1\", NA,      \"Sire2\",     \"Sire2\"),\n  Dam  = c(NA,      NA,     \"Dam1\",  NA,      \"Dam2\",      \"Dam2\"),\n  Sex  = c(\"male\",  \"female\", \"male\", \"female\", \"male\",     \"female\")\n)\ntiny_ped\n\n         Ind  Sire  Dam    Sex\n1      Sire1  &lt;NA&gt; &lt;NA&gt;   male\n2       Dam1  &lt;NA&gt; &lt;NA&gt; female\n3      Sire2 Sire1 Dam1   male\n4       Dam2  &lt;NA&gt; &lt;NA&gt; female\n5 Offspring1 Sire2 Dam2   male\n6 Offspring2 Sire2 Dam2 female\n\n\nThe table tells you who the parents are, but it gives no visual sense of relationships, generations, or family structure. Now let visPedigree turn it into a graph:\n\ntiny_tidy &lt;- tidyped(tiny_ped)\nvisped(tiny_tidy, cex = 0.6, symbolsize = 21)\n\n\n\n\n\n\n\nFigure 1: The same pedigree drawn by visped(). Each row is a generation. Circles: females. Squares: males. Parents connect to offspring via grey lines.\n\n\n\n\n\nA few things are happening automatically:\n\nGenerations are inferred and arranged top-to-bottom.\nSex can be supplied explicitly, as in the example above, or inferred from whether an individual appears as a sire or a dam.\nFounders — individuals without recorded parents — sit at the top.\n\nThis two-step workflow — tidyped() then visped() — is the core pattern you will use for every pedigree."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#preparing-pedigree-data-with-tidyped",
+    "href": "posts/vispedigree-viz-20260725/index.html#preparing-pedigree-data-with-tidyped",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Preparing pedigree data with tidyped()",
+    "text": "Preparing pedigree data with tidyped()\ntidyped() validates, orders, and enriches your pedigree. Let us prepare a slightly larger pedigree that ships with the package:\n\ntidy_small &lt;- tidyped(\n  small_ped,\n  cand = c(\"Y\", \"Z1\", \"Z2\")\n)\n\n# What did tidyped() produce?\nsummary(tidy_small)\n\nPedigree Summary\n================\n\nTotal Individuals:  24 \n  - Males:    10 (41.7%) \n  - Females:  11 (45.8%) \n  - Unknown:  3 (12.5%) \n\nPedigree Structure:\n  - Founders (no parents):   9 \n  - Both parents known:      15 \n\nGeneration:\n  - Maximum:  6 \n  - Distribution:\n      Gen 1: 9 individuals\n      Gen 2: 3 individuals\n      Gen 3: 5 individuals\n      Gen 4: 3 individuals\n      Gen 5: 2 individuals\n      Gen 6: 2 individuals\n\nReproduction:\n  - Individuals with offspring:  21 \n  - Sires:  10  (Mean=1.5, Max=3 offspring)\n  - Dams:   11  (Mean=1.4, Max=2 offspring)\n\nFull-sibling Families:\n  - Number of families:      11 \n  - Mean family size:        1.36\n  - Maximum family size:     2 \n  - Top families by size:\n      AxB: 2\n      ExF: 2\n      J2xC: 2\n      NxX: 2\n      HxI: 1\n\nCandidates Traced:  3 \n\n================\n\n\ntidyped() does several things in one call:\n\nValidates that every sire and dam exists as an individual (or is NA for founders).\nOrders individuals so that parents always appear before their offspring.\nInfers generations (the Gen column) from the pedigree structure.\nDetects and reports pedigree loops — circular parentage that would make the pedigree invalid.\nPrunes to the relevant sub-pedigree when you specify cand.\n\nThe cand argument tells tidyped() which individuals you care about; it trims unrelated branches so your plot stays focused."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#your-first-pedigree-graph",
+    "href": "posts/vispedigree-viz-20260725/index.html#your-first-pedigree-graph",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Your first pedigree graph",
+    "text": "Your first pedigree graph\nOnce the pedigree is tidied, one line of code produces the plot:\n\nvisped(tidy_small, cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 2: The small_ped pedigree, tidied with candidate individuals Y, Z1, and Z2.\n\n\n\n\n\nThe default visual encoding (shapeby = \"sex\") uses circles for females, squares for males, and diamonds for unknown sex. Each row of connected nodes is a generation, aligned for easy comparison.\nTo save the graph as a publication-ready vector file, add a filename:\nvisped(tidy_small, file = \"my_pedigree.pdf\")   # PDF\nvisped(tidy_small, file = \"my_pedigree.svg\")   # SVG (editable in Illustrator)\nFor deep pedigrees, generation labels help readers navigate the graph. Use genlab = TRUE for default G1, G2, ... labels, or a character vector for custom text:\n\ntidy_simple &lt;- tidyped(simple_ped)\nvisped(tidy_simple,\n       genlab = c(\"Founder\", \"G1\", \"G2\", \"G3\", \"G4\", \"G5\"),\n       cex = 0.3, symbolsize = 8)\n\n\n\n\n\n\n\nFigure 3: Custom generation labels on the simple_ped pedigree.\n\n\n\n\n\nIf labels appear too small, genlabcex adjusts them independently of cex."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#focusing-on-individuals-highlight-and-trace",
+    "href": "posts/vispedigree-viz-20260725/index.html#focusing-on-individuals-highlight-and-trace",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Focusing on individuals — highlight and trace",
+    "text": "Focusing on individuals — highlight and trace\nIn a large pedigree, you often need to draw attention to specific individuals: breeding candidates, genotyped animals, or carriers of a particular allele. The highlight argument does exactly that:\n\nvisped(tidy_small, highlight = \"Y\", cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 4: Individual Y is highlighted with a purple border and light purple fill.\n\n\n\n\n\nYou can highlight multiple individuals and customize the colors:\n\nvisped(tidy_small,\n  highlight = list(ids = c(\"Y\", \"Z1\"),\n                   frame.color = \"#4caf50\", color = \"#81c784\"),\n  cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 5: Y and Z1 highlighted with a custom green color scheme.\n\n\n\n\n\nMore useful still is tracing — showing only an individual and its ancestors:\n\nvisped(tidy_small, highlight = \"Y\", trace = \"up\", cex = 0.6, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 6: Tracing Y’s ancestors with trace = “up”. Only Y and its direct ancestral line are shown.\n\n\n\n\n\nSet trace = \"down\" for descendants, or trace = \"all\" for both. This is invaluable when you need to answer: Where did this breeding candidate come from?"
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#compact-mode-for-large-full-sib-families",
+    "href": "posts/vispedigree-viz-20260725/index.html#compact-mode-for-large-full-sib-families",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Compact mode for large full-sib families",
+    "text": "Compact mode for large full-sib families\nReal-world pedigrees often contain large full-sib families. In aquatic species like shrimp and fish, a single mating can produce dozens of full siblings. Plotting every individual creates an unreadable wall of nodes.\nHere we extract three full-sib families from a real breeding program — 1,120 offspring across three sire–dam pairs — and trace their ancestry through nine generations:\n\ndata(big_family_size_ped)\ntp &lt;- tidyped(big_family_size_ped)\n\n# Select offspring from three sire–dam pairs in the most recent generation\nmaxgen &lt;- max(tp$Gen)\ncand_offspring &lt;- tp[Gen == maxgen & (\n  (Sire == \"70Z5\" & Dam == \"7Z0Y\") |\n  (Sire == \"70YZ\" & Dam == \"7ZZ0\") |\n  (Sire == \"7009\" & Dam == \"7093\")\n), Ind]\n\n# Trace up through all ancestors\nsub_ped &lt;- tidyped(big_family_size_ped, cand = cand_offspring, trace = \"up\")\n\n# Shorten labels to last 4 characters to reduce clutter\nsub_ped$ShortID &lt;- substring(sub_ped$Ind, pmax(1, nchar(sub_ped$Ind) - 3))\n\nvisped(sub_ped, labelvar = \"ShortID\", compact = TRUE,\n       cex = 0.35, symbolsize = 8)\n\n\n\n\n\n\n\nFigure 7: Three large full-sib families compacted into FS×N nodes, with nine generations of ancestry. Without compact mode, the bottom row would contain 1,120 individual nodes.\n\n\n\n\n\nEach green-grey rectangle represents an entire family — FS×378, FS×367, and FS×375 for the three selected families. Without compact = TRUE, the bottom row alone would contain 1,120 individual nodes, making the graph unreadable. With compact mode, the pedigree structure is clear at a glance.\nThe labelvar argument tells visped() to display a different column as node labels — here, the last four characters of each ID instead of the full string. Compact family nodes (FS×N) are unaffected and continue to show family size.\nFor extremely large pedigrees, outline = TRUE draws the pedigree in silhouette mode — no individual labels, just the population shape — useful for quick visual inspection of population construction over generations.\nThis is what makes visPedigree different from a generic plotting wrapper — it understands pedigree structure and uses it to produce readable graphs at any scale. Core algorithms (inbreeding calculation, topological sorting, ancestry tracing) are implemented in C++ and scale to over one million individuals."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#inbreeding-coefficients-on-the-graph",
+    "href": "posts/vispedigree-viz-20260725/index.html#inbreeding-coefficients-on-the-graph",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Inbreeding coefficients on the graph",
+    "text": "Inbreeding coefficients on the graph\nInbreeding is a central concern in breeding programs and conservation genetics. Run tidyped() with inbreed = TRUE to compute inbreeding coefficients, then set showf = TRUE in visped() to display them on the graph:\n\ntidy_inbred &lt;- tidyped(inbred_ped, inbreed = TRUE)\nvisped(tidy_inbred, showf = TRUE, cex = 0.7, symbolsize = 10)\n\n\n\n\n\n\n\nFigure 8: Inbreeding coefficients displayed alongside individual IDs. Individual G, the product of several generations of close mating within a small population, has F = 0.4375.\n\n\n\n\n\nEach node now shows both the ID and its inbreeding coefficient (f), making it easy to spot individuals with elevated inbreeding at a glance."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#real-world-applications",
+    "href": "posts/vispedigree-viz-20260725/index.html#real-world-applications",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Real-world applications",
+    "text": "Real-world applications\nvisPedigree is used in peer-reviewed research across livestock breeding, conservation genetics, and human genealogy:\n\n🐖 Gochu Asturcelta pig — pedigree visualization of 471 individuals from 51 families (BMC Genomics, 2024).\n🦏 Eastern black rhinoceros — observational pedigree construction to classify ancestry cohorts for inbreeding depression analysis (PNAS, 2025).\n🐕 Labrador Retriever — pedigree quality control on 1,486,764 records, helping locate pedigree loops that were traced to incorrect sire assignments (Genetics Selection Evolution, 2025).\n\nMore verified applications are listed on the Applications page."
+  },
+  {
+    "objectID": "posts/vispedigree-viz-20260725/index.html#where-to-go-from-here",
+    "href": "posts/vispedigree-viz-20260725/index.html#where-to-go-from-here",
+    "title": "Visualizing complex pedigrees in R with visPedigree",
+    "section": "Where to go from here",
+    "text": "Where to go from here\nVisualization is the entry point, but the same tidied pedigree object powers a complete analysis pipeline:\n\nPopulation genetic summaries — pedigree completeness, generation intervals, and inbreeding statistics (pedstats()).\nGenetic diversity analysis — founder and ancestor contributions, effective population size, and diversity half-life modelling (pedcontrib(), pediv(), pedne(), pedhalflife()).\nRelationship matrices and matrix-free computation — additive, dominance, and epistatic relationship matrices, plus pedprod() for computing Ax and A⁻¹x without constructing the dense matrix (pedmat(), pedprod(), vismat()).\n\nIf you work with pedigree data in R — whether in animal breeding, conservation genetics, or genealogy — visPedigree provides a unified workflow from data preparation to publication-ready output.\nInstall from CRAN:\ninstall.packages(\"visPedigree\")\nFull documentation at luansheng.github.io/visPedigree."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Simple living, high thinking",
     "section": "",
-    "text": "Sheng Luan, Professor of YSFRI\nluansheng@gmail.com\nNanjing Road 106#, Qingdao, 266071, Shandong, China"
+    "text": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化\n\n\n\nR\n\nvisPedigree\n\nPedigree Analysis\n\nBreeding\n\nSoftware\n\n\n\nvisPedigree 软件论文在 Bioinformatics Advances 发表。介绍该 R 软件包在系谱数据标准化、复杂家系可视化、群体遗传分析和百万级数据处理方面的功能与应用。\n\n\n\n\n\nJul 30, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nVisualizing complex pedigrees in R with visPedigree\n\n\n\nR\n\nVisualization\n\nPedigree\n\nBreeding\n\nr-bloggers\n\n\n\nTurn raw pedigree tables into publication-ready graphs in R. From simple family trees to compact views of thousands of individuals.\n\n\n\n\n\nJul 26, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n面向水产动物家系选育的百万系谱分析：visPedigree 1.8.1 的工作流与方法学解释\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n以一个包含 1,000,150 个体、50 个世代的模拟系谱为例，从水产动物家系选育的理论与技术体系出发，说明如何用 visPedigree 1.8.1 完成百万级系谱整理、参考群体多样性诊断、半衰期监控与局部可视化，并将结果转化为可执行的育种管理建议。\n\n\n\n\n\nMar 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n系谱多样性动态：Shannon 有效数（feH、faH）与多样性半衰期分析\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在育种管理中，仅看某一时点的有效始祖数或有效祖先数，往往不足以判断多样性流失的速度与来源。本文在经典有效数基础上，引入基于香农信息熵的有效始祖数（feH）与有效祖先数（faH），说明其原理、公式与“长尾”遗传贡献的解释方式；并结合 visPedigree::pedhalflife() 和真实群体数据集 G09_prunedPed.csv，演示如何评估多样性半衰期、拆解始祖效应/瓶颈/漂变三类衰减来源，以及如何建立 pediv() 与 pedhalflife() 联合使用的年度育种监控流程。\n\n\n\n\n\nMar 20, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n有效祖先数与有效始祖数的计算原理及其在visPedigree中的验证\n\n\n\nBreeding\n\nPedigree Analysis\n\nvisPedigree\n\n\n\n在群体遗传学和系谱分析中，有效始祖数（fe）与有效祖先数（fa）是衡量群体遗传多样性与遗传瓶颈的两个核心指标。本文通过构建具备典型“瓶颈效应”的微型系谱模型，以纯手工推导的方式拆解这两个参数的计算原理，最后调用 visPedigree::pedcontrib() 函数进行自动化计算，实现理论推导与工程实现的交叉验证。\n\n\n\n\n\nMar 8, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n廿载罗虾育种路，斯人已逝，深切缅怀\n\n\n\nBreeding\n\nMemorial\n\n\n\n记录参与罗虾育种20年的零碎感悟，以及对杨国梁研究员的深切怀念。\n\n\n\n\n\nMar 3, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nvisPedigree 1.0.1 cran发布：动物系谱分析与可视化的高效解决方案\n\n\n\nR\n\nVisualization\n\nPedigree\n\nBreeding\n\n\n\nvisPedigree 1.0.1 cran正式发布。新版本通过 C++ 加速与图论优化重构核心架构，新增高亮追踪、近交系数可视化及矩阵分析工具，显著提升大规模系谱数据处理效率。\n\n\n\n\n\nFeb 24, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\n家系育种数据的探索性数据分析（EDA）\n\n\n\nR\n\nEDA\n\nBreeding\n\nDataExplorer\n\n\n\n利用 DataExplorer 和 Tidyverse 进行高效的数据清理与可视化\n\n\n\n\n\nJan 5, 2026\n\n\nSheng Luan\n\n\n\n\n\n\n\n\n\n\n\n\nVibe coding\n\n\n\ncode\n\nAI\n\n\n\n大模型编程世代到来了\n\n\n\n\n\nJan 3, 2026\n\n\nSheng Luan\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "about.html#contact",
-    "href": "about.html#contact",
-    "title": "About",
+    "objectID": "CLAUDE.html",
+    "href": "CLAUDE.html",
+    "title": "CLAUDE.md",
     "section": "",
-    "text": "Sheng Luan, Professor of YSFRI\nluansheng@gmail.com\nNanjing Road 106#, Qingdao, 266071, Shandong, China"
+    "text": "This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n\nA Quarto blog about animal breeding and quantitative genetics, written by Professor Sheng Luan. Published to GitHub Pages at https://luansheng.github.io/lsblog.\n\n\n\n\n\nquarto preview\n\n\n\nquarto render --cache-refresh\n\n\n\nquarto render posts/&lt;post-dir&gt;/index.qmd --cache-refresh\n\n\n\nprintf 'Y\\n' | quarto publish gh-pages\nOr use the bundled safe-publish script (render + publish in one step):\nbash scripts/publish-gh-pages-safe.sh                     # full site\nbash scripts/publish-gh-pages-safe.sh posts/&lt;dir&gt;/index.qmd  # single post\n\n\n\n\n\n\nEach post lives in posts/&lt;slug&gt;/ as index.qmd. Posts use Quarto’s freeze feature (posts/_metadata.yml sets freeze: true), which caches computational outputs in _freeze/. Example post layout:\nposts/million_ped-20260324/\n  index.qmd          # Quarto markdown with R code chunks\n  data.csv           # Optional attached data files\n  image.png          # Optional cover / inline images\n  index_cache/       # R cache (gitignored)\n  index_files/       # Rendering intermediates (gitignored)\n\n\n\nposts/_metadata.yml sets freeze: true for all posts. This means quarto publish gh-pages reuses previously frozen execution results — if a post’s R code, figures, or sampling outputs changed, the published page will still show the old results.\nSee PUBLISH-SOP.md for the full decision tree. The critical rule is:\n\nWhen code, figures, random sampling, or data outputs change, run quarto render --cache-refresh before quarto publish gh-pages. Text-only changes can publish directly.\n\n\n\n\nPosts use categories (e.g., Breeding, Pedigree Analysis, visPedigree, R, code, AI), descriptions, and optional TOC. Code-heavy posts typically disable warnings/messages in YAML:\nexecute:\n  warning: false\n  message: false\n\n\n\n\nSource branch: main — all writing and editing happens here\nPublish branch: gh-pages — managed by quarto publish, never edited directly\nIgnored: _site/, _freeze/, .quarto/, *_files/, *_cache/, and large CSV data files tracked outside git\n\n\n\n\nSeveral posts use the visPedigree R package (also authored by the blog owner) for pedigree analysis and visualization. Posts that run R code require the package and its dependencies installed in the local R environment.\n\n\n\nUses simplex Bootswatch theme with a custom brand override and styles.css for additional CSS."
   },
   {
-    "objectID": "about.html#biography",
-    "href": "about.html#biography",
-    "title": "About",
-    "section": "Biography",
-    "text": "Biography\nMy research is on the areas of shrimp and fish selective breeding. I am interested in design of genetic improvement programs, development of breeding objectives, selection strategies, and genetic evaluation systems. Currently, my research is focused on estimating genetic parameters for additive, non-additive and indirect genetic effects, predicting selection response, and designing mating scheme for economically important traits in shrimp and fish."
+    "objectID": "CLAUDE.html#project-overview",
+    "href": "CLAUDE.html#project-overview",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "A Quarto blog about animal breeding and quantitative genetics, written by Professor Sheng Luan. Published to GitHub Pages at https://luansheng.github.io/lsblog."
   },
   {
-    "objectID": "about.html#interests",
-    "href": "about.html#interests",
-    "title": "About",
-    "section": "Interests",
-    "text": "Interests\n\nDesign the selective breeding program for shrimp and fish\nGenomic selection and GWAS for important economic traits in shrimp\nIndirect genetic effect for target traits in shrimp\nGenetic evaluation for uniformity in shrimp\nApplication of optimum contribution in shrimp and fish"
+    "objectID": "CLAUDE.html#commands",
+    "href": "CLAUDE.html#commands",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "quarto preview\n\n\n\nquarto render --cache-refresh\n\n\n\nquarto render posts/&lt;post-dir&gt;/index.qmd --cache-refresh\n\n\n\nprintf 'Y\\n' | quarto publish gh-pages\nOr use the bundled safe-publish script (render + publish in one step):\nbash scripts/publish-gh-pages-safe.sh                     # full site\nbash scripts/publish-gh-pages-safe.sh posts/&lt;dir&gt;/index.qmd  # single post"
   },
   {
-    "objectID": "about.html#education",
-    "href": "about.html#education",
-    "title": "About",
-    "section": "Education",
-    "text": "Education\n\nPhD in marine biology, 2006\nOcean University of China"
+    "objectID": "CLAUDE.html#architecture",
+    "href": "CLAUDE.html#architecture",
+    "title": "CLAUDE.md",
+    "section": "",
+    "text": "Each post lives in posts/&lt;slug&gt;/ as index.qmd. Posts use Quarto’s freeze feature (posts/_metadata.yml sets freeze: true), which caches computational outputs in _freeze/. Example post layout:\nposts/million_ped-20260324/\n  index.qmd          # Quarto markdown with R code chunks\n  data.csv           # Optional attached data files\n  image.png          # Optional cover / inline images\n  index_cache/       # R cache (gitignored)\n  index_files/       # Rendering intermediates (gitignored)\n\n\n\nposts/_metadata.yml sets freeze: true for all posts. This means quarto publish gh-pages reuses previously frozen execution results — if a post’s R code, figures, or sampling outputs changed, the published page will still show the old results.\nSee PUBLISH-SOP.md for the full decision tree. The critical rule is:\n\nWhen code, figures, random sampling, or data outputs change, run quarto render --cache-refresh before quarto publish gh-pages. Text-only changes can publish directly.\n\n\n\n\nPosts use categories (e.g., Breeding, Pedigree Analysis, visPedigree, R, code, AI), descriptions, and optional TOC. Code-heavy posts typically disable warnings/messages in YAML:\nexecute:\n  warning: false\n  message: false\n\n\n\n\nSource branch: main — all writing and editing happens here\nPublish branch: gh-pages — managed by quarto publish, never edited directly\nIgnored: _site/, _freeze/, .quarto/, *_files/, *_cache/, and large CSV data files tracked outside git\n\n\n\n\nSeveral posts use the visPedigree R package (also authored by the blog owner) for pedigree analysis and visualization. Posts that run R code require the package and its dependencies installed in the local R environment.\n\n\n\nUses simplex Bootswatch theme with a custom brand override and styles.css for additional CSS."
+  },
+  {
+    "objectID": "rweekly.org/archive.html",
+    "href": "rweekly.org/archive.html",
+    "title": "Archive",
+    "section": "",
+    "text": "{% for post in site.posts %} * {{ post.date | date_to_string }} » {{ post.title }} {% endfor %}"
+  },
+  {
+    "objectID": "rweekly.org/archive.html#blog-posts",
+    "href": "rweekly.org/archive.html#blog-posts",
+    "title": "Archive",
+    "section": "",
+    "text": "{% for post in site.posts %} * {{ post.date | date_to_string }} » {{ post.title }} {% endfor %}"
+  },
+  {
+    "objectID": "rweekly.org/draft.html",
+    "href": "rweekly.org/draft.html",
+    "title": "R Weekly 2026-W31",
+    "section": "",
+    "text": "How to have (my) content shared by R Weekly?\n\nThis week’s release was curated by , with help from the R Weekly team members and contributors.\n\nHighlight\n\n\nInsights\n\nWhat Makes R Strong: Reflections from useR! 2026\nNavigating Challenges in Spatial Machine Learning\nOutcomes from EuroBioC2026 Tidyomics Hackathon\n\n\n\nR in the Real World\n\nNew Frontier\nir 0.1.0: self-describing R scripts and Quarto documents\n\n\n\nR in Organizations\n\n\nR in Academia\n\n\nTutorials\n\nA {tidy} companion to the StatQuest Illustrated Guide to Statistics\nBuilding our own glue with R\nMultiple Imputation Analysis with mianalyze()\n\n\n\nResources\n\nA world still to be mapped: reflections on geocomputation in R: takeaways from the talk and workshop at UseR! 2026\n\n\n\nNew Packages\n\n\n📦 Keep up to date wtih CRANberries 📦\n\nCRAN\nBioconductor\nGitHub or Bitbucket or GitLab\n\n\nUpdated Packages\n🔍 Search on R-universe 🔍\n\nmuttest 0.3.0: Turn surviving mutants into a to-do list\n\n\n\nVideos and Podcasts\n\nListen to the R-Weekly Highlights Podcast\n\n\n\nGist & Cookbook\n\nLittle useless-useful R functions – Jug solver with Bezout’s Identity\n\n\n\nShiny Apps\n\n\nR Internationally\n\nTaller: Crea tu propia página web con Quarto y R\nTruco de RStudio: escribe en múltiples líneas al mismo tiempo\nSobre números pequeños y con muchos decimales\n\n\n\n\nR Project Updates\nUpdates from R Core:\n\n\nCall for Participation\n\n\nUpcoming Events in 3 Months\nEvents in 3 Months:\n\nA list of R conferences and meetings\nThis week’s local R-User and applied stats events\nWeekly R Workshops for Ukraine\n\n\n\nGrants & Funding\n\n\nDatasets\n\n\nConnect\nJoin the Data Science Learning Community\n\n\nrtistry\n\n\nQuotes of the Week"
+  },
+  {
+    "objectID": "rweekly.org/scripts/curinator_system_prompt.html",
+    "href": "rweekly.org/scripts/curinator_system_prompt.html",
+    "title": "metabreeding",
+    "section": "",
+    "text": "You are a RWeekly curation support bot. You read in RSS feed posts which are blog articles usually and help the RWeekly curation team decide on if the content is R related and what section category it belongs to."
+  },
+  {
+    "objectID": "rweekly.org/scripts/curinator_system_prompt.html#purpose",
+    "href": "rweekly.org/scripts/curinator_system_prompt.html#purpose",
+    "title": "metabreeding",
+    "section": "",
+    "text": "You are a RWeekly curation support bot. You read in RSS feed posts which are blog articles usually and help the RWeekly curation team decide on if the content is R related and what section category it belongs to."
+  },
+  {
+    "objectID": "rweekly.org/scripts/curinator_system_prompt.html#desired-output",
+    "href": "rweekly.org/scripts/curinator_system_prompt.html#desired-output",
+    "title": "metabreeding",
+    "section": "Desired output",
+    "text": "Desired output\n\nYou only answer yes or no to the first question and one of the categories below to the second question. You do not answer anything else. You should use JSON format for your response.\n\nExample #1: { “is_r_related”: “yes”, “category”: “Tutorials” }\nExample #2: { “is_r_related”: “no”, “category”: “N/A” }"
+  },
+  {
+    "objectID": "rweekly.org/scripts/curinator_system_prompt.html#notes",
+    "href": "rweekly.org/scripts/curinator_system_prompt.html#notes",
+    "title": "metabreeding",
+    "section": "Notes",
+    "text": "Notes\n\nIf the content is not R related, you should answer “no” to the first question and “N/A” to the second question.\nIf the content is missing then you should also answer “no” to the first question and “N/A” to the second question."
+  },
+  {
+    "objectID": "rweekly.org/scripts/curinator_system_prompt.html#important-info",
+    "href": "rweekly.org/scripts/curinator_system_prompt.html#important-info",
+    "title": "metabreeding",
+    "section": "Important info",
+    "text": "Important info\n\nYou will be fed the webpage title, the URL link, and a markdown version of the webpage which will just be a snippet.\nThe section categories are as follows: ### Tutorials Please post R tutorials for how to use certain packages and tools (usually code is embedded)\n\n\nInsights\nPlease post articles that talks about R and data science in general(usually no code embedded)\n\n\nR in Real World\nPlease post analyses that use R to analyze real-world data sets\n\n\nR in Organization\nPlease post R use cases/events that showcase how organizations are utilizing or integrating to R\n\n\nR in Academia\nPlease post R use cases that showcase how Academia is utilizing R\n\n\nInternational R\nPlease post Non-English R related content\n\n\nVideos and Podcasts\nVideos and Podcasts about R\n\n\nResources\nPlease post long posts, websites, books, slides, list, cheat sheets, or other learning resources in general that are more officially aggregated as a guide material\n\n\nJobs\nPlease post R Jobs\n\n\nNew Packages and Tools\nPlease post new packages and tools that are created or published in the past 2 weeks.\n\n\nUpdated Packages\nPlease post new releases of tools and packages for R\n\n\nCall for Participation\nPlease post new R groups, communities or competitions here.\n\n\nUpcoming Events\nPlease post at most three links about big events for the upcoming months. This section repeats every issue. If there are some big interesting events, we can also add more than three links.\nEvents can also be in Call for Participation section."
+  },
+  {
+    "objectID": "rweekly.org/curatinator_latest.html",
+    "href": "rweekly.org/curatinator_latest.html",
+    "title": "RSS POSTS:",
+    "section": "",
+    "text": "RSS POSTS:\n\n\nCRANberries UPDATED:\n\n{statcanR} 0.3.0: Client for Statistics Canada’s Open Economic Data - diffify\n{shard} 0.2.0: Deterministic, Zero-Copy Parallel Execution for R - diffify\n{nn2poly} 1.0.1: Neural Network Weights Transformation into Polynomial Coefficients - diffify\n{dcortools} 0.2.2: Providing Fast and Flexible Functions for Distance Correlation Analysis - diffify\n{BayesFBHborrow} 2.0.14: Bayesian Dynamic Borrowing with Flexible Baseline Hazard Function - diffify\n{qtl2convert} 0.36: Convert Data among QTL Mapping Packages - diffify\n{diffobj} 0.3.8: Diffs for R Objects - diffify\n{npANCOVA} 0.2.0: Nonparametric ANCOVA Methods - diffify\n{seacarb} 3.4.0: Seawater Carbonate Chemistry - diffify\n{graphicalVAR} 0.4.1: Graphical VAR for Experience Sampling Data - diffify\n{semPlot} 1.2.0: Path Diagrams and Visual Analysis of Various SEM Packages’ Output - diffify\n{rxode2ll} 2.0.15: Log-Likelihood Functions for ‘rxode2’ - diffify\n{nat.templatebrains} 1.2.3: NeuroAnatomy Toolbox (‘nat’) Extension for Handling Template Brains - diffify\n{remstimate} 3.1.0: Optimization Frameworks for Tie-Oriented and Actor-Oriented Relational Event Models - diffify\n{sshist} 0.2.4: Optimal Density Estimation via Shimazaki-Shinomoto Method - diffify\n{rjd3production} 1.1.1: Prepare for Production of Seasonal Adjustment with ‘JDemetra+’ - diffify\n{partykit} 1.2-29: A Toolkit for Recursive Partytioning - diffify\n{codez} 2.0.0: Torch Seq2Seq Encoder-Decoder Model for Time-Feature Analysis - diffify\n{sdbuildR} 2.2.2: An Accessible Interface for Stock-and-Flow Modelling - diffify\n{oosse} 1.0.12: Out-of-Sample R² with Standard Error Estimation - diffify\n{kardl} 2.0.4: Make Symmetric and Asymmetric ARDL Estimations - diffify\n{hubEvals} 0.3.1: Tools for Scoring and Evaluating Hubverse Model Outputs - diffify\n{greeks} 1.5.6: Sensitivities of Prices of Financial Options and Implied Volatilities - diffify\n{OPCreg} 4.0.2: Online Principal Component Regression for Online Datasets - diffify\n{MorphoRegions} 0.2.0: Analysis of Regionalization Patterns in Serially Homologous Structures - diffify\n{mmconvert} 0.14: Mouse Map Converter - diffify\n{cox.rvph} 0.1.3: Remedy the Violation of the Proportional Hazards Assumption of Cox Regression - diffify\n{bbotk} 1.12.0: Black-Box Optimization Toolkit - diffify\n{xegaPopulation} 1.0.0.16: Genetic Population Level Functions - diffify\n{jenga} 2.0.0: Fast Extrapolation of Time Features using K-Nearest Neighbors - diffify\n{shinySbm} 0.2.1: ‘shiny’ Application to Use the Stochastic Block Model - diffify\n{minimaxApprox} 0.6.0: Minimax Approximation of Functions by Polynomials and Rational Functions - diffify\n{epiR} 2.0.95: Tools for the Analysis of Epidemiological Data - diffify\n{twopexp} 1.0.0: The Two Parameter Exponential Distribution - diffify\n{sensobol} 1.2.0: Computation of Variance-Based Sensitivity Indices - diffify\n{nwsrfsr} 1.0.2: NWS Hydrology Models: SAC-SMA, SNOW17, UH, CONSUSE, CHANLOSS - diffify\n{merDeriv} 0.2-6: Case-Wise and Cluster-Wise Derivatives for Mixed Effects Models - diffify {rjd3workspace} 3.8.0: Wrangling ‘JDemetra+ 3.x’ Workspaces - diffify\n{Qindex} 0.2.0: Continuous and Dichotomized Index Predictors Based on Distribution Quantiles - diffify\n{mboost} 2.9-13: Model-Based Boosting - diffify\n{IndependenceTests} 0.8: Non-Parametric Tests of Independence Between Random Vectors - diffify\n{astrochron} 1.8: A Computational Tool for Astrochronology - diffify\n{timbr} 0.3.0: Forest/Tree Data Frames - diffify\n{parSim} 0.4.0: Parallel Simulator - diffify\n{zctaCrosswalk} 2.0.1: Crosswalk Between 2020 Census ZIP Code Tabulation Areas (ZCTAs), States and Counties - diffify\n{Waypoint} 2.0.0: Convert, Validate, Format and Print Geographic Coordinates and Waypoints - diffify\n{sadists} 0.2.6: Some Additional Distributions - diffify\n{MVNGmod} 0.1.2: Matrix-Variate Non-Gaussian Linear Regression Models - diffify\n{lavaan} 0.7-2: Latent Variable Analysis - diffify\n{GeDS} 0.3.5: Geometrically Designed Spline Regression - diffify\n{fmx} 0.2.0: Finite Mixture Parametrization - diffify\n{EPLSIM} 1.0.0: Partial Linear Single Index Models for Environmental Mixture Analysis - diffify\n{DACF} 1.1.0: Data Analysis with Ceiling and/or Floor Data - diffify\n{colleyRstats} 0.1.3: Functions to Streamline Statistical Analysis and Reporting - diffify\n{arrow} 25.0.0: Integration to ‘Apache’ ‘Arrow’ - diffify\n{ARPALData} 2.0.1: Retrieving and Analyzing Air Quality and Weather Data from ARPA Lombardia - diffify\n{TukeyGH77} 0.2.0: Tukey g-&-h Distribution - diffify\n{QuantileGH} 0.3.0: Quantile Least Mahalanobis Distance Estimator for Tukey g-&-h Mixture - diffify\n{BIGpopA} 1.0.6: Pedigree Validation Genetic Composition of Diploids & Polyploids - diffify\n{toolero} 0.4.0: A Toolkit for Research Workflows - diffify\n{pysparklyr} 0.2.2: Provides a ‘PySpark’ Back-End for the ‘sparklyr’ Package - diffify\n{buzzMed} 0.1.3: Bayesian Understanding for Mediator Selection Framework - diffify\n{psychonetrics} 0.16.9: Structural Equation Modeling and Confirmatory Network Analysis - diffify\n{GEMSS} 0.1.2: Generalization Error Minimization in SubSampling for Gaussian Processes - diffify\n{NNS} 13.1: Nonlinear Nonparametric Statistics - diffify\n{SimVitD} 1.0.5: Simulation Tools for Planning Vitamin D Studies - diffify\n{qMRI} 1.2.8: Methods for Quantitative Magnetic Resonance Imaging (‘qMRI’) - diffify\n{dtsmartr} 0.4.1: Interactive Virtualized Data Explorer Grid Widget - diffify\n{dsp} 1.5.1: Dynamic Shrinkage Process and Change Point Detection - diffify\n{SimplicialComplex} 0.1.1: Topological Data Analysis: Simplicial Complex - diffify\n{ameras} 0.5.1: Analyze Multiple Exposure Realizations in Association Studies - diffify\n{test.assessr} 2.1.3: Assessing Package Test Reliability and Quality - diffify\n{padr} 0.7.0: Quickly Get Datetime Data Ready for Analysis - diffify\n{officer} 0.7.6: Manipulation of Microsoft Word and PowerPoint Documents - diffify\n{iGasso} 1.6.2: Statistical Tests and Utilities for Genetic Association - diffify\n{GeoModels} 2.2.6: Procedures for Gaussian and Non Gaussian Geostatistical (Large) Data Analysis - diffify\n{rdyncall} 0.10.1: Improved Foreign Function Interface and Dynamic Bindings to C Libraries - diffify\n{powerPLS} 0.2.2: Power Analysis for PLS Classification - diffify\n{newmark} 1.3.0: Uncertainty Analysis in Dynamic Site and Slope Response - diffify\n{tram} 1.4-4: Transformation Models - diffify\n{softwareRisk} 0.3.0: Computation of Node and Path-Level Risk Scores in Scientific Models - diffify\n{qtl2fst} 0.32: Database Storage of Genotype Probabilities for QTL Mapping - diffify\n{lme4} 2.0-6: Linear Mixed-Effects Models using ‘Eigen’ and S4 - diffify\n{tidyfun} 0.2.0: Tidy Functional Data Wrangling and Visualization - diffify\n{spatstat.utils} 3.2-4: Utility Functions for ‘spatstat’ - diffify\n{pecora} 0.1.3: Permutation Conditional Random Tests - diffify\n{carts} 0.2.0: Simulation-Based Assessment of Covariate Adjustment in Randomized Trials - diffify\n{caretSDM} 1.9.7: Build Species Distribution Modeling using ‘caret’ - diffify\n{suncalc} 0.5.3: Compute Sun Position, Sunlight Phases, Moon Position and Lunar Phase - diffify\n{rjd3bench} 3.1.3: Temporal Disaggregation and Benchmarking in ‘JDemetra+’ 3.x - diffify\n{temper} 1.1.1: Temporal Encoder-Masked Probabilistic Ensemble Regressor - diffify\n{nVennR2} 2.0.4: An Interface to ‘nVenn2’ - diffify\n{MVA} 1.0-10: An Introduction to Applied Multivariate Analysis with R - diffify\n{IsingSampler} 0.5.0: Sampling Methods and Distribution Functions for the Ising Model - diffify\n{CbKST} 0.1-1: Competence-Based Knowledge Space Theory - diffify\n{mlpack} 4.8.0: ‘Rcpp’ Integration for the ‘mlpack’ Library - diffify\n{medmod} 1.2.0: Simple Mediation and Moderation Analysis - diffify\n{ahpsurvey} 0.4.3: Analytic Hierarchy Process for Survey Data - diffify\n{growthPheno} 3.1.20: Functional Analysis of Phenotypic Growth Data to Smooth and Extract Traits - diffify\n{lintr} 3.4.0: A ‘Linter’ for R Code - diffify\n{nmathopencl} 0.8.3: ‘OpenCL’-Ported R ‘Mathlib’ for GPU-Accelerated Packages - diffify\n{lavaan.mi} 0.1-1: Fit Structural Equation Models to Multiply Imputed Data - diffify\n{arg} 0.2.0: Clean and Simple Argument Checking - diffify\n{tseffects} 0.3.1: Dynamic Inferences from Time Series (with Interactions) - diffify\n{rdiversity} 2.3.0: Measurement and Partitioning of Similarity-Sensitive Biodiversity - diffify\n{spFFBS} 1.0-1: Spatiotemporal Propagation for Multivariate Bayesian Dynamic Learning - diffify\n{extras} 0.10.0: Helper Functions for Bayesian Analyses - diffify\n{ALDEx3} 1.2.0: Linear Models for Sequence Count Data - diffify\n{mlr3fda} 0.7.1: Extending ‘mlr3’ to Functional Data Analysis - diffify\n{gerda} 0.7.1: German Election Database (GERDA) - diffify\n{pak} 0.11.0: Another Approach to Package Installation - diffify\n{actiread} 0.3.0: Baseline Package for Reading Actigraphy and Activity Data - diffify\n{rapidsplithalf} 0.8: A Fast Permutation-Based Split-Half Reliability Algorithm - diffify\n{mos} 0.1.4: Simulation and Moment Computation for Order Statistics - diffify\n{StormR} 0.3.0: Analyzing the Behaviour of Wind Generated by Tropical Storms and Cyclones - diffify\n{snap} 2.0.0: Simple Neural Application - diffify\n{pxmake} 0.21.0: Make PX-Files in R - diffify\n{FCPS} 1.4.0: Fundamental Clustering Problems Suite - diffify\n{colorify} 1.0.0: Intuitive Color and Palette Generation and Modification - diffify\n{shrinkem} 0.4.0: Approximate Bayesian Regularization for Parsimonious Estimates - diffify\n{mlstats} 0.1.1: Multilevel Descriptive Statistics and Data Preparation - diffify\n{kstMatrix} 2.3-4: Basic Functions in Knowledge Space Theory Using Matrix Representation - diffify\n{remstats} 4.1.0: Computes Statistics for Relational Event History Data - diffify\n{projoint} 1.1.2: Conjoint Analysis with Reliability Correction and Visualization - diffify\n{nlme} 3.1-170: Linear and Nonlinear Mixed Effects Models - diffify\n{DALEX} 2.5.4: moDel Agnostic Language for Exploration and eXplanation - diffify\n{BigDataPE} 0.2.0: Secure and Intuitive Access to ‘BigDataPE’ ‘API’ Datasets - diffify\n{APRScenario} 0.0.4.0: Structural Scenario Analysis for Bayesian Structural Vector Autoregression Models - diffify\n{radsafer} 2.4.1: Radiation Safety - diffify\n{mSigPlot} 2.0.41: Plotting Mutational Signatures and Mutational Spectra - diffify\n{metafrontier} 0.3.0: Analysis of Metafrontier Models for Efficiency and Productivity - diffify\n{lineup} 0.46: Lining Up Two Sets of Measurements - diffify\n{freegroup} 1.2-1: The Free Group - diffify\n{MASS} 7.3-66: Support Functions and Datasets for Venables and Ripley’s MASS - diffify\n{CAST} 1.1.1: ‘caret’ Applications for Spatial-Temporal Models - diffify\n{VCMoE} 0.2.0: Varying-Coefficient Mixture-of-Experts Models - diffify\n{targeted} 0.8: Targeted Inference - diffify\n{ssd4mosaic} 1.0.4-3: Web Application for the SSD Module of the MOSAIC Platform - diffify\n{hubUtils} 1.2.1: Core ‘hubverse’ Utilities - diffify\n{ThSQCA} 2.0.2: Threshold-Sweep QCA - diffify\n{RmecabKo} 0.3.0: Korean Text Analysis with ‘MeCab’ - diffify\n{PCRA} 1.3.1: Companion to Portfolio Construction and Risk Analysis - diffify\n{remdata} 0.2.1: A Collection of Empirical and Simulated Relational Event Data Sequences - diffify\n{mccca} 2.2: Visualizing Class Specific Heterogeneous Tendencies in Categorical Data - diffify\n{emmeans} 2.0.4: Estimated Marginal Means, aka Least-Squares Means - diffify\n{caroline} 1.1.2: A Collection of Database, Data Structure, Data Conversion, Visualization, Reporting, and General Utility Functions - diffify\n{actibase} 0.3.0: Baseline Functions for Actigraphy and Activity Processing and Analysis - diffify\n{visPedigree} 1.9.0: Tidying, Analysis, and Fast Visualization of Animal and Plant Pedigrees - diffify\n{relations} 0.6-18: Data Structures and Algorithms for Relations - diffify\n{exametrika} 1.15.0: Test Theory Analysis and Biclustering - diffify\n{chron} 2.3-63: Chronological Objects which Can Handle Dates and Times - diffify\n{npRmpi} 0.70-5: Parallel Nonparametric Kernel Smoothing Methods for Mixed Data Types Using ‘MPI’ - diffify\n{np} 0.70-5: Nonparametric Kernel Smoothing Methods for Mixed Data Types - diffify\n{rnnmf} 0.3.1: Regularized Non-Negative Matrix Factorization - diffify\n{paco} 0.5.0: Procrustes Application to Cophylogenetic Analysis - diffify\n{fishbc} 0.2.2: Fishes of British Columbia - diffify\n{SNPkit} 0.1.2: S4 Tools for Reading and Organizing Genetic Data - diffify\n{madness} 0.2.9: Automatic Differentiation of Multivariate Operations - diffify\n{ctsmTMB} 1.1.1: Continuous Time Stochastic Modelling using Template Model Builder - diffify\n{LOST} 2.1.4: Missing Morphometric Data Simulation and Estimation - diffify\n{cdcanthro} 0.2.1: Sex- and Age-Standardized Metrics from the Centers for Disease Control and Prevention (CDC) Growth Charts - diffify\n{easyRasch2} 1.1.0: Psychometric Analysis with Rasch Measurement Theory - diffify\n\n\n\nCRANberries NEW:\n\n{stargazer2} 0.1.0: Beautiful Regression Tables for Modern Econometrics Packages\n{hood2net} 1.0.0: Create a Language Network from Neighborhoods of Words\n{flexstanr} 0.1.0: Portable Backend Layer for ‘Stan’ Models\n{UniCensor} 0.1.0: Reproducible Random Samples Under Univariate Censoring Schemes\n{riemannianStats} 0.1.1: Riemannian Statistics for Dimensionality Reduction and Visualization\n{nhanesR} 0.1.5: Download, Parse, and Analyze NHANES Data with Mortality Linkage\n{lingamr} 0.1.2: ‘LiNGAM’ Algorithms for Causal Discovery\n{ggsketch} 2.0.0: Grammar-Native Hand-Drawn Geoms for ‘ggplot2’\n{sybilion} 0.1.0: Official R Client for the ‘Sybilion’ API\n{ggadjustedforest} 0.1.0: Publication Ready Forest Plots for Estimand of Interest\n{dsn} 0.1.0: Data Source Name and Description Helpers for Use with ‘GDAL’\n{AGCA4extremes} 0.1.0: Anchored Geodesic Component Analysis for Extremes\n{easieRnmt} 0.0.5: Local Machine-Translation with ‘EasyNMT’ from ‘R’\n{Saylac} 0.1.3: Spatial Analysis of Yearly, Longitudinal, and Areal Change\n{retentionflow} 0.1.25: Retention Flow Tables and Sankey Diagrams\n{rdtools} 0.1.0: Efficient Manipulation of ‘Rd’ Files and Help Topics\n{modelimportance} 0.1.0: Measuring Contributions of Component Models to Ensemble Forecast Accuracy\n{mixqrgate} 0.1.2: Location-Varying Gating for Mixtures of Quantile Regressions\n{minex} 0.1.0: Automatically Reduce Failing R Scripts to a Minimal Reproducible Example\n{imputeCGM} 0.0.3: Impute Missing Glucose Values in CGM Data\n{ggsnap} 0.1.2: Save a ‘ggplot2’ Plot using ‘+’ Operator\n{dtametaTMB} 0.1.0: Diagnostic Test Accuracy Meta-Analysis using Template Model Builder\n{ct} 0.4.0: Integrated Camera-Trap Data Management and Analysis\n{SidraFacil} 1.0.2: Framework for Automated Download of SIDRA IBGE Data\n{rootWishartHD} 0.95.2: Exact and Log-Scale Tail Probabilities for Roy’s Largest Root\n{regulog} 0.2.1: Tamper-Evident Audit Logging for Regulated Environments\n{prova} 1.0.0: Nonparametric Probabilistic-Statistical Variate Analysis with Automated Markov-Chain Monte Carlo\n{nwsrfsr} 1.0.2: NWS Hydrology Models: SAC-SMA, SNOW17, UH, CONSUSE, CHANLOSS\n{nQuack} 1.0.4: Predicting Ploidal Level from Sequence Data\n{neutroPPS} 0.1.1: Neutrosophic PPSWOR Sampling with NHT and NGREG Estimators\n{lorax} 0.1.0: Speak for the Trees\n{jsplyr} 0.1.0: Manipulate ‘JSON’ Data in the Browser with a ‘dplyr’ Interface\n{IsletCalc} 0.0.1: Calculators for Insulin and Glucagon Release Indices\n{DiscreteMorseR} 1.0.0: Discrete Morse Theory for 3D Meshes Derived from Point Clouds\n{basil} 0.1.0: Survival Prediction for Severe Limb Ischaemia (BASIL Model)\n{ahull3D} 1.0.0: Fast 3D Alpha Hull with Label Propagation\n{gdpar} 0.1.0: General Dynamic Parameter Models via Reference Anchoring\n{cusna} 0.1.0: Native GPU-Accelerated Simulation and Estimation of Network Models\n{tweedieDistr} 0.1.0: Tweedie Distribution\n{roxyreqs} 1.3.0: ‘roxygen2’-Style Metadata for Test Cases and Function Documentation\n{MarineChain} 1.1.0: Blockchain-Enabled Maritime Transportation System Simulator\n{kro.inv.test} 0.1.1: Kronecker-Invariant Tests for High-Dimensional Separability Testing\n{fletcher} 0.1.0: Compute Fletcher Checksums (16, 32, and 64 Bit)\n{BBNI} 0.1.1: Bayesian Inference of Boolean Genetic Networks\n{appac} 4.0.3: Atmospheric Pressure Peak Area Correction for Gas Chromatography with Standard Detectors\n{tantivyr} 0.1.0: Fast Full-Text Search for R with ‘Tantivy’\n{rpic} 0.6.2: The ‘pic’ Graphics Language Rendered to SVG, PNG and PDF\n{lazymatrix} 0.1.0: Perform Complex Matrix Operations Symbolically on Sparse Matrices\n{glydraw} 0.6.3: Draw Beautiful Symbol Nomenclature for Glycans\n{DynCount} 0.1.0: Bayesian Dynamic Models for Poisson and Binomial Time Series\n{circularNet} 0.1.0: Circular Graphical Model Estimation"
   }
 ]
