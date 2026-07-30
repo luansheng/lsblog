@@ -270,7 +270,7 @@
     "href": "posts/vispedigree-paper-20260730/index.html",
     "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
     "section": "",
-    "text": "近日，visPedigree 的软件论文 “visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees” 在 Bioinformatics Advances 发表（DOI: 10.1093/bioadv/vbag210）。visPedigree 是一款面向动物、植物及水产育种的 R 软件包，聚焦于复杂系谱数据的整理、分析和可视化。"
+    "text": "近日，由中国水产科学研究院黄海水产研究所虾类遗传资源与育种团队开发的 visPedigree 软件论文 “visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees” 在 Bioinformatics Advances 正式发表（DOI: 10.1093/bioadv/vbag210）。visPedigree 是一款面向动物、植物及水产育种的 R 软件包，聚焦于复杂系谱数据的整理、分析和可视化。"
   },
   {
     "objectID": "posts/vispedigree-paper-20260730/index.html#面向育种实践中的复杂系谱数据问题",
@@ -333,7 +333,7 @@
     "href": "posts/vispedigree-paper-20260730/index.html#小结",
     "title": "visPedigree 软件论文发表：复杂育种系谱数据的整理、分析与可视化",
     "section": "小结",
-    "text": "小结\n从 2018 年在 GitHub 上发布第一个版本，到如今完成 CRAN 发布和同行评议论文发表，visPedigree 的每一步改进都来自实际育种数据分析中的真实需求。如果你在处理系谱数据时遇到整理、分析或可视化方面的问题，欢迎尝试 visPedigree，也欢迎通过 GitHub Issues 提交反馈和建议。"
+    "text": "小结\n从 2018 年在 GitHub 上发布第一个版本，到如今完成 CRAN 发布和同行评议论文发表，visPedigree 的每一步改进都来自实际育种数据分析中的真实需求。栾生研究员为论文第一作者和通讯作者。如果你在处理系谱数据时遇到整理、分析或可视化方面的问题，欢迎尝试 visPedigree，也欢迎通过 GitHub Issues 提交反馈和建议。"
   },
   {
     "objectID": "posts/EDA-20260104/index.html",
