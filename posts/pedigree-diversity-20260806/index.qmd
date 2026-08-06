@@ -1,5 +1,5 @@
 ---
-title: "From pedigree records to genetic diversity analysis in R"
+title: "From pedigree records to genetic diversity analysis in R with visPedigree"
 description: "A complete pedigree-based genetic diversity workflow in R: pedigree completeness, generation intervals, founder contributions, effective population size, and diversity half-life — with visPedigree."
 author: "Sheng Luan"
 date: "2026-08-06"
@@ -78,9 +78,10 @@ consumes this same tidied object.
 ## Question 1: How complete and deep is your pedigree?
 
 Every diversity indicator inherits the quality of the pedigree it is computed
-from. A shallow or incomplete pedigree underestimates inbreeding and
-overestimates diversity. `pedstats()` gives a compact structural summary in
-one call:
+from. A shallow or incomplete pedigree can bias estimates of inbreeding and
+genetic diversity, because unknown ancestry reduces the information available
+for reconstructing relationships. `pedstats()` gives a compact structural
+summary in one call:
 
 ```{r}
 stats_deep <- pedstats(tp_deep)
@@ -112,13 +113,8 @@ distribution of ECG across the population:
 plot(stats_deep, type = "ecg", metric = "ECG")
 ```
 
-ECG is such a useful quantity that it has its own function, `pedecg()`, which
-returns a per-individual table you can sort, filter, or export:
-
-```{r}
-ecg_deep <- pedecg(tp_deep)
-ecg_deep[order(-ECG)][1:10]
-```
+ECG is such a useful quantity that it has its own function, `pedecg()`,
+returning the per-individual table you can sort, filter, or export.
 
 ## Question 2: How long is a generation?
 
@@ -197,11 +193,10 @@ barplot(top_anc$Contrib, names.arg = top_anc$Ind,
         col = "steelblue", border = NA)
 ```
 
-The same table is available per founder in `contrib_res$founders`. The
-Shannon-entropy variants `feH` and `faH` count rare founders and ancestors
-more equitably; the ratios `feH / fe` and `faH / fa` reveal whether
-secondary founders still carry material that is invisible to the classical
-metrics.
+Per-founder contributions are in `contrib_res$founders`. The Shannon-entropy
+variants `feH` and `faH` count rare founders and ancestors more equitably; a
+large ratio `feH / fe` reveals that many minor founders still carry genetic
+material that is invisible to the classical metric.
 
 ## Question 4: How much diversity remains?
 
@@ -254,9 +249,9 @@ hl$decay
 For `deep_ped`, the drift component (λd) dominates the total loss rate — most
 diversity loss here is random drift rather than fixable selection decisions.
 The half-life of about 5 generations means that, at the current rate, founder
-genome equivalents will halve every five generations. In conservation and
-aquaculture genetics, a half-life shorter than five to ten generations is
-generally considered a cause for concern.
+genome equivalents will halve every five generations. As a rough benchmark, a
+half-life shorter than five to ten generations is generally considered a cause
+for concern in conservation and aquaculture genetics.
 
 The full object also exposes the per-generation time series, and can be
 plotted on the log scale (the fitted linear decays) or the raw scale:
@@ -293,72 +288,31 @@ breeding population (or cryopreserve) for λd.
 
 ## How large is the effective population size?
 
-Effective population size (Ne) is the size of an ideal population that loses
-diversity at the same rate as the real one. It is almost always far smaller
-than the census size, and it comes in several flavors. `pedne()` computes
-three of them from the same tidied object:
+`pedne()` computes pedigree-based estimates of effective population size from
+the same tidied object, using demographic parent counts, the realized rate of
+inbreeding, or the rate of coancestry:
 
 ```{r}
 # Coancestry-based Ne — the strictest and most sensitive warning signal
 ne_coan <- pedne(tp_deep, method = "coancestry", by = "Gen", seed = 42L)
 ne_coan
-
-# Inbreeding-based Ne — based on the realized rate of inbreeding
-ne_inb <- pedne(tp_deep, method = "inbreeding", by = "Gen")
-ne_inb
-
-# Demographic Ne — from the numbers of contributing sires and dams
-ne_demo <- pedne(tp_deep, method = "demographic", by = "Gen")
-ne_demo
 ```
 
-The three estimates answer different questions: the demographic Ne uses only
-parent counts and is often optimistic; the inbreeding Ne captures realized
-inbreeding accumulation; the coancestry Ne detects the accumulation of
-relatedness *before* it is fully expressed as inbreeding, which makes it the
-earliest warning signal in managed populations.
-
-## Keeping an eye on inbreeding
-
-Inbreeding is the direct consequence of small Ne and concentrated ancestor
-contributions. Two functions make it easy to monitor.
-
-`inbreed()` computes Wright's inbreeding coefficient for every individual;
-`pedfclass()` classifies the population by inbreeding severity, with default
-thresholds corresponding to familiar mating scenarios (0.0625 half-sib, 0.125
-avuncular, 0.25 full-sib):
-
-```{r}
-data(inbred_ped, package = "visPedigree")
-tp_inbred <- inbreed(tidyped(inbred_ped))
-
-# Mean inbreeding by generation
-tp_inbred[, .(MeanF = mean(f, na.rm = TRUE)), by = Gen]
-
-# Classification by inbreeding severity
-pedfclass(tp_inbred)
-```
-
-Custom thresholds can be supplied through `breaks` — for example, to flag the
-top percentiles of your own population:
-
-```r
-pedfclass(tp_inbred, breaks = c(0.03125, 0.0625, 0.125, 0.25))
-```
-
-And as shown in the [visualization
-tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/),
-you can display the inbreeding coefficient directly on the pedigree graph with
-`visped(tp, showf = TRUE)` — combining the numbers in this article with the
-picture from the previous one.
+The coancestry-based estimate detects the accumulation of relatedness
+*before* it is fully expressed as inbreeding, making it the earliest warning
+signal in managed populations. Individual inbreeding coefficients can also be
+computed with `inbreed()` (or `tidyped(..., inbreed = TRUE)`) and displayed
+directly on the pedigree graph with `visped(showf = TRUE)`, as shown in the
+[visualization tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/);
+`pedfclass()` classifies individuals by inbreeding severity.
 
 ## Real-world applications
 
 The same workflow has been used in peer-reviewed research across breeding and
 conservation genetics:
 
-- 🦏 **Eastern black rhinoceros** — observational pedigrees constructed to
-  classify ancestry cohorts for inbreeding depression analysis
+- 🦏 **Eastern black rhinoceros** — observational pedigree construction
+  for ancestry cohort classification
   ([PNAS, 2025](https://doi.org/10.1073/pnas.2414412122)).
 - 🐖 **Gochu Asturcelta pig** — pedigree visualization of 471 individuals from
   51 families in a study of harmful haplotypes
