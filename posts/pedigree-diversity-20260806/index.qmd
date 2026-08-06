@@ -1,0 +1,401 @@
+---
+title: "From pedigree records to genetic diversity analysis in R"
+description: "A complete pedigree-based genetic diversity workflow in R: pedigree completeness, generation intervals, founder contributions, effective population size, and diversity half-life — with visPedigree."
+author: "Sheng Luan"
+date: "2026-08-06"
+categories: [R, Genetics, Pedigree, Breeding, Conservation, r-bloggers]
+image: cover.png
+format:
+  html:
+    fig-dpi: 300
+execute:
+  warning: false
+  message: false
+---
+
+A pedigree is a family tree at population scale. Every breeding program,
+studbook, and conservation herd keeps one — usually as a spreadsheet with
+three columns: `Ind`, `Sire`, `Dam`, repeated row after row. Those columns
+tell you *who is related to whom*, but they say nothing about the questions
+that actually matter:
+
+1. **How complete and deep is my pedigree?** — Can I trust diversity estimates
+   computed from it?
+2. **How long is a generation?** — What is the rate of genetic turnover?
+3. **Who carries the gene pool?** — Are a few founders or ancestors dominating
+   the population?
+4. **How much diversity remains, and how fast is it disappearing?**
+5. **How large is the effective population size?**
+
+In my [previous tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/),
+I showed how [visPedigree](https://github.com/luansheng/visPedigree) turns raw
+pedigree tables into publication-ready graphs. This article covers the analysis
+side: how the same package computes the indicators used in breeding and
+conservation genetics — pedigree completeness, generation intervals, founder
+and ancestor contributions, effective population size, and a headline metric
+called the *diversity half-life*.
+
+```{r}
+#| label: setup
+#| include: false
+library(visPedigree)
+library(data.table)
+```
+
+## Getting started
+
+Install visPedigree from CRAN and load it:
+
+```r
+install.packages("visPedigree")
+library(visPedigree)
+```
+
+## One tidy step, every analysis after
+
+Every analysis in this article starts from the same object: a pedigree
+prepared by `tidyped()`. The function validates the parent–offspring records,
+orders individuals, infers generations, and flags pedigree loops.
+
+We will use two built-in datasets:
+
+- `deep_ped` — 4,396 individuals across deep generations, ideal for
+  completeness, diversity, and half-life analysis.
+- `big_family_size_ped` — 178,421 records with a `Year` column, ideal for
+  generation-interval analysis.
+
+```{r}
+data(deep_ped, package = "visPedigree")
+data(big_family_size_ped, package = "visPedigree")
+
+tp_deep <- tidyped(deep_ped)
+summary(tp_deep)
+```
+
+Everything downstream — statistics, contributions, diversity, effective size —
+consumes this same tidied object.
+
+## Question 1: How complete and deep is your pedigree?
+
+Every diversity indicator inherits the quality of the pedigree it is computed
+from. A shallow or incomplete pedigree underestimates inbreeding and
+overestimates diversity. `pedstats()` gives a compact structural summary in
+one call:
+
+```{r}
+stats_deep <- pedstats(tp_deep)
+stats_deep$summary
+```
+
+The `$ecg` component reports ancestral depth for every individual, summarized
+by three complementary metrics:
+
+- **ECG** — equivalent complete generations: a depth measure that accounts for
+  both how far and how completely ancestry is known. It is the depth
+  adjustment used by inbreeding- and coancestry-based effective population
+  size estimators.
+- **FullGen** — the number of fully traced ancestral generations.
+- **MaxGen** — the deepest known ancestral path, even if incomplete.
+
+```{r}
+tail(stats_deep$ecg)
+```
+
+`pedstats()` also prints and plots these summaries — for example, the
+distribution of ECG across the population:
+
+```{r}
+#| label: fig-ecg
+#| fig-cap: "Distribution of equivalent complete generations (ECG) in deep_ped. Most individuals carry between two and three equivalent complete generations of ancestry."
+#| fig-width: 7
+#| fig-height: 5
+plot(stats_deep, type = "ecg", metric = "ECG")
+```
+
+ECG is such a useful quantity that it has its own function, `pedecg()`, which
+returns a per-individual table you can sort, filter, or export:
+
+```{r}
+ecg_deep <- pedecg(tp_deep)
+ecg_deep[order(-ECG)][1:10]
+```
+
+## Question 2: How long is a generation?
+
+The generation interval — the average age of parents when their offspring are
+born — determines how quickly genetic material cycles through the population.
+Long intervals mean slow genetic gain and slow response to selection.
+
+`pedstats()` computes generation intervals when a time column is available.
+`big_family_size_ped` carries a `Year` column:
+
+```{r}
+tp_time <- tidyped(big_family_size_ped)
+stats_time <- pedstats(tp_time, timevar = "Year")
+stats_time$gen_intervals
+```
+
+The output reports the four classic gametic pathways — sire–son (SS),
+sire–daughter (SD), dam–son (DS), and dam–daughter (DD) — plus an overall
+average. A sire-to-son interval that is consistently longer than sire-to-
+daughter, for example, often reflects the use of proven old sires.
+
+```{r}
+#| label: fig-genint
+#| fig-cap: "Generation intervals by gametic pathway in big_family_size_ped. Mean age of sires at the birth of their sons (SS) and daughters (SD), and of dams at the birth of their sons (DS) and daughters (DD)."
+#| fig-width: 7
+#| fig-height: 5
+plot(stats_time, type = "genint")
+```
+
+You can also call `pedgenint()` directly for the full pathway table, or pass
+`cycle` to compare the realized interval with a target breeding cycle:
+
+```r
+pedgenint(tp_time, timevar = "Year", unit = "year", cycle = 1.2)
+```
+
+## Question 3: Who carries the gene pool?
+
+The most informative way to describe a population's genetic architecture is
+to ask where its genes come from. `pedcontrib()` traces probabilistic gene
+flow from founders and ancestors into a **reference population** — the cohort
+you care about (recent generations, breeding candidates, genotyped animals).
+
+Here the reference population is the most recent two generations of `deep_ped`:
+
+```{r}
+ref_pop <- tp_deep[Gen >= max(Gen) - 1, Ind]
+length(ref_pop)
+```
+
+```{r}
+contrib_res <- pedcontrib(tp_deep, reference = ref_pop, mode = "both")
+
+# Classical (q = 2) and Shannon-entropy (q = 1) effective numbers
+contrib_res$summary[c("n_founder", "f_e_H", "f_e", "n_ancestor", "f_a_H", "f_a")]
+```
+
+Two numbers carry most of the interpretation:
+
+- **Effective number of founders, `fe`** — how many founders the population
+  behaves like, *if their contributions were equal*. A small `fe` relative to
+  the actual founder count means founders were used very unequally.
+- **Effective number of ancestors, `fa`** — how many ancestors explain the
+  gene pool after removing contributions already explained by more influential
+  ones. When `fa` is markedly smaller than `fe`, a small set of key ancestors
+  created a **genetic bottleneck**.
+
+```{r}
+#| label: fig-contrib
+#| fig-cap: "Top 10 ancestor contributions to the reference population of deep_ped. The contribution of a handful of ancestors dominates the gene pool."
+#| fig-width: 7
+#| fig-height: 5
+top_anc <- contrib_res$ancestors[1:10]
+barplot(top_anc$Contrib, names.arg = top_anc$Ind,
+        las = 2, ylab = "Contribution to reference population",
+        col = "steelblue", border = NA)
+```
+
+The same table is available per founder in `contrib_res$founders`. The
+Shannon-entropy variants `feH` and `faH` count rare founders and ancestors
+more equitably; the ratios `feH / fe` and `faH / fa` reveal whether
+secondary founders still carry material that is invisible to the classical
+metrics.
+
+## Question 4: How much diversity remains?
+
+`pediv()` is the integrated diversity summary. From the reference population
+it computes founder genome equivalents (`fg`), mean coancestry, and the
+retained genetic diversity index `GeneDiv`:
+
+```{r}
+div_res <- pediv(tp_deep, reference = ref_pop, top = 10, seed = 42L)
+div_res$summary[, .(NFounder, fe, fa, fg, MeanCoan, GeneDiv)]
+```
+
+The headline index is **`GeneDiv`** — the pedigree-based retained genetic
+diversity, equal to one minus the mean coancestry of the reference population.
+An unrelated, non-inbred population has `GeneDiv = 1`; a population of full
+sibs from two unrelated founders has `GeneDiv ≈ 0.75`. Because it is a
+dimensionless proportion, it is the easiest metric to communicate to managers
+and stakeholders.
+
+**Founder genome equivalents (`fg`)** is the more conservative indicator: it
+captures drift as well as unequal founder use and bottlenecks, so it is often
+the smallest of the three.
+
+## Question 5: How fast is diversity disappearing? — the diversity half-life
+
+`pediv()` is a snapshot. `pedhalflife()` turns it into a film: for every
+time point in the pedigree (here, every generation), it recomputes `fe`,
+`fa`, and `fg`, then fits a log-linear decay model to quantify the *rate* of
+diversity loss.
+
+The total loss rate is decomposed into three additive components, each with a
+distinct biological meaning:
+
+| Component | Symbol | Source of loss |
+|---|---|---|
+| Foundation | λe | Unequal founder contributions |
+| Bottleneck | λb | Overuse of a few key ancestors |
+| Drift | λd | Random genetic drift in a finite population |
+
+The **diversity half-life** is the number of time units for `fg` to halve:
+T₁/₂ = ln 2 / λtotal.
+
+```{r}
+hl <- pedhalflife(tp_deep, timevar = "Gen")
+print(hl)
+
+hl$decay
+```
+
+For `deep_ped`, the drift component (λd) dominates the total loss rate — most
+diversity loss here is random drift rather than fixable selection decisions.
+The half-life of about 5 generations means that, at the current rate, founder
+genome equivalents will halve every five generations. In conservation and
+aquaculture genetics, a half-life shorter than five to ten generations is
+generally considered a cause for concern.
+
+The full object also exposes the per-generation time series, and can be
+plotted on the log scale (the fitted linear decays) or the raw scale:
+
+```{r}
+#| label: fig-halflife-log
+#| fig-cap: "Log-linear decay of effective founders (ln fe), effective ancestors (ln fa), and founder genome equivalents (ln fg) across generations in deep_ped. Slopes of these lines are λe, λb, and λd."
+#| fig-width: 7
+#| fig-height: 5
+plot(hl, type = "log")
+```
+
+```{r}
+#| label: fig-halflife-raw
+#| fig-cap: "The same diversity metrics on the original scale: fe, fa, and fg by generation."
+#| fig-width: 7
+#| fig-height: 5
+plot(hl, type = "raw")
+```
+
+To focus the half-life on a specific window — for example, the last four
+generations — pass them to the `at` argument:
+
+```r
+hl_recent <- pedhalflife(tp_deep, timevar = "Gen",
+                         at = tail(sort(unique(tp_deep$Gen)), 4))
+print(hl_recent)
+```
+
+The λ decomposition turns "we are losing diversity" — which everyone already
+knew — into "we are losing it *for this reason*", which tells you what to do:
+broaden founder use for λe, rotate breeding males for λb, and enlarge the
+breeding population (or cryopreserve) for λd.
+
+## How large is the effective population size?
+
+Effective population size (Ne) is the size of an ideal population that loses
+diversity at the same rate as the real one. It is almost always far smaller
+than the census size, and it comes in several flavors. `pedne()` computes
+three of them from the same tidied object:
+
+```{r}
+# Coancestry-based Ne — the strictest and most sensitive warning signal
+ne_coan <- pedne(tp_deep, method = "coancestry", by = "Gen", seed = 42L)
+ne_coan
+
+# Inbreeding-based Ne — based on the realized rate of inbreeding
+ne_inb <- pedne(tp_deep, method = "inbreeding", by = "Gen")
+ne_inb
+
+# Demographic Ne — from the numbers of contributing sires and dams
+ne_demo <- pedne(tp_deep, method = "demographic", by = "Gen")
+ne_demo
+```
+
+The three estimates answer different questions: the demographic Ne uses only
+parent counts and is often optimistic; the inbreeding Ne captures realized
+inbreeding accumulation; the coancestry Ne detects the accumulation of
+relatedness *before* it is fully expressed as inbreeding, which makes it the
+earliest warning signal in managed populations.
+
+## Keeping an eye on inbreeding
+
+Inbreeding is the direct consequence of small Ne and concentrated ancestor
+contributions. Two functions make it easy to monitor.
+
+`inbreed()` computes Wright's inbreeding coefficient for every individual;
+`pedfclass()` classifies the population by inbreeding severity, with default
+thresholds corresponding to familiar mating scenarios (0.0625 half-sib, 0.125
+avuncular, 0.25 full-sib):
+
+```{r}
+data(inbred_ped, package = "visPedigree")
+tp_inbred <- inbreed(tidyped(inbred_ped))
+
+# Mean inbreeding by generation
+tp_inbred[, .(MeanF = mean(f, na.rm = TRUE)), by = Gen]
+
+# Classification by inbreeding severity
+pedfclass(tp_inbred)
+```
+
+Custom thresholds can be supplied through `breaks` — for example, to flag the
+top percentiles of your own population:
+
+```r
+pedfclass(tp_inbred, breaks = c(0.03125, 0.0625, 0.125, 0.25))
+```
+
+And as shown in the [visualization
+tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/),
+you can display the inbreeding coefficient directly on the pedigree graph with
+`visped(tp, showf = TRUE)` — combining the numbers in this article with the
+picture from the previous one.
+
+## Real-world applications
+
+The same workflow has been used in peer-reviewed research across breeding and
+conservation genetics:
+
+- 🦏 **Eastern black rhinoceros** — observational pedigrees constructed to
+  classify ancestry cohorts for inbreeding depression analysis
+  ([PNAS, 2025](https://doi.org/10.1073/pnas.2414412122)).
+- 🐖 **Gochu Asturcelta pig** — pedigree visualization of 471 individuals from
+  51 families in a study of harmful haplotypes
+  ([BMC Genomics, 2024](https://doi.org/10.1186/s12864-024-10407-x)).
+- 🦌 **Wild caribou** — pedigree construction after parentage inference with
+  COLONY, supporting relatedness classification for network analysis
+  ([Global Ecology and Conservation, 2023](https://doi.org/10.1016/j.gecco.2023.e02688)).
+- 🐕 **Labrador Retriever** — pedigree quality control on 1,486,764 records,
+  locating pedigree loops traced to incorrect sire assignments
+  ([Genetics Selection Evolution, 2025](https://doi.org/10.1186/s12711-025-00994-y)).
+
+More verified applications are listed on the [Applications
+page](https://luansheng.github.io/visPedigree/articles/applications.html).
+
+## Where to go from here
+
+This article covered the pedigree-based diversity pipeline: completeness
+(`pedstats()`, `pedecg()`), generation intervals (`pedgenint()`), gene-origin
+analysis (`pedcontrib()`), diversity snapshots (`pediv()`), diversity dynamics
+(`pedhalflife()`), effective size (`pedne()`), and inbreeding monitoring
+(`inbreed()`, `pedfclass()`).
+
+The same tidied pedigree object also powers relationship matrices (additive
+A, dominance D, and additive-by-additive AA), and — for pedigrees with
+hundreds of thousands of individuals — matrix-free products `Ax` and `A⁻¹x`
+that never construct the dense matrix. That is the topic of a future article.
+
+If visPedigree contributes to your published work, please cite it:
+
+```r
+citation("visPedigree")
+```
+
+Install from CRAN:
+
+```r
+install.packages("visPedigree")
+```
+
+Full documentation at [luansheng.github.io/visPedigree](https://luansheng.github.io/visPedigree/).
