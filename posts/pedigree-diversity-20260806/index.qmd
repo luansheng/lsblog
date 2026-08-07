@@ -107,7 +107,7 @@ distribution of ECG across the population:
 
 ```{r}
 #| label: fig-ecg
-#| fig-cap: "Distribution of equivalent complete generations (ECG) in deep_ped. The distribution is skewed toward deep ancestry — the median is 6.4 ECG, and most individuals carry more than six equivalent complete generations."
+#| fig-cap: "Distribution of equivalent complete generations (ECG) in deep_ped. The distribution is skewed toward deep ancestry — the median is 6.4 ECGs, and most individuals carry more than six ECGs."
 #| fig-width: 7
 #| fig-height: 5
 plot(stats_deep, type = "ecg", metric = "ECG")
