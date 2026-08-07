@@ -274,6 +274,9 @@ conservation genetics, and human genealogy:
 - 🐕 **Labrador Retriever** — pedigree quality control on 1,486,764 records,
   helping locate pedigree loops that were traced to incorrect sire assignments
   ([Genetics Selection Evolution, 2025](https://doi.org/10.1186/s12711-025-00994-y)).
+- 🦌 **Wild caribou** — pedigree construction and visualization after parentage
+  inference with COLONY, supporting relatedness classification for network
+  analysis ([Global Ecology and Conservation, 2023](https://doi.org/10.1016/j.gecco.2023.e02688)).
 
 More verified applications are listed on the [Applications
 page](https://luansheng.github.io/visPedigree/articles/applications.html).

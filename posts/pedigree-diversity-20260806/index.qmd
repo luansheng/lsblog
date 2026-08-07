@@ -314,27 +314,6 @@ directly on the pedigree graph with `visped(showf = TRUE)`, as shown in the
 [visualization tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/);
 `pedfclass()` classifies individuals by inbreeding severity.
 
-## Real-world applications
-
-The same workflow has been used in peer-reviewed research across breeding and
-conservation genetics:
-
-- 🦏 **Eastern black rhinoceros** — observational pedigree construction
-  for ancestry cohort classification
-  ([PNAS, 2025](https://doi.org/10.1073/pnas.2414412122)).
-- 🐖 **Gochu Asturcelta pig** — pedigree visualization of 471 individuals from
-  51 families in a study of harmful haplotypes
-  ([BMC Genomics, 2024](https://doi.org/10.1186/s12864-024-10407-x)).
-- 🦌 **Wild caribou** — pedigree construction after parentage inference with
-  COLONY, supporting relatedness classification for network analysis
-  ([Global Ecology and Conservation, 2023](https://doi.org/10.1016/j.gecco.2023.e02688)).
-- 🐕 **Labrador Retriever** — pedigree quality control on 1,486,764 records,
-  locating pedigree loops traced to incorrect sire assignments
-  ([Genetics Selection Evolution, 2025](https://doi.org/10.1186/s12711-025-00994-y)).
-
-More verified applications are listed on the [Applications
-page](https://luansheng.github.io/visPedigree/articles/applications.html).
-
 ## Where to go from here
 
 This article covered the pedigree-based diversity pipeline: completeness
@@ -347,6 +326,10 @@ The same tidied pedigree object also powers relationship matrices (additive
 A, dominance D, and additive-by-additive AA), and — for pedigrees with
 hundreds of thousands of individuals — matrix-free products `Ax` and `A⁻¹x`
 that never construct the dense matrix. That is the topic of a future article.
+
+For published research using visPedigree, see the [Applications
+page](https://luansheng.github.io/visPedigree/articles/applications.html) and
+the [visualization tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/).
 
 If visPedigree contributes to your published work, please cite it:
 
