@@ -296,6 +296,13 @@ complete analysis pipeline:
   and *A⁻¹x* without constructing the dense matrix (`pedmat()`, `pedprod()`,
   `vismat()`).
 
+The next article in this series — [From pedigree records to genetic diversity
+analysis in R with
+visPedigree](https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/)
+— walks through the analysis side of these functions: pedigree completeness,
+generation intervals, founder contributions, effective population size, and
+the diversity half-life.
+
 If you work with pedigree data in R — whether in animal breeding, conservation
 genetics, or genealogy — visPedigree provides a unified workflow from data
 preparation to publication-ready output.
