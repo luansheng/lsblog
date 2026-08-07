@@ -24,8 +24,11 @@ that actually matter:
 2. **How long is a generation?** — What is the rate of genetic turnover?
 3. **Who carries the gene pool?** — Are a few founders or ancestors dominating
    the population?
-4. **How much diversity remains, and how fast is it disappearing?**
-5. **How large is the effective population size?**
+4. **How much diversity remains?** — What share of the founder genome is still
+   present?
+5. **How fast is it disappearing?** — When will the founder genome halve?
+6. **How large is the effective population size?** — Is the population smaller
+   than it appears?
 
 In my [previous tutorial](https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/),
 I showed how [visPedigree](https://github.com/luansheng/visPedigree) turns raw
@@ -294,7 +297,7 @@ knew — into "we are losing it *for this reason*", which tells you what to do:
 broaden founder use for λe, balance the use of influential ancestors for λb,
 and enlarge the breeding population (or cryopreserve) for λd.
 
-## How large is the effective population size?
+## Question 6: How large is the effective population size?
 
 `pedne()` computes pedigree-based estimates of effective population size from
 the same tidied object, using demographic parent counts, the realized rate of
