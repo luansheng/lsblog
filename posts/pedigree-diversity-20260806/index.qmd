@@ -48,6 +48,7 @@ Install visPedigree from CRAN and load it:
 
 ```r
 install.packages("visPedigree")
+install.packages("optiSel")   # only needed for the ExamplePed dataset used below
 library(visPedigree)
 ```
 
@@ -57,16 +58,17 @@ Every analysis in this article starts from the same object: a pedigree
 prepared by `tidyped()`. The function validates the parent–offspring records,
 orders individuals, infers generations, and flags pedigree loops.
 
-We will use two built-in datasets:
+We will use two datasets:
 
-- `deep_ped` — 4,396 individuals across deep generations, ideal for
-  completeness, diversity, and half-life analysis.
-- `big_family_size_ped` — 178,421 records with a `Year` column, ideal for
-  generation-interval analysis.
+- `deep_ped` (built in) — 4,396 individuals across deep generations, ideal
+  for completeness, diversity, and half-life analysis.
+- `ExamplePed` from the `optiSel` package — the pedigree of a Hinterwald
+  cattle population: 1,179 animals born between 1947 and 1995, ideal for
+  generation-interval analysis because generations overlap.
 
 ```{r}
 data(deep_ped, package = "visPedigree")
-data(big_family_size_ped, package = "visPedigree")
+data(ExamplePed, package = "optiSel")
 
 tp_deep <- tidyped(deep_ped)
 summary(tp_deep)
@@ -123,33 +125,37 @@ born — determines how quickly genetic material cycles through the population.
 Longer generation intervals generally slow the rate at which genetic
 improvement accumulates per unit time.
 
-`pedstats()` computes generation intervals when a time column is available.
-`big_family_size_ped` carries a `Year` column:
+We use the Hinterwald cattle pedigree bundled with `optiSel` — generations
+overlap there, which is exactly what makes generation intervals interesting:
 
 ```{r}
-tp_time <- tidyped(big_family_size_ped)
-stats_time <- pedstats(tp_time, timevar = "Year")
+ped_cattle <- tidyped(ExamplePed)   # column names are detected automatically
+stats_time <- pedstats(ped_cattle, timevar = "Born")
 stats_time$gen_intervals
 ```
 
 The output reports the four classic gametic pathways — sire–son (SS),
 sire–daughter (SD), dam–son (DS), and dam–daughter (DD) — plus an overall
-average. A sire-to-son interval that is consistently longer than sire-to-
-daughter, for example, often reflects the use of proven old sires.
+average. Here the contrast is striking: sires are about four years old on
+average at the birth of their calves, dams about seven. Males are used early
+and broadly in cattle breeding, while females reproduce across a longer
+lifespan — a difference that directly affects the rate of genetic gain per
+year.
 
 ```{r}
 #| label: fig-genint
-#| fig-cap: "Generation intervals by gametic pathway in big_family_size_ped. Mean age of sires at the birth of their sons (SS) and daughters (SD), and of dams at the birth of their sons (DS) and daughters (DD)."
+#| fig-cap: "Generation intervals by gametic pathway in the Hinterwald cattle pedigree (optiSel::ExamplePed). Sires are about 4 years old on average at the birth of their calves (SS, SD); dams about 7 years (DS, DD)."
 #| fig-width: 7
 #| fig-height: 5
 plot(stats_time, type = "genint")
 ```
 
 You can also call `pedgenint()` directly for the full pathway table, or pass
-`cycle` to compare the realized interval with a target breeding cycle:
+`cycle` to compare the realized interval with a target breeding cycle (here,
+a 4-year cycle):
 
 ```r
-pedgenint(tp_time, timevar = "Year", unit = "year", cycle = 1.2)
+pedgenint(ped_cattle, timevar = "Born", unit = "year", cycle = 4)
 ```
 
 ## Question 3: Who carries the gene pool?
