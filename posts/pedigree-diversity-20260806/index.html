@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Sheng Luan">
+<meta name="dcterms.date" content="2026-08-06">
+<meta name="description" content="A pedigree-based genetic diversity workflow in R: pedigree completeness, generation intervals, founder contributions, effective population size, and diversity half-life with visPedigree.">
+
+<title>From pedigree records to genetic diversity analysis in R with visPedigree – metabreeding</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a1c87f40015067c62c82f3c4ff3d1ad4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">metabreeding</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../publication.html"> 
+<span class="menu-text">Publication</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://www.r-bloggers.com"> 
+<span class="menu-text">R-bloggers</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">From pedigree records to genetic diversity analysis in R with visPedigree</h1>
+                  <div>
+        <div class="description">
+          A pedigree-based genetic diversity workflow in R: pedigree completeness, generation intervals, founder contributions, effective population size, and diversity half-life with visPedigree.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Genetics</div>
+                <div class="quarto-category">Pedigree</div>
+                <div class="quarto-category">Breeding</div>
+                <div class="quarto-category">Conservation</div>
+                <div class="quarto-category">r-bloggers</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Sheng Luan </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">August 6, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>A pedigree is a family tree at population scale. Every breeding program, studbook, and conservation herd keeps one — usually as a spreadsheet with three columns: <code>Ind</code>, <code>Sire</code>, <code>Dam</code>, repeated row after row. Those columns tell you <em>who is related to whom</em>, but they say nothing about the questions that actually matter:</p>
+<ol type="1">
+<li><strong>How complete and deep is my pedigree?</strong> — Can I trust diversity estimates computed from it?</li>
+<li><strong>How long is a generation?</strong> — What is the rate of genetic turnover?</li>
+<li><strong>Who carries the gene pool?</strong> — Are a few founders or ancestors dominating the population?</li>
+<li><strong>How much diversity remains?</strong> — What share of the founder genome is still present?</li>
+<li><strong>How fast is it disappearing?</strong> — When will the founder genome halve?</li>
+<li><strong>How large is the effective population size?</strong> — Is the population smaller than it appears?</li>
+</ol>
+<p>In my <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">previous tutorial</a>, I showed how <a href="https://github.com/luansheng/visPedigree">visPedigree</a> turns raw pedigree tables into publication-ready graphs. This article covers the analysis side: how the same package computes the indicators used in breeding and conservation genetics — pedigree completeness, generation intervals, founder and ancestor contributions, effective population size, and a headline metric called the <em>diversity half-life</em>.</p>
+<section id="getting-started" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started">Getting started</h2>
+<p>Install visPedigree from CRAN and load it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"visPedigree"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"optiSel"</span>)   <span class="co"># only needed for the ExamplePed dataset used below</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(visPedigree)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="one-tidy-step-every-analysis-after" class="level2">
+<h2 class="anchored" data-anchor-id="one-tidy-step-every-analysis-after">One tidy step, every analysis after</h2>
+<p>Every analysis in this article starts from the same object: a pedigree prepared by <code>tidyped()</code>. The function validates the parent–offspring records, orders individuals, infers generations, and flags pedigree loops.</p>
+<p>We will use two datasets:</p>
+<ul>
+<li><code>deep_ped</code> (built in) — 4,396 individuals across deep generations, ideal for completeness, diversity, and half-life analysis.</li>
+<li><code>ExamplePed</code> from the <code>optiSel</code> package — the pedigree of a Hinterwald cattle population: 1,179 animals born between 1947 and 1995, ideal for generation-interval analysis because generations overlap.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(deep_ped, <span class="at">package =</span> <span class="st">"visPedigree"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(ExamplePed, <span class="at">package =</span> <span class="st">"optiSel"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>tp_deep <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(deep_ped)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tp_deep)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pedigree Summary
+================
+
+Total Individuals:  4399 
+  - Males:    1839 (41.8%) 
+  - Females:  2039 (46.4%) 
+  - Unknown:  521 (11.8%) 
+
+Pedigree Structure:
+  - Founders (no parents):   138 
+  - Both parents known:      4242 
+  - Dam only known:          19 
+
+Generation:
+  - Maximum:  13 
+  - Distribution: 13 generations (use str() for details)
+
+Reproduction:
+  - Individuals with offspring:  1037 
+  - Sires:  483  (Mean=8.8, Max=63 offspring)
+  - Dams:   554  (Mean=7.7, Max=34 offspring)
+
+Full-sibling Families:
+  - Number of families:      540 
+  - Mean family size:        7.86
+  - Maximum family size:     34 
+  - Top families by size:
+      K010263AxK010702YZ: 34
+      K010278ExK010139A: 33
+      K010767AxK010130YZ: 33
+      K010148KxK010566YZ: 32
+      K010538DxK010507YZ: 32
+
+================</code></pre>
+</div>
+</div>
+<p>Everything downstream — statistics, contributions, diversity, effective size — consumes this same tidied object.</p>
+</section>
+<section id="question-1-how-complete-and-deep-is-your-pedigree" class="level2">
+<h2 class="anchored" data-anchor-id="question-1-how-complete-and-deep-is-your-pedigree">Question 1: How complete and deep is your pedigree?</h2>
+<p>Every diversity indicator inherits the quality of the pedigree it is computed from. A shallow or incomplete pedigree can bias estimates of inbreeding and genetic diversity, because unknown ancestry reduces the information available for reconstructing relationships. <code>pedstats()</code> gives a compact structural summary in one call:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>stats_deep <span class="ot">&lt;-</span> <span class="fu">pedstats</span>(tp_deep)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>stats_deep<span class="sc">$</span>summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       N NSire  NDam NFounder MaxGen
+   &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;  &lt;int&gt;
+1:  4399   483   554      138     13</code></pre>
+</div>
+</div>
+<p>The <code>$ecg</code> component reports ancestral depth for every individual, summarized by three complementary metrics:</p>
+<ul>
+<li><strong>ECG</strong> — equivalent complete generations: a depth measure that accounts for both how far and how completely ancestry is known. It is an important pedigree-depth measure when interpreting inbreeding- and coancestry-based analyses.</li>
+<li><strong>FullGen</strong> — the number of fully traced ancestral generations.</li>
+<li><strong>MaxGen</strong> — the deepest known ancestral path, even if incomplete.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span>(stats_deep<span class="sc">$</span>ecg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Ind      ECG FullGen MaxGen
+     &lt;char&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;
+1: K110997Q 7.616211       5     12
+2: K110997Z 6.722656       5     12
+3: K110998Q 4.606445       2     12
+4: K110998Z 6.417969       5     12
+5: K110999Q 7.345215       5     12
+6: K110999Z 6.875977       5     12</code></pre>
+</div>
+</div>
+<p><code>pedstats()</code> also prints and plots these summaries — for example, the distribution of ECG across the population:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(stats_deep, <span class="at">type =</span> <span class="st">"ecg"</span>, <span class="at">metric =</span> <span class="st">"ECG"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-ecg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ecg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-ecg-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ecg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Distribution of equivalent complete generations (ECG) in deep_ped. The distribution is skewed toward deep ancestry — the median is 6.4 ECGs, and most individuals carry more than six ECGs.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>ECG is such a useful quantity that it has its own function, <code>pedecg()</code>, returning the per-individual table you can sort, filter, or export.</p>
+</section>
+<section id="question-2-how-long-is-a-generation" class="level2">
+<h2 class="anchored" data-anchor-id="question-2-how-long-is-a-generation">Question 2: How long is a generation?</h2>
+<p>The generation interval — the average age of parents when their offspring are born — determines how quickly genetic material cycles through the population. Longer generation intervals generally slow the rate at which genetic improvement accumulates per unit time.</p>
+<p>We use the Hinterwald cattle pedigree bundled with <code>optiSel</code> — generations overlap there, which is exactly what makes generation intervals interesting:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ped_cattle <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(ExamplePed)   <span class="co"># column names are detected automatically</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>stats_time <span class="ot">&lt;-</span> <span class="fu">pedstats</span>(ped_cattle, <span class="at">timevar =</span> <span class="st">"Born"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>stats_time<span class="sc">$</span>gen_intervals</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Pathway     N     Mean       SD
+    &lt;char&gt; &lt;int&gt;    &lt;num&gt;    &lt;num&gt;
+1: Average  1564 5.429011 3.306798
+2:      DD   436 7.128390 3.355804
+3:      DO   758 7.097622 3.311750
+4:      DS   322 7.055960 3.255885
+5:      SD   466 3.763863 2.355588
+6:      SO   806 3.859772 2.414623
+7:      SS   340 3.991223 2.490764</code></pre>
+</div>
+</div>
+<p>The output reports generation intervals by parental pathway, including sire–son (SS), sire–daughter (SD), dam–son (DS), and dam–daughter (DD), plus an overall average. Here the contrast is striking: sires are about four years old on average at the birth of their calves, dams about seven. This difference reflects the distinct reproductive and selection strategies for males and females in cattle breeding, and directly affects the rate of genetic gain per year.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(stats_time, <span class="at">type =</span> <span class="st">"genint"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-genint" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-genint-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-genint-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-genint-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Generation intervals by gametic pathway in the Hinterwald cattle pedigree (optiSel::ExamplePed). Sires are about 4 years old on average at the birth of their calves (SS, SD); dams about 7 years (DS, DD).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>You can also call <code>pedgenint()</code> directly for the full pathway table, or pass <code>cycle</code> to compare the realized interval with a target breeding cycle (here, a 4-year cycle):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pedgenint</span>(ped_cattle, <span class="at">timevar =</span> <span class="st">"Born"</span>, <span class="at">unit =</span> <span class="st">"year"</span>, <span class="at">cycle =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="question-3-who-carries-the-gene-pool" class="level2">
+<h2 class="anchored" data-anchor-id="question-3-who-carries-the-gene-pool">Question 3: Who carries the gene pool?</h2>
+<p>The most informative way to describe a population’s genetic architecture is to ask where its genes come from. <code>pedcontrib()</code> traces expected genetic contributions from founders and ancestors into a <strong>reference population</strong> — the cohort you care about (recent generations, breeding candidates, genotyped animals).</p>
+<p>Here the reference population is the most recent two generations of <code>deep_ped</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>ref_pop <span class="ot">&lt;-</span> tp_deep[Gen <span class="sc">&gt;=</span> <span class="fu">max</span>(Gen) <span class="sc">-</span> <span class="dv">1</span>, Ind]</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(ref_pop)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3471</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>contrib_res <span class="ot">&lt;-</span> <span class="fu">pedcontrib</span>(tp_deep, <span class="at">reference =</span> ref_pop, <span class="at">mode =</span> <span class="st">"both"</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Classical (q = 2) and Shannon-entropy (q = 1) effective numbers</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>contrib_res<span class="sc">$</span>summary[<span class="fu">c</span>(<span class="st">"n_founder"</span>, <span class="st">"f_e_H"</span>, <span class="st">"f_e"</span>, <span class="st">"n_ancestor"</span>, <span class="st">"f_a_H"</span>, <span class="st">"f_a"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$n_founder
+[1] 157
+
+$f_e_H
+[1] 92.0943
+
+$f_e
+[1] 64.73344
+
+$n_ancestor
+[1] 94
+
+$f_a_H
+[1] 60.1444
+
+$f_a
+[1] 44.12033</code></pre>
+</div>
+</div>
+<p>Two numbers carry most of the interpretation:</p>
+<ul>
+<li><strong>Effective number of founders, <code>fe</code></strong> — how many founders the population behaves like, <em>if their contributions were equal</em>. A small <code>fe</code> relative to the actual founder count means founders were used very unequally.</li>
+<li><strong>Effective number of ancestors, <code>fa</code></strong> — how many ancestors explain the gene pool after removing contributions already explained by more influential ones. When <code>fa</code> is markedly smaller than <code>fe</code>, a small set of key ancestors has contributed disproportionately to the gene pool, indicating a potential <strong>genetic bottleneck</strong>.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>top_anc <span class="ot">&lt;-</span> contrib_res<span class="sc">$</span>ancestors[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(top_anc<span class="sc">$</span>Contrib, <span class="at">names.arg =</span> top_anc<span class="sc">$</span>Ind,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">las =</span> <span class="dv">2</span>, <span class="at">ylab =</span> <span class="st">"Contribution to reference population"</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="st">"steelblue"</span>, <span class="at">border =</span> <span class="cn">NA</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-contrib" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-contrib-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-contrib-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-contrib-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Top 10 ancestor contributions to the reference population of deep_ped. The ten most influential of the 94 ancestors account for about 38% of the gene pool.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Per-founder contributions are in <code>contrib_res$founders</code>. The Shannon-entropy variants <code>feH</code> and <code>faH</code> weight founder and ancestor contributions more evenly; a large ratio <code>feH / fe</code> indicates that genetic contributions from less influential founders are retained but underrepresented by classical metrics.</p>
+</section>
+<section id="question-4-how-much-diversity-remains" class="level2">
+<h2 class="anchored" data-anchor-id="question-4-how-much-diversity-remains">Question 4: How much diversity remains?</h2>
+<p><code>pediv()</code> is the integrated diversity summary. From the reference population it computes founder genome equivalents (<code>fg</code>), mean coancestry, and the retained genetic diversity index <code>GeneDiv</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>div_res <span class="ot">&lt;-</span> <span class="fu">pediv</span>(tp_deep, <span class="at">reference =</span> ref_pop, <span class="at">top =</span> <span class="dv">10</span>, <span class="at">seed =</span> <span class="dv">42</span>L)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>div_res<span class="sc">$</span>summary[, .(NFounder, fe, fa, fg, MeanCoan, GeneDiv)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   NFounder       fe       fa       fg  MeanCoan   GeneDiv
+      &lt;int&gt;    &lt;num&gt;    &lt;num&gt;    &lt;num&gt;     &lt;num&gt;     &lt;num&gt;
+1:      157 64.73344 44.12033 19.17965 0.0260693 0.9739307</code></pre>
+</div>
+</div>
+<p>The headline index is <strong><code>GeneDiv</code></strong> — the pedigree-based retained genetic diversity, equal to one minus the mean coancestry of the reference population. An unrelated, non-inbred population has <code>GeneDiv = 1</code>; under the standard pedigree coancestry definition, a population of full sibs from two unrelated founders has <code>GeneDiv ≈ 0.75</code>. Because it is a dimensionless proportion, it is the easiest metric to communicate to managers and stakeholders.</p>
+<p><strong>Founder genome equivalents (<code>fg</code>)</strong> is the more conservative indicator: it captures drift as well as unequal founder use and bottlenecks, so it is often the smallest of the three.</p>
+</section>
+<section id="question-5-how-fast-is-diversity-disappearing-the-diversity-half-life" class="level2">
+<h2 class="anchored" data-anchor-id="question-5-how-fast-is-diversity-disappearing-the-diversity-half-life">Question 5: How fast is diversity disappearing? — the diversity half-life</h2>
+<p><code>pediv()</code> is a snapshot. <code>pedhalflife()</code> turns it into a film: for every time point in the pedigree (here, every generation), it recomputes <code>fe</code>, <code>fa</code>, and <code>fg</code>, then fits a log-linear decay model to quantify the <em>rate</em> of diversity loss.</p>
+<p>The total loss rate is decomposed into three additive components, each with a distinct biological meaning:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Symbol</th>
+<th>Source of loss</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Foundation</td>
+<td>λe</td>
+<td>Unequal founder contributions</td>
+</tr>
+<tr class="even">
+<td>Bottleneck</td>
+<td>λb</td>
+<td>Overuse of a few key ancestors</td>
+</tr>
+<tr class="odd">
+<td>Drift</td>
+<td>λd</td>
+<td>Random genetic drift in a finite population</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>diversity half-life</strong> is the number of time units for <code>fg</code> to halve: T₁/₂ = ln 2 / λtotal.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>hl <span class="ot">&lt;-</span> <span class="fu">pedhalflife</span>(tp_deep, <span class="at">timevar =</span> <span class="st">"Gen"</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(hl)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Information-Theoretic Diversity Half-Life
+-----------------------------------------
+Total Loss Rate (lambda_total):   0.128778
+  Foundation  (lambda_e)      :   0.034626
+  Bottleneck  (lambda_b)      :   0.025217
+  Drift       (lambda_d)      :   0.068935
+-----------------------------------------
+Diversity Half-life (T_1/2)   :       5.38 (Gen)
+
+Timeseries: 13 time points</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>hl<span class="sc">$</span>decay</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      LambdaE    LambdaB    LambdaD LambdaTotal    THalf
+        &lt;num&gt;      &lt;num&gt;      &lt;num&gt;       &lt;num&gt;    &lt;num&gt;
+1: 0.03462645 0.02521662 0.06893453   0.1287776 5.382513</code></pre>
+</div>
+</div>
+<p>For <code>deep_ped</code>, the drift component (λd) dominates the total loss rate — most diversity loss here is random drift rather than fixable selection decisions. The half-life of about 5 generations means that, at the current rate, founder genome equivalents will halve after approximately five generations. A shorter diversity half-life indicates faster loss of founder genome representation and can serve as an indicator for diversity management.</p>
+<p>The full object also exposes the per-generation time series, and can be plotted on the log scale (the fitted linear decays) or the raw scale:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hl, <span class="at">type =</span> <span class="st">"log"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-halflife-log" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-halflife-log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-halflife-log-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-halflife-log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Log-linear decay of effective founders (ln fe), effective ancestors (ln fa), and founder genome equivalents (ln fg) across generations in deep_ped. Slopes of these lines are λe, λb, and λd.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hl, <span class="at">type =</span> <span class="st">"raw"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-halflife-raw" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-halflife-raw-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-halflife-raw-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-halflife-raw-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: The same diversity metrics on the original scale: fe, fa, and fg by generation.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>To focus the half-life on a specific window — for example, the last four generations — pass them to the <code>at</code> argument:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>hl_recent <span class="ot">&lt;-</span> <span class="fu">pedhalflife</span>(tp_deep, <span class="at">timevar =</span> <span class="st">"Gen"</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">at =</span> <span class="fu">tail</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(tp_deep<span class="sc">$</span>Gen)), <span class="dv">4</span>))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(hl_recent)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The λ decomposition turns “we are losing diversity” — which everyone already knew — into “we are losing it <em>for this reason</em>”, which tells you what to do: broaden founder use for λe, balance the use of influential ancestors for λb, and enlarge the breeding population (or cryopreserve) for λd.</p>
+</section>
+<section id="question-6-how-large-is-the-effective-population-size" class="level2">
+<h2 class="anchored" data-anchor-id="question-6-how-large-is-the-effective-population-size">Question 6: How large is the effective population size?</h2>
+<p><code>pedne()</code> computes pedigree-based estimates of effective population size from the same tidied object, using demographic parent counts, the realized rate of inbreeding, or the rate of coancestry:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Coancestry-based Ne — the strictest and most sensitive warning signal</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>ne_coan <span class="ot">&lt;-</span> <span class="fu">pedne</span>(tp_deep, <span class="at">method =</span> <span class="st">"coancestry"</span>, <span class="at">by =</span> <span class="st">"Gen"</span>, <span class="at">seed =</span> <span class="dv">42</span>L)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>ne_coan</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Cohort     N NSampled      DeltaC        Ne
+     &lt;int&gt; &lt;int&gt;    &lt;int&gt;       &lt;num&gt;     &lt;num&gt;
+ 1:      1   138      138          NA        NA
+ 2:      2    96       96 0.003707511 134.86137
+ 3:      3    74       74 0.004556238 109.73967
+ 4:      4    91       91 0.011999547  41.66824
+ 5:      5    95       95 0.007279728  68.68388
+ 6:      6   119      119 0.016808626  29.74663
+ 7:      7    37       37 0.007397103  67.59403
+ 8:      8    41       41 0.007575599  66.00139
+ 9:      9    51       51 0.006888524  72.58449
+10:     10    78       78 0.005429686  92.08636
+11:     11   108      108 0.005479583  91.24782
+12:     12   209      209 0.005239967  95.42044
+13:     13  3262     1000 0.003887379 128.62137</code></pre>
+</div>
+</div>
+<p>The coancestry-based estimate detects the accumulation of relatedness <em>before</em> it is fully expressed as inbreeding, making it the earliest warning signal in managed populations. Individual inbreeding coefficients can also be computed with <code>inbreed()</code> (or <code>tidyped(..., inbreed = TRUE)</code>) and displayed directly on the pedigree graph with <code>visped(showf = TRUE)</code>, as shown in the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization tutorial</a>; <code>pedfclass()</code> classifies individuals by inbreeding severity.</p>
+</section>
+<section id="where-to-go-from-here" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-go-from-here">Where to go from here</h2>
+<p>This article covered the pedigree-based diversity pipeline: completeness (<code>pedstats()</code>, <code>pedecg()</code>), generation intervals (<code>pedgenint()</code>), gene-origin analysis (<code>pedcontrib()</code>), diversity snapshots (<code>pediv()</code>), diversity dynamics (<code>pedhalflife()</code>), effective size (<code>pedne()</code>), and inbreeding monitoring (<code>inbreed()</code>, <code>pedfclass()</code>).</p>
+<p>The same tidied pedigree object also powers relationship matrices and large-scale pedigree-based computations. That is the topic of a future article.</p>
+<p>The same workflow can also be applied to large-scale breeding populations, including aquaculture species with complex family structures.</p>
+<p>For published research using visPedigree, see the <a href="https://luansheng.github.io/visPedigree/articles/applications.html">Applications page</a> and the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization tutorial</a>.</p>
+<p>If visPedigree contributes to your published work, please cite it:</p>
+<blockquote class="blockquote">
+<p>Luan S, Kong J, Xia Z, Kang Z, Qiang G, Luo K, Sui J. 2026. visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees. <em>Bioinformatics Advances</em>. DOI: <a href="https://doi.org/10.1093/bioadv/vbag210">10.1093/bioadv/vbag210</a>.</p>
+</blockquote>
+<p>(<code>citation("visPedigree")</code> always returns the citation for your installed version.)</p>
+<p>Install from CRAN:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"visPedigree"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Full documentation at <a href="https://luansheng.github.io/visPedigree/">luansheng.github.io/visPedigree</a>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/luansheng\.github\.io\/lsblog");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -6,7 +6,642 @@
     <atom:link href="https://luansheng.github.io/lsblog/r-bloggers.xml" rel="self" type="application/rss+xml"/>
     <description>R-related posts from metabreeding</description>
     <generator>quarto-1.8.27</generator>
-    <lastBuildDate>Wed, 29 Jul 2026 16:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 05 Aug 2026 16:00:00 GMT</lastBuildDate>
+    <item>
+      <title>From pedigree records to genetic diversity analysis in R with visPedigree</title>
+      <dc:creator>Sheng Luan</dc:creator>
+      <link>https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/</link>
+      <description><![CDATA[ 
+
+
+
+
+
+<p>A pedigree is a family tree at population scale. Every breeding program, studbook, and conservation herd keeps one — usually as a spreadsheet with three columns: <code>Ind</code>, <code>Sire</code>, <code>Dam</code>, repeated row after row. Those columns tell you <em>who is related to whom</em>, but they say nothing about the questions that actually matter:</p>
+<ol type="1">
+<li><strong>How complete and deep is my pedigree?</strong> — Can I trust diversity estimates computed from it?</li>
+<li><strong>How long is a generation?</strong> — What is the rate of genetic turnover?</li>
+<li><strong>Who carries the gene pool?</strong> — Are a few founders or ancestors dominating the population?</li>
+<li><strong>How much diversity remains?</strong> — What share of the founder genome is still present?</li>
+<li><strong>How fast is it disappearing?</strong> — When will the founder genome halve?</li>
+<li><strong>How large is the effective population size?</strong> — Is the population smaller than it appears?</li>
+</ol>
+<p>In my <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">previous tutorial</a>, I showed how <a href="https://github.com/luansheng/visPedigree">visPedigree</a> turns raw pedigree tables into publication-ready graphs. This article covers the analysis side: how the same package computes the indicators used in breeding and conservation genetics — pedigree completeness, generation intervals, founder and ancestor contributions, effective population size, and a headline metric called the <em>diversity half-life</em>.</p>
+<section id="getting-started" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started">Getting started</h2>
+<p>Install visPedigree from CRAN and load it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"visPedigree"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"optiSel"</span>)   <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># only needed for the ExamplePed dataset used below</span></span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(visPedigree)</span></code></pre></div></div>
+</section>
+<section id="one-tidy-step-every-analysis-after" class="level2">
+<h2 class="anchored" data-anchor-id="one-tidy-step-every-analysis-after">One tidy step, every analysis after</h2>
+<p>Every analysis in this article starts from the same object: a pedigree prepared by <code>tidyped()</code>. The function validates the parent–offspring records, orders individuals, infers generations, and flags pedigree loops.</p>
+<p>We will use two datasets:</p>
+<ul>
+<li><code>deep_ped</code> (built in) — 4,396 individuals across deep generations, ideal for completeness, diversity, and half-life analysis.</li>
+<li><code>ExamplePed</code> from the <code>optiSel</code> package — the pedigree of a Hinterwald cattle population: 1,179 animals born between 1947 and 1995, ideal for generation-interval analysis because generations overlap.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(deep_ped, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">package =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"visPedigree"</span>)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(ExamplePed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">package =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"optiSel"</span>)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4">tp_deep <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(deep_ped)</span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(tp_deep)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pedigree Summary
+================
+
+Total Individuals:  4399 
+  - Males:    1839 (41.8%) 
+  - Females:  2039 (46.4%) 
+  - Unknown:  521 (11.8%) 
+
+Pedigree Structure:
+  - Founders (no parents):   138 
+  - Both parents known:      4242 
+  - Dam only known:          19 
+
+Generation:
+  - Maximum:  13 
+  - Distribution: 13 generations (use str() for details)
+
+Reproduction:
+  - Individuals with offspring:  1037 
+  - Sires:  483  (Mean=8.8, Max=63 offspring)
+  - Dams:   554  (Mean=7.7, Max=34 offspring)
+
+Full-sibling Families:
+  - Number of families:      540 
+  - Mean family size:        7.86
+  - Maximum family size:     34 
+  - Top families by size:
+      K010263AxK010702YZ: 34
+      K010278ExK010139A: 33
+      K010767AxK010130YZ: 33
+      K010148KxK010566YZ: 32
+      K010538DxK010507YZ: 32
+
+================</code></pre>
+</div>
+</div>
+<p>Everything downstream — statistics, contributions, diversity, effective size — consumes this same tidied object.</p>
+</section>
+<section id="question-1-how-complete-and-deep-is-your-pedigree" class="level2">
+<h2 class="anchored" data-anchor-id="question-1-how-complete-and-deep-is-your-pedigree">Question 1: How complete and deep is your pedigree?</h2>
+<p>Every diversity indicator inherits the quality of the pedigree it is computed from. A shallow or incomplete pedigree can bias estimates of inbreeding and genetic diversity, because unknown ancestry reduces the information available for reconstructing relationships. <code>pedstats()</code> gives a compact structural summary in one call:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">stats_deep <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedstats</span>(tp_deep)</span>
+<span id="cb4-2">stats_deep<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       N NSire  NDam NFounder MaxGen
+   &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;  &lt;int&gt;
+1:  4399   483   554      138     13</code></pre>
+</div>
+</div>
+<p>The <code>$ecg</code> component reports ancestral depth for every individual, summarized by three complementary metrics:</p>
+<ul>
+<li><strong>ECG</strong> — equivalent complete generations: a depth measure that accounts for both how far and how completely ancestry is known. It is an important pedigree-depth measure when interpreting inbreeding- and coancestry-based analyses.</li>
+<li><strong>FullGen</strong> — the number of fully traced ancestral generations.</li>
+<li><strong>MaxGen</strong> — the deepest known ancestral path, even if incomplete.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tail</span>(stats_deep<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ecg)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Ind      ECG FullGen MaxGen
+     &lt;char&gt;    &lt;num&gt;   &lt;num&gt;  &lt;num&gt;
+1: K110997Q 7.616211       5     12
+2: K110997Z 6.722656       5     12
+3: K110998Q 4.606445       2     12
+4: K110998Z 6.417969       5     12
+5: K110999Q 7.345215       5     12
+6: K110999Z 6.875977       5     12</code></pre>
+</div>
+</div>
+<p><code>pedstats()</code> also prints and plots these summaries — for example, the distribution of ECG across the population:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(stats_deep, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ecg"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">metric =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ECG"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-ecg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ecg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/index_files/figure-html/fig-ecg-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ecg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Distribution of equivalent complete generations (ECG) in deep_ped. The distribution is skewed toward deep ancestry — the median is 6.4 ECGs, and most individuals carry more than six ECGs.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>ECG is such a useful quantity that it has its own function, <code>pedecg()</code>, returning the per-individual table you can sort, filter, or export.</p>
+</section>
+<section id="question-2-how-long-is-a-generation" class="level2">
+<h2 class="anchored" data-anchor-id="question-2-how-long-is-a-generation">Question 2: How long is a generation?</h2>
+<p>The generation interval — the average age of parents when their offspring are born — determines how quickly genetic material cycles through the population. Longer generation intervals generally slow the rate at which genetic improvement accumulates per unit time.</p>
+<p>We use the Hinterwald cattle pedigree bundled with <code>optiSel</code> — generations overlap there, which is exactly what makes generation intervals interesting:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">ped_cattle <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(ExamplePed)   <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># column names are detected automatically</span></span>
+<span id="cb9-2">stats_time <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedstats</span>(ped_cattle, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Born"</span>)</span>
+<span id="cb9-3">stats_time<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>gen_intervals</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Pathway     N     Mean       SD
+    &lt;char&gt; &lt;int&gt;    &lt;num&gt;    &lt;num&gt;
+1: Average  1564 5.429011 3.306798
+2:      DD   436 7.128390 3.355804
+3:      DO   758 7.097622 3.311750
+4:      DS   322 7.055960 3.255885
+5:      SD   466 3.763863 2.355588
+6:      SO   806 3.859772 2.414623
+7:      SS   340 3.991223 2.490764</code></pre>
+</div>
+</div>
+<p>The output reports generation intervals by parental pathway, including sire–son (SS), sire–daughter (SD), dam–son (DS), and dam–daughter (DD), plus an overall average. Here the contrast is striking: sires are about four years old on average at the birth of their calves, dams about seven. This difference reflects the distinct reproductive and selection strategies for males and females in cattle breeding, and directly affects the rate of genetic gain per year.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(stats_time, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"genint"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-genint" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-genint-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/index_files/figure-html/fig-genint-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-genint-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Generation intervals by gametic pathway in the Hinterwald cattle pedigree (optiSel::ExamplePed). Sires are about 4 years old on average at the birth of their calves (SS, SD); dams about 7 years (DS, DD).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>You can also call <code>pedgenint()</code> directly for the full pathway table, or pass <code>cycle</code> to compare the realized interval with a target breeding cycle (here, a 4-year cycle):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedgenint</span>(ped_cattle, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Born"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">unit =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"year"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cycle =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>)</span></code></pre></div></div>
+</section>
+<section id="question-3-who-carries-the-gene-pool" class="level2">
+<h2 class="anchored" data-anchor-id="question-3-who-carries-the-gene-pool">Question 3: Who carries the gene pool?</h2>
+<p>The most informative way to describe a population’s genetic architecture is to ask where its genes come from. <code>pedcontrib()</code> traces expected genetic contributions from founders and ancestors into a <strong>reference population</strong> — the cohort you care about (recent generations, breeding candidates, genotyped animals).</p>
+<p>Here the reference population is the most recent two generations of <code>deep_ped</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">ref_pop <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp_deep[Gen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(Gen) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, Ind]</span>
+<span id="cb13-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(ref_pop)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3471</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1">contrib_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedcontrib</span>(tp_deep, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_pop, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mode =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"both"</span>)</span>
+<span id="cb15-2"></span>
+<span id="cb15-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Classical (q = 2) and Shannon-entropy (q = 1) effective numbers</span></span>
+<span id="cb15-4">contrib_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"n_founder"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"f_e_H"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"f_e"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"n_ancestor"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"f_a_H"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"f_a"</span>)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$n_founder
+[1] 157
+
+$f_e_H
+[1] 92.0943
+
+$f_e
+[1] 64.73344
+
+$n_ancestor
+[1] 94
+
+$f_a_H
+[1] 60.1444
+
+$f_a
+[1] 44.12033</code></pre>
+</div>
+</div>
+<p>Two numbers carry most of the interpretation:</p>
+<ul>
+<li><strong>Effective number of founders, <code>fe</code></strong> — how many founders the population behaves like, <em>if their contributions were equal</em>. A small <code>fe</code> relative to the actual founder count means founders were used very unequally.</li>
+<li><strong>Effective number of ancestors, <code>fa</code></strong> — how many ancestors explain the gene pool after removing contributions already explained by more influential ones. When <code>fa</code> is markedly smaller than <code>fe</code>, a small set of key ancestors has contributed disproportionately to the gene pool, indicating a potential <strong>genetic bottleneck</strong>.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1">top_anc <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> contrib_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ancestors[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>]</span>
+<span id="cb17-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">barplot</span>(top_anc<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Contrib, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">names.arg =</span> top_anc<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind,</span>
+<span id="cb17-3">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">las =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Contribution to reference population"</span>,</span>
+<span id="cb17-4">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"steelblue"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">border =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-contrib" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-contrib-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/index_files/figure-html/fig-contrib-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-contrib-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Top 10 ancestor contributions to the reference population of deep_ped. The ten most influential of the 94 ancestors account for about 38% of the gene pool.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Per-founder contributions are in <code>contrib_res$founders</code>. The Shannon-entropy variants <code>feH</code> and <code>faH</code> weight founder and ancestor contributions more evenly; a large ratio <code>feH / fe</code> indicates that genetic contributions from less influential founders are retained but underrepresented by classical metrics.</p>
+</section>
+<section id="question-4-how-much-diversity-remains" class="level2">
+<h2 class="anchored" data-anchor-id="question-4-how-much-diversity-remains">Question 4: How much diversity remains?</h2>
+<p><code>pediv()</code> is the integrated diversity summary. From the reference population it computes founder genome equivalents (<code>fg</code>), mean coancestry, and the retained genetic diversity index <code>GeneDiv</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1">div_res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pediv</span>(tp_deep, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reference =</span> ref_pop, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">top =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>L)</span>
+<span id="cb18-2">div_res<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>summary[, .(NFounder, fe, fa, fg, MeanCoan, GeneDiv)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   NFounder       fe       fa       fg  MeanCoan   GeneDiv
+      &lt;int&gt;    &lt;num&gt;    &lt;num&gt;    &lt;num&gt;     &lt;num&gt;     &lt;num&gt;
+1:      157 64.73344 44.12033 19.17965 0.0260693 0.9739307</code></pre>
+</div>
+</div>
+<p>The headline index is <strong><code>GeneDiv</code></strong> — the pedigree-based retained genetic diversity, equal to one minus the mean coancestry of the reference population. An unrelated, non-inbred population has <code>GeneDiv = 1</code>; under the standard pedigree coancestry definition, a population of full sibs from two unrelated founders has <code>GeneDiv ≈ 0.75</code>. Because it is a dimensionless proportion, it is the easiest metric to communicate to managers and stakeholders.</p>
+<p><strong>Founder genome equivalents (<code>fg</code>)</strong> is the more conservative indicator: it captures drift as well as unequal founder use and bottlenecks, so it is often the smallest of the three.</p>
+</section>
+<section id="question-5-how-fast-is-diversity-disappearing-the-diversity-half-life" class="level2">
+<h2 class="anchored" data-anchor-id="question-5-how-fast-is-diversity-disappearing-the-diversity-half-life">Question 5: How fast is diversity disappearing? — the diversity half-life</h2>
+<p><code>pediv()</code> is a snapshot. <code>pedhalflife()</code> turns it into a film: for every time point in the pedigree (here, every generation), it recomputes <code>fe</code>, <code>fa</code>, and <code>fg</code>, then fits a log-linear decay model to quantify the <em>rate</em> of diversity loss.</p>
+<p>The total loss rate is decomposed into three additive components, each with a distinct biological meaning:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Symbol</th>
+<th>Source of loss</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Foundation</td>
+<td>λe</td>
+<td>Unequal founder contributions</td>
+</tr>
+<tr class="even">
+<td>Bottleneck</td>
+<td>λb</td>
+<td>Overuse of a few key ancestors</td>
+</tr>
+<tr class="odd">
+<td>Drift</td>
+<td>λd</td>
+<td>Random genetic drift in a finite population</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>diversity half-life</strong> is the number of time units for <code>fg</code> to halve: T₁/₂ = ln 2 / λtotal.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1">hl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedhalflife</span>(tp_deep, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Gen"</span>)</span>
+<span id="cb20-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(hl)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Information-Theoretic Diversity Half-Life
+-----------------------------------------
+Total Loss Rate (lambda_total):   0.128778
+  Foundation  (lambda_e)      :   0.034626
+  Bottleneck  (lambda_b)      :   0.025217
+  Drift       (lambda_d)      :   0.068935
+-----------------------------------------
+Diversity Half-life (T_1/2)   :       5.38 (Gen)
+
+Timeseries: 13 time points</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1">hl<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>decay</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      LambdaE    LambdaB    LambdaD LambdaTotal    THalf
+        &lt;num&gt;      &lt;num&gt;      &lt;num&gt;       &lt;num&gt;    &lt;num&gt;
+1: 0.03462645 0.02521662 0.06893453   0.1287776 5.382513</code></pre>
+</div>
+</div>
+<p>For <code>deep_ped</code>, the drift component (λd) dominates the total loss rate — most diversity loss here is random drift rather than fixable selection decisions. The half-life of about 5 generations means that, at the current rate, founder genome equivalents will halve after approximately five generations. A shorter diversity half-life indicates faster loss of founder genome representation and can serve as an indicator for diversity management.</p>
+<p>The full object also exposes the per-generation time series, and can be plotted on the log scale (the fitted linear decays) or the raw scale:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(hl, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"log"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-halflife-log" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-halflife-log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/index_files/figure-html/fig-halflife-log-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-halflife-log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Log-linear decay of effective founders (ln fe), effective ancestors (ln fa), and founder genome equivalents (ln fg) across generations in deep_ped. Slopes of these lines are λe, λb, and λd.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot</span>(hl, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"raw"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-halflife-raw" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-halflife-raw-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/index_files/figure-html/fig-halflife-raw-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-halflife-raw-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: The same diversity metrics on the original scale: fe, fa, and fg by generation.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>To focus the half-life on a specific window — for example, the last four generations — pass them to the <code>at</code> argument:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1">hl_recent <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedhalflife</span>(tp_deep, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">timevar =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Gen"</span>,</span>
+<span id="cb26-2">                         <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">at =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tail</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sort</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(tp_deep<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen)), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>))</span>
+<span id="cb26-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span>(hl_recent)</span></code></pre></div></div>
+<p>The λ decomposition turns “we are losing diversity” — which everyone already knew — into “we are losing it <em>for this reason</em>”, which tells you what to do: broaden founder use for λe, balance the use of influential ancestors for λb, and enlarge the breeding population (or cryopreserve) for λd.</p>
+</section>
+<section id="question-6-how-large-is-the-effective-population-size" class="level2">
+<h2 class="anchored" data-anchor-id="question-6-how-large-is-the-effective-population-size">Question 6: How large is the effective population size?</h2>
+<p><code>pedne()</code> computes pedigree-based estimates of effective population size from the same tidied object, using demographic parent counts, the realized rate of inbreeding, or the rate of coancestry:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Coancestry-based Ne — the strictest and most sensitive warning signal</span></span>
+<span id="cb27-2">ne_coan <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedne</span>(tp_deep, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"coancestry"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Gen"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>L)</span>
+<span id="cb27-3">ne_coan</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Cohort     N NSampled      DeltaC        Ne
+     &lt;int&gt; &lt;int&gt;    &lt;int&gt;       &lt;num&gt;     &lt;num&gt;
+ 1:      1   138      138          NA        NA
+ 2:      2    96       96 0.003707511 134.86137
+ 3:      3    74       74 0.004556238 109.73967
+ 4:      4    91       91 0.011999547  41.66824
+ 5:      5    95       95 0.007279728  68.68388
+ 6:      6   119      119 0.016808626  29.74663
+ 7:      7    37       37 0.007397103  67.59403
+ 8:      8    41       41 0.007575599  66.00139
+ 9:      9    51       51 0.006888524  72.58449
+10:     10    78       78 0.005429686  92.08636
+11:     11   108      108 0.005479583  91.24782
+12:     12   209      209 0.005239967  95.42044
+13:     13  3262     1000 0.003887379 128.62137</code></pre>
+</div>
+</div>
+<p>The coancestry-based estimate detects the accumulation of relatedness <em>before</em> it is fully expressed as inbreeding, making it the earliest warning signal in managed populations. Individual inbreeding coefficients can also be computed with <code>inbreed()</code> (or <code>tidyped(..., inbreed = TRUE)</code>) and displayed directly on the pedigree graph with <code>visped(showf = TRUE)</code>, as shown in the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization tutorial</a>; <code>pedfclass()</code> classifies individuals by inbreeding severity.</p>
+</section>
+<section id="where-to-go-from-here" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-go-from-here">Where to go from here</h2>
+<p>This article covered the pedigree-based diversity pipeline: completeness (<code>pedstats()</code>, <code>pedecg()</code>), generation intervals (<code>pedgenint()</code>), gene-origin analysis (<code>pedcontrib()</code>), diversity snapshots (<code>pediv()</code>), diversity dynamics (<code>pedhalflife()</code>), effective size (<code>pedne()</code>), and inbreeding monitoring (<code>inbreed()</code>, <code>pedfclass()</code>).</p>
+<p>The same tidied pedigree object also powers relationship matrices and large-scale pedigree-based computations. That is the topic of a future article.</p>
+<p>The same workflow can also be applied to large-scale breeding populations, including aquaculture species with complex family structures.</p>
+<p>For published research using visPedigree, see the <a href="https://luansheng.github.io/visPedigree/articles/applications.html">Applications page</a> and the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization tutorial</a>.</p>
+<p>If visPedigree contributes to your published work, please cite it:</p>
+<blockquote class="blockquote">
+<p>Luan S, Kong J, Xia Z, Kang Z, Qiang G, Luo K, Sui J. 2026. visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees. <em>Bioinformatics Advances</em>. DOI: <a href="https://doi.org/10.1093/bioadv/vbag210">10.1093/bioadv/vbag210</a>.</p>
+</blockquote>
+<p>(<code>citation("visPedigree")</code> always returns the citation for your installed version.)</p>
+<p>Install from CRAN:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
+<p>Full documentation at <a href="https://luansheng.github.io/visPedigree/">luansheng.github.io/visPedigree</a>.</p>
+
+
+</section>
+
+ ]]></description>
+      <category>R</category>
+      <category>Genetics</category>
+      <category>Pedigree</category>
+      <category>Breeding</category>
+      <category>Conservation</category>
+      <category>r-bloggers</category>
+      <guid>https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/</guid>
+      <pubDate>Wed, 05 Aug 2026 16:00:00 GMT</pubDate>
+      <media:content url="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/cover.png" medium="image" type="image/png" height="103" width="144"/>
+    </item>
     <item>
       <title>Visualizing complex pedigrees in R with visPedigree</title>
       <dc:creator>Sheng Luan</dc:creator>
@@ -657,6 +1292,7 @@ Figure&nbsp;8: Inbreeding coefficients displayed alongside individual IDs. Indiv
 <li>🐖 <strong>Gochu Asturcelta pig</strong> — pedigree visualization of 471 individuals from 51 families (<a href="https://doi.org/10.1186/s12864-024-10407-x">BMC Genomics, 2024</a>).</li>
 <li>🦏 <strong>Eastern black rhinoceros</strong> — observational pedigree construction to classify ancestry cohorts for inbreeding depression analysis (<a href="https://doi.org/10.1073/pnas.2414412122">PNAS, 2025</a>).</li>
 <li>🐕 <strong>Labrador Retriever</strong> — pedigree quality control on 1,486,764 records, helping locate pedigree loops that were traced to incorrect sire assignments (<a href="https://doi.org/10.1186/s12711-025-00994-y">Genetics Selection Evolution, 2025</a>).</li>
+<li>🦌 <strong>Wild caribou</strong> — pedigree construction and visualization after parentage inference with COLONY, supporting relatedness classification for network analysis (<a href="https://doi.org/10.1016/j.gecco.2023.e02688">Global Ecology and Conservation, 2023</a>).</li>
 </ul>
 <p>More verified applications are listed on the <a href="https://luansheng.github.io/visPedigree/articles/applications.html">Applications page</a>.</p>
 </section>
@@ -668,6 +1304,7 @@ Figure&nbsp;8: Inbreeding coefficients displayed alongside individual IDs. Indiv
 <li><strong>Genetic diversity analysis</strong> — founder and ancestor contributions, effective population size, and diversity half-life modelling (<code>pedcontrib()</code>, <code>pediv()</code>, <code>pedne()</code>, <code>pedhalflife()</code>).</li>
 <li><strong>Relationship matrices and matrix-free computation</strong> — additive, dominance, and epistatic relationship matrices, plus <code>pedprod()</code> for computing <em>Ax</em> and <em>A⁻¹x</em> without constructing the dense matrix (<code>pedmat()</code>, <code>pedprod()</code>, <code>vismat()</code>).</li>
 </ul>
+<p>The next article in this series — <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">From pedigree records to genetic diversity analysis in R with visPedigree</a> — walks through the analysis side of these functions: pedigree completeness, generation intervals, founder contributions, effective population size, and the diversity half-life.</p>
 <p>If you work with pedigree data in R — whether in animal breeding, conservation genetics, or genealogy — visPedigree provides a unified workflow from data preparation to publication-ready output.</p>
 <p>Install from CRAN:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
