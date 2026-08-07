@@ -137,13 +137,13 @@ stats_time <- pedstats(ped_cattle, timevar = "Born")
 stats_time$gen_intervals
 ```
 
-The output reports the four classic gametic pathways — sire–son (SS),
-sire–daughter (SD), dam–son (DS), and dam–daughter (DD) — plus an overall
-average. Here the contrast is striking: sires are about four years old on
-average at the birth of their calves, dams about seven. Males are used early
-and broadly in cattle breeding, while females reproduce across a longer
-lifespan — a difference that directly affects the rate of genetic gain per
-year.
+The output reports generation intervals by parental pathway, including
+sire–son (SS), sire–daughter (SD), dam–son (DS), and dam–daughter (DD), plus
+an overall average. Here the contrast is striking: sires are about four years
+old on average at the birth of their calves, dams about seven. This
+difference reflects the distinct reproductive and selection strategies for
+males and females in cattle breeding, and directly affects the rate of
+genetic gain per year.
 
 ```{r}
 #| label: fig-genint
@@ -191,7 +191,8 @@ Two numbers carry most of the interpretation:
 - **Effective number of ancestors, `fa`** — how many ancestors explain the
   gene pool after removing contributions already explained by more influential
   ones. When `fa` is markedly smaller than `fe`, a small set of key ancestors
-  created a **genetic bottleneck**.
+  has contributed disproportionately to the gene pool, indicating a potential
+  **genetic bottleneck**.
 
 ```{r}
 #| label: fig-contrib
@@ -206,8 +207,9 @@ barplot(top_anc$Contrib, names.arg = top_anc$Ind,
 
 Per-founder contributions are in `contrib_res$founders`. The Shannon-entropy
 variants `feH` and `faH` weight founder and ancestor contributions more
-evenly; a large ratio `feH / fe` reveals that many minor founders still carry
-genetic material that is invisible to the classical metric.
+evenly; a large ratio `feH / fe` indicates that genetic contributions from
+less influential founders are retained but underrepresented by classical
+metrics.
 
 ## Question 4: How much diversity remains?
 
@@ -222,8 +224,9 @@ div_res$summary[, .(NFounder, fe, fa, fg, MeanCoan, GeneDiv)]
 
 The headline index is **`GeneDiv`** — the pedigree-based retained genetic
 diversity, equal to one minus the mean coancestry of the reference population.
-An unrelated, non-inbred population has `GeneDiv = 1`; a population of full
-sibs from two unrelated founders has `GeneDiv ≈ 0.75`. Because it is a
+An unrelated, non-inbred population has `GeneDiv = 1`; under the standard
+pedigree coancestry definition, a population of full sibs from two unrelated
+founders has `GeneDiv ≈ 0.75`. Because it is a
 dimensionless proportion, it is the easiest metric to communicate to managers
 and stakeholders.
 
@@ -260,9 +263,9 @@ hl$decay
 For `deep_ped`, the drift component (λd) dominates the total loss rate — most
 diversity loss here is random drift rather than fixable selection decisions.
 The half-life of about 5 generations means that, at the current rate, founder
-genome equivalents will halve every five generations. A shorter diversity
-half-life indicates faster loss of founder genome representation and can serve
-as an indicator for diversity management.
+genome equivalents will halve after approximately five generations. A shorter
+diversity half-life indicates faster loss of founder genome representation and
+can serve as an indicator for diversity management.
 
 The full object also exposes the per-generation time series, and can be
 plotted on the log scale (the fitted linear decays) or the raw scale:
@@ -325,10 +328,12 @@ analysis (`pedcontrib()`), diversity snapshots (`pediv()`), diversity dynamics
 (`pedhalflife()`), effective size (`pedne()`), and inbreeding monitoring
 (`inbreed()`, `pedfclass()`).
 
-The same tidied pedigree object also powers relationship matrices (additive
-A, dominance D, and additive-by-additive AA), and — for pedigrees with
-hundreds of thousands of individuals — matrix-free products `Ax` and `A⁻¹x`
-that never construct the dense matrix. That is the topic of a future article.
+The same tidied pedigree object also powers relationship matrices and
+large-scale pedigree-based computations. That is the topic of a future
+article.
+
+The same workflow can also be applied to large-scale breeding populations,
+including aquaculture species with complex family structures.
 
 For published research using visPedigree, see the [Applications
 page](https://luansheng.github.io/visPedigree/articles/applications.html) and
