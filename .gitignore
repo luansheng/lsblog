@@ -4,6 +4,7 @@
 .Rproj.user
 .DS_Store
 /_freeze/
+/rweekly.org/
 **/*.quarto_ipynb
 **/*_files/
 **/*_cache/
