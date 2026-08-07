@@ -1,6 +1,11 @@
 project:
   type: website
   post-render: scripts/filter-rss.R
+  # Whitelist what gets rendered: root .md files (CLAUDE.md, PUBLISH-SOP.md)
+  # and any stray dirs (e.g. a rweekly.org checkout) are left out of _site.
+  render:
+    - "*.qmd"
+    - "posts/**/*.qmd"
 
 website:
   description: "A blog built with Quarto"
