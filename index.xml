@@ -660,20 +660,20 @@ font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
 <section id="面向育种实践中的复杂系谱数据问题" class="level2">
 <h2 class="anchored" data-anchor-id="面向育种实践中的复杂系谱数据问题">面向育种实践中的复杂系谱数据问题</h2>
 <p>系谱数据是遗传育种中的基础数据，支撑着亲缘关系控制、选配方案制定、近交监测和遗传多样性评估等关键环节。然而，在实际育种工作中，大型群体的系谱数据往往需要用不同的工具和数据结构分别完成整理、分析和可视化，这种碎片化使常规分析流程变得繁琐且容易出错。</p>
-<p>更具体地说，真实育种系谱具有三个常被忽视的结构复杂性：其一，水产和植物育种中常见的高繁殖力物种，单对亲本可产生大量全同胞后代，导致系谱结构极不平衡；其二，育种群体世代深度参差不齐——并非所有个体都能追溯至相同世代；其三，多批次、多世代的重复评估使得系谱数据持续增长且结构不断变化。传统的手工整理方式或通用数据处理工具难以有效应对这些特点。</p>
-<p>visPedigree 正是围绕上述实际问题持续开发的解决方案。它通过设计统一的 <code>tidyped</code> 对象模型，将系谱整理、结构校验、可视化、近交分析和群体遗传评估整合在同一框架内，避免数据在不同工具间反复转换。该软件最早于 2018 年在 GitHub 发布，经过多年使用和完善，近期完成了系统整理、CRAN 发布和同行评议论文发表，为后续推广应用、结果复现和规范引用提供了基础。</p>
+<p>更具体地说，真实育种系谱具有三个常被忽视的结构复杂性：其一，水产动物育种中常见的高繁殖力特点，单对亲本可产生大量全同胞后代，导致系谱结构极不平衡；其二，育种群体世代深度参差不齐——并非所有个体都能追溯至相同世代；其三，多批次、多世代的重复评估使得系谱数据持续增长且结构不断变化。传统的手工整理方式或通用数据处理工具难以有效应对这些特点。</p>
+<p>visPedigree 正是围绕上述实际问题持续开发的解决方案。它通过设计统一的 <code>tidyped</code> 对象模型，将系谱整理、结构校验和后续分析流程整合在统一的数据框架内，避免数据在不同工具间反复转换。该软件最早于 2018 年在 GitHub 发布，经过多年使用和完善，近期完成了系统整理、CRAN 发布和同行评议论文发表，为后续推广应用、结果复现和规范引用提供了基础。</p>
 </section>
 <section id="构建标准化的-tidyped-系谱对象" class="level2">
 <h2 class="anchored" data-anchor-id="构建标准化的-tidyped-系谱对象">构建标准化的 <code>tidyped</code> 系谱对象</h2>
-<p>针对实际系谱数据来源复杂、格式不统一、父母本信息不完整、个体排序混乱等问题，visPedigree 设计了标准化的 <code>tidyped</code> 系谱对象。</p>
+<p>针对实际系谱数据来源复杂、格式不统一、父母本信息不完整、个体排序混乱等问题，visPedigree 设计了标准化的 <code>tidyped</code> 对象。</p>
 <p>通过 <code>tidyped()</code> 函数，用户可以将原始系谱表整理为结构规范、可直接用于后续分析的对象。在这一过程中，软件可完成个体排序、父母本关系检查、世代推断、缺失亲本处理、候选个体追踪和循环系谱检测等操作。</p>
-<p>这一设计使系谱整理、结构校验、可视化、近交分析、遗传多样性分析和关系矩阵相关计算能够基于统一数据对象完成，有助于减少重复数据整理和不同分析流程之间的格式转换，提高分析流程的规范性和可复用性。</p>
+<p>这一设计使系谱整理、结构校验、可视化、近交分析、遗传多样性分析和关系矩阵计算能够基于统一的数据对象完成，有助于减少重复数据整理和不同分析流程之间的格式转换，提高分析流程的规范性与可复用性。</p>
 </section>
 <section id="支持复杂系谱追踪与可视化" class="level2">
 <h2 class="anchored" data-anchor-id="支持复杂系谱追踪与可视化">支持复杂系谱追踪与可视化</h2>
-<p>在育种研究中，研究人员经常需要追溯候选个体的祖先来源，分析某一家系在后续世代中的延续情况，或展示多世代育种群体的亲缘结构。</p>
+<p>在育种研究中，研究人员经常需要追溯候选个体的祖先来源，分析特定家系在后续世代中的延续情况，以及展示多世代育种群体的亲缘结构。</p>
 <p>visPedigree 支持候选个体的祖先追踪、后代追踪和双向追踪，并可将追踪结果绘制为多世代系谱图。软件可根据世代信息自动排列个体，并支持根据性别、角色或用户自定义信息设置节点样式，便于研究人员直观展示复杂群体结构。</p>
-<p>针对育种群体中常见的大型全同胞家系，特别是对虾、鱼类等高繁殖力水产动物中一个家系后代数量大的特点，visPedigree 提供了紧凑展示方式。该功能可以将同一父母本组合产生的大量全同胞个体压缩为家系节点（图中 <code>FS×N</code> 矩形节点），在保留主要系谱结构信息的同时，提高复杂系谱图的可读性和展示效果。</p>
+<p>针对育种群体中常见的大型全同胞家系，特别是对虾、鱼类等高繁殖力水产动物中单个家系后代数量较多的特点，visPedigree 提供了紧凑展示方式。该功能可以将同一父母本组合产生的大量全同胞个体压缩为家系节点（图中 <code>FS×N</code> (full-sib family size) 矩形节点），在保留主要系谱结构信息的同时，提高复杂系谱图的可读性和展示效果。</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="https://luansheng.github.io/lsblog/posts/vispedigree-paper-20260730/Figure_1.png" class="img-fluid figure-img"></p>
@@ -685,14 +685,14 @@ font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
 <h2 class="anchored" data-anchor-id="拓展系谱群体遗传分析功能">拓展系谱群体遗传分析功能</h2>
 <p>visPedigree 不仅用于系谱图绘制，也整合了多种基于系谱的群体遗传分析功能。</p>
 <p>软件支持计算近交系数、系谱完整性、等效完整世代、世代间隔，以及有效 founder 数、有效 ancestor 数和有效群体大小等经典群体遗传指标，可用于评估育种群体的近交积累、祖先贡献不均衡和遗传多样性损失情况。</p>
-<p>在此基础上，visPedigree 进一步引入了基于 Shannon 信息熵的有效 founder 数和有效 ancestor 数（记为 feH 和 faH）。与经典指标相比，feH 和 faH 对低频始祖和祖先贡献更为敏感，能够反映群体中是否存在尚未完全丢失、仍可通过计划选配恢复的”长尾”遗传多样性。</p>
-<p>此外，软件提供了多样性半衰期（diversity half-life）分析工具，可在时间序列上追踪群体遗传多样性的衰减趋势，并将其分解为始祖贡献不均、世代瓶颈传递和世代内随机漂变三个组分的贡献。这有助于育种管理者判断多样性下降的主要来源——是建群基础不够均衡、中间世代收缩过快，还是长期闭锁导致的逐代漂变——从而有针对性地调整选配策略。</p>
+<p>在此基础上，visPedigree 进一步引入了基于 Shannon 信息熵的有效 founder 数和有效 ancestor 数，即 feH 和 faH。与经典指标相比，feH 和 faH 对低频始祖和祖先贡献更为敏感，能够反映群体中是否存在尚未完全丢失、仍可通过计划选配恢复的”长尾”遗传多样性。</p>
+<p>此外，软件提供了多样性半衰期（diversity half-life）分析工具，可在时间序列上追踪群体遗传多样性的衰减趋势，并将其分解为始祖贡献不均、世代瓶颈传递和世代内随机漂变三个组分的贡献。这有助于育种管理者判断多样性下降的主要来源，即是建群基础不够均衡、中间世代收缩过快，还是长期闭锁导致的逐代漂变，从而有针对性地调整选配策略。</p>
 <p>对于长期闭锁或半闭锁选育群体，上述分析可为亲本选择、近交控制、群体结构优化和种质资源管理提供辅助决策依据。</p>
 </section>
 <section id="提升大规模系谱数据处理能力" class="level2">
 <h2 class="anchored" data-anchor-id="提升大规模系谱数据处理能力">提升大规模系谱数据处理能力</h2>
-<p>随着育种规模扩大和长期系谱数据积累，育种群体中的个体数量可能达到十万级甚至百万级。在大规模系谱分析中，传统关系矩阵相关计算往往需要显式构建完整的 <img src="https://latex.codecogs.com/png.latex?n%20%5Ctimes%20n"> 矩阵，容易带来较高的内存和计算压力。</p>
-<p>visPedigree 在部分计算中支持不显式构建完整矩阵，而是直接进行矩阵向量乘法等操作，例如计算 <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7BA%7D%5Cmathbf%7Bx%7D"> 或 <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7BA%7D%5E%7B-1%7D%5Cmathbf%7Bx%7D">。这一设计为大规模系谱数据处理提供了更加灵活的实现方式，有助于提高大型育种群体分析效率。</p>
+<p>随着育种规模扩大和长期系谱数据积累，育种群体中的个体数量可能达到十万级甚至百万级。在大规模系谱分析中，传统关系矩阵相关计算往往需要显式构建完整的 <img src="https://latex.codecogs.com/png.latex?n%20%5Ctimes%20n"> 矩阵，容易带来较高的内存占用和计算压力。</p>
+<p>visPedigree 在部分计算中支持不显式构建完整矩阵，而是直接执行矩阵—向量乘法等运算，例如计算 <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7BA%7D%5Cmathbf%7Bx%7D"> 或 <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7BA%7D%5E%7B-1%7D%5Cmathbf%7Bx%7D">。这一设计为大规模系谱数据处理提供了更加灵活和高效的实现方式，有助于降低内存需求，并提高大型育种群体的分析效率。</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="https://luansheng.github.io/lsblog/posts/vispedigree-paper-20260730/Figure_2.png" class="img-fluid figure-img"></p>
@@ -702,21 +702,21 @@ font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
 </section>
 <section id="已在多个研究场景中得到应用" class="level2">
 <h2 class="anchored" data-anchor-id="已在多个研究场景中得到应用">已在多个研究场景中得到应用</h2>
-<p>在正式软件论文发表之前，visPedigree 已被多个外部研究团队在论文中使用或引用，应用场景涵盖畜禽育种、保护遗传、人类谱系研究和大规模系谱质量控制等方向。</p>
+<p>在软件论文发表之前，visPedigree 已被多个外部研究团队在论文中使用或引用，应用场景涵盖畜禽育种、保护遗传、人类谱系研究和大规模系谱质量控制等方向。</p>
 <ul>
-<li><strong>畜禽育种</strong>：在 Gochu Asturcelta 猪的单倍型分析和孟德尔错误研究中用于系谱可视化（Arias et al., <em>BMC Genomics</em> 2024; <em>Scientific Reports</em> 2022）；在泽西牛面部畸形研究中用于追溯共同祖先（Vander Jagt et al., <em>AAABG</em> 2023）；在 Silla Argentino 马的群体遗传分析中用于系谱数据整理（León Rubio et al., <em>SPERMOVA</em> 2021）。</li>
-<li><strong>保护遗传</strong>：在东非黑犀牛保护研究中，用于构建观测系谱并分析近交水平，比较自然扩散与人工转移的遗传效果（Mellya et al., <em>PNAS</em> 2025）；在野生驯鹿亲缘关系研究中用于系谱构建（Jones et al., <em>Global Ecology and Conservation</em> 2023）。</li>
-<li><strong>人类谱系研究</strong>：用于追踪 10 个世代的历史人类群体后代延续情况（Young et al., <em>Proceedings of the Royal Society B</em> 2023）。</li>
-<li><strong>犬系谱质控</strong>：在拉布拉多犬研究中，用于辅助定位超过 148 万条系谱记录中的循环和亲本错误（Lee et al., <em>Genetics Selection Evolution</em> 2025）。</li>
+<li><strong>畜禽育种</strong>：在猪、牛、马等育种研究中，用于系谱结构可视化、系谱整理和群体遗传分析前处理（Arias et al., <em>Scientific Reports</em> 2022; <em>BMC Genomics</em> 2024；Vander Jagt et al., <em>AAABG</em> 2023；León Rubio et al., <em>SPERMOVA</em> 2021）。</li>
+<li><strong>保护遗传</strong>：在东非黑犀牛和野生驯鹿研究中，用于观测系谱构建和亲缘关系分析，为种群遗传结构和近交风险评估提供基础（Mellya et al., <em>PNAS</em> 2025；Jones et al., <em>Global Ecology and Conservation</em> 2023）。</li>
+<li><strong>人类谱系研究</strong>：用于多代历史系谱构建和后代关系追踪（Young et al., <em>Proceedings of the Royal Society B</em> 2023）。</li>
+<li><strong>犬系谱质控</strong>：在拉布拉多犬百万级系谱研究中，用于辅助发现系谱循环和错误亲本关系（Lee et al., <em>Genetics Selection Evolution</em> 2025）。</li>
 </ul>
-<p>此外，遗传育种模拟软件 <strong>MoBPS</strong> 已将 visPedigree 的 <code>tidyped()</code> 和 <code>visped()</code> 直接整合进其系谱可视化模块，CRAN Task View: Agricultural Science 也将 visPedigree 列入动物科学推荐工具。自2026年1月在cran发布以来，累计下载量已2900余次。</p>
+<p>此外，遗传育种模拟软件 <strong>MoBPS</strong> 已将 visPedigree 的 <code>tidyped()</code> 和 <code>visped()</code> 直接整合进其系谱可视化模块，CRAN Task View: Agricultural Science 已收录 visPedigree，并将其列入动物科学相关软件列表。自2026年1月在cran发布，截止发稿日累计下载量近 3000 次。</p>
 <p>更多应用案例详见：<a href="https://luansheng.github.io/visPedigree/articles/applications.html" class="uri">https://luansheng.github.io/visPedigree/articles/applications.html</a></p>
+<p>visPedigree 的具体使用教程可参阅博客系列文章：<a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">Visualizing complex pedigrees in R with visPedigree</a> 和 <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">From pedigree records to genetic diversity analysis in R with visPedigree</a>。</p>
 <p>这些应用表明，visPedigree 虽然源于水产育种实践需求，但其功能可扩展至更广泛的亲缘关系分析、谱系追溯和群体遗传研究场景。</p>
 </section>
 <section id="为智能化精准育种提供基础工具支撑" class="level2">
 <h2 class="anchored" data-anchor-id="为智能化精准育种提供基础工具支撑">为智能化精准育种提供基础工具支撑</h2>
-<p>当前，水产种业正由传统表型和系谱选择，逐步向基因组选择、智能表型测定、多源数据融合和智能化育种决策方向发展。在这一过程中，规范、可靠、可复用的数据分析工具是提高育种效率的重要基础。</p>
-<p>visPedigree 可作为家系选育、基因组选育、遗传多样性监测和智能育种分析流程中的基础模块，用于支撑系谱数据整理、群体结构检查、候选个体追踪、近交控制和群体遗传状态评估等工作。未来，团队将继续围绕水产遗传育种中的实际需求，完善系谱分析、基因组选育、智能表型和育种数据管理等工具，推动育种数据分析流程更加标准化、自动化和可复用。</p>
+<p>随着水产育种向精准化、智能化方向发展，规范可靠的育种数据分析工具成为提升育种效率的重要基础。系谱数据作为反映个体来源、家系结构和遗传关系的基础信息，在育种群体管理和遗传改良中发挥着关键作用。visPedigree 可作为水产育种分析流程中的基础工具模块，为系谱数据整理、群体结构检查、候选个体追踪、近交控制和遗传多样性评估提供技术支撑。未来，团队将继续围绕实际育种需求，完善系谱分析、基因组育种和智能化育种数据分析工具，推动水产育种数据分析流程向标准化、自动化和智能化方向发展。</p>
 </section>
 <section id="软件获取与相关信息" class="level2">
 <h2 class="anchored" data-anchor-id="软件获取与相关信息">软件获取与相关信息</h2>
@@ -758,6 +758,10 @@ font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
 <section id="小结" class="level2">
 <h2 class="anchored" data-anchor-id="小结">小结</h2>
 <p>从 2018 年在 GitHub 上发布第一个版本，到如今完成 CRAN 发布和同行评议论文发表，visPedigree 的每一步改进都来自实际育种数据分析中的真实需求。栾生研究员为论文第一作者和通讯作者。如果你在处理系谱数据时遇到整理、分析或可视化方面的问题，欢迎尝试 visPedigree，也欢迎通过 GitHub Issues 提交反馈和建议。</p>
+<p>如果你在发表的研究中使用了 visPedigree，欢迎引用该软件论文：</p>
+<blockquote class="blockquote">
+<p>Luan S, Kong J, Xia Z, Kang Z, Qiang G, Luo K, Sui J. 2026. visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees. <em>Bioinformatics Advances</em>. DOI: <a href="https://doi.org/10.1093/bioadv/vbag210">10.1093/bioadv/vbag210</a>.</p>
+</blockquote>
 
 
 </section>
