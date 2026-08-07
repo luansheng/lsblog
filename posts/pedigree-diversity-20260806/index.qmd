@@ -336,9 +336,13 @@ the [visualization tutorial](https://luansheng.github.io/lsblog/posts/vispedigre
 
 If visPedigree contributes to your published work, please cite it:
 
-```r
-citation("visPedigree")
-```
+> Luan S, Kong J, Xia Z, Kang Z, Qiang G, Luo K, Sui J. 2026. visPedigree:
+> a comprehensive R package for tidying, analyzing, and visualizing breeding
+> pedigrees. *Bioinformatics Advances*. DOI:
+> [10.1093/bioadv/vbag210](https://doi.org/10.1093/bioadv/vbag210).
+
+(`citation("visPedigree")` always returns the citation for your installed
+version.)
 
 Install from CRAN:
 
