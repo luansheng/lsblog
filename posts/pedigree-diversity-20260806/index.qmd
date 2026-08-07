@@ -107,7 +107,7 @@ distribution of ECG across the population:
 
 ```{r}
 #| label: fig-ecg
-#| fig-cap: "Distribution of equivalent complete generations (ECG) in deep_ped. Most individuals carry between two and three equivalent complete generations of ancestry."
+#| fig-cap: "Distribution of equivalent complete generations (ECG) in deep_ped. The distribution is skewed toward deep ancestry — the median is 6.4 ECG, and most individuals carry more than six equivalent complete generations."
 #| fig-width: 7
 #| fig-height: 5
 plot(stats_deep, type = "ecg", metric = "ECG")
@@ -186,7 +186,7 @@ Two numbers carry most of the interpretation:
 
 ```{r}
 #| label: fig-contrib
-#| fig-cap: "Top 10 ancestor contributions to the reference population of deep_ped. The contribution of a handful of ancestors dominates the gene pool."
+#| fig-cap: "Top 10 ancestor contributions to the reference population of deep_ped. The ten most influential of the 94 ancestors account for about 38% of the gene pool."
 #| fig-width: 7
 #| fig-height: 5
 top_anc <- contrib_res$ancestors[1:10]
