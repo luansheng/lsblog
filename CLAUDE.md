@@ -39,6 +39,23 @@ bash scripts/publish-gh-pages-safe.sh                     # full site
 bash scripts/publish-gh-pages-safe.sh posts/<dir>/index.qmd  # single post
 ```
 
+### Update the Publication page (auto-maintained)
+
+`publication.qmd` is **generated** — never edit it by hand. The pipeline:
+
+1. `publications.json` is the database: `auto` entries (English papers where Sheng Luan is first or last/corresponding author, pulled from the OpenAlex author profile `A5040332583`) and `manual` entries (Chinese-language papers and non-first/corresponding papers, kept verbatim in `display`).
+2. `scripts/update_publications.py` (Python stdlib only) fetches the OpenAlex profile, filters by venue whitelist + first/last author position, merges new works by DOI, takes author names from Crossref (publisher-registered; OpenAlex display names only as fallback), and regenerates `publication.qmd` sorted by year.
+3. `.github/workflows/update-publications.yml` runs it weekly (Mon 03:17 UTC) and commits changes to `main`. Publishing to GitHub Pages stays manual (see above).
+
+Manual edits go into `publications.json`, not the qmd:
+
+- **Add a Chinese paper**: append to `manual` with `display` (markdown text), `year`, and a new `order`.
+- **Suppress a wrongly auto-added paper**: add its DOI to `filter.suppressed` in `publications.json`.
+- **Guarantee a paper is included** (e.g. the visPedigree software paper in *Bioinformatics Advances*, which is outside the venue whitelist and may sit in a freshly split OpenAlex author cluster): add its DOI to `filter.watch_dois` — venue checks are bypassed, the first/last-author rule still applies, and the author is matched by name.
+- **Chinese papers with English-translated OpenAlex records** (CNKI DOIs like `10.3724/...`): put the DOI in the manual entry's `suppress_dois` to prevent an English duplicate.
+
+Run locally with `python3 scripts/update_publications.py` (exit code 2 = changes made).
+
 ## Architecture
 
 ### Post structure

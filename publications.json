@@ -1,0 +1,2263 @@
+{
+  "updated": "2026-08-08",
+  "openalex_author_id": "A5040332583",
+  "filter": {
+    "positions": [
+      "first",
+      "last"
+    ],
+    "types": [
+      "article"
+    ],
+    "venue_whitelist": [
+      "Aquaculture",
+      "Fish & Shellfish Immunology",
+      "Animals",
+      "Aquaculture Research",
+      "PLoS ONE",
+      "Journal of Fishery Sciences of China",
+      "Biology",
+      "Scientific Reports",
+      "Acta Oceanologica Sinica",
+      "Genetics Selection Evolution",
+      "JOURNAL OF FISHERIES OF CHINA",
+      "Aquaculture International",
+      "Aquaculture Reports",
+      "International Journal of Molecular Sciences",
+      "Journal of Ocean University of China",
+      "Acta Hydrobiologica Sinica",
+      "Gene",
+      "Chinese Journal of Oceanology and Limnology",
+      "General and Comparative Endocrinology",
+      "Molecular Genetics and Genomics",
+      "Frontiers in Genetics",
+      "Molecular Ecology Resources",
+      "Haiyang yu huzhao",
+      "Molecular Ecology Notes",
+      "Developmental & Comparative Immunology",
+      "Journal of Shellfish Research",
+      "PROGREES IN FISHERY SCIENCES"
+    ],
+    "venue_blocklist": [
+      "Molecular Plant",
+      "Plant Cell & Environment",
+      "Plant Biotechnology Journal",
+      "The Plant Cell",
+      "Biologia Plantarum",
+      "Jiguang shengwu xuebao",
+      "Figshare",
+      "SSRN Electronic Journal",
+      "中文版",
+      "한국수산과학회 양식분과 학술대회"
+    ],
+    "venue_aliases": {
+      "PROGREES IN FISHERY SCIENCES": "Progress in Fishery Sciences"
+    },
+    "suppressed": [
+      {
+        "doi": "10.3724/sp.j.1118.2021.20124",
+        "reason": "Chinese-language paper (中国水产科学 2021) with English-translated OpenAlex record; maintained manually"
+      },
+      {
+        "doi": "10.1016/j.aquaculture.2015.08.014",
+        "reason": "Luan is last author but not the corresponding author (Wang Weiji is); removed 2026-08-07"
+      }
+    ],
+    "watch_dois": [
+      "10.1093/bioadv/vbag210",
+      "10.3390/ijms27114665",
+      "10.1038/s41598-026-47716-y",
+      "10.1038/s41598-026-37622-8"
+    ]
+  },
+  "skip_log": [
+    {
+      "doi": "10.1186/s12711-025-00949-3",
+      "year": 2025,
+      "title": "Genomic selection strategies to overcome genotype by environment interactions in",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.3390/ani14121817",
+      "year": 2024,
+      "title": "Estimation of Genetic Parameters for Growth and WSSV Resistance Traits in Litope",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/biology13100758",
+      "year": 2024,
+      "title": "Characterization and Expression Analysis of the C-Type Lectin Ladderlectin in Li",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2025.742576",
+      "year": 2025,
+      "title": "Genomic selection for hard-to-measure traits in aquaculture: Challenges in balan",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1038/s41598-025-26048-3",
+      "year": 2025,
+      "title": "Multi-marker GWAS and variant-specific genomic prediction for growth traits in P",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1016/j.fsi.2013.09.004",
+      "year": 2013,
+      "title": "Molecular cloning and characterization of a cathepsin B gene from the Chinese sh",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1038/s41598-017-10475-y",
+      "year": 2017,
+      "title": "Comparative transcriptome analysis of the Pacific White Shrimp (Litopenaeus vann",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1186/s12711-015-0164-y",
+      "year": 2015,
+      "title": "An analysis of indirect genetic effects on adult body weight of the Pacific whit",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1371/journal.pone.0211182",
+      "year": 2019,
+      "title": "Screening of the candidate genes related to low-temperature tolerance of Fennero",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2018.10.063",
+      "year": 2018,
+      "title": "Genotype by environment interaction for feed efficiency trait of the juvenile Pa",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1007/s00343-016-5034-0",
+      "year": 2016,
+      "title": "Heritability of body weight and resistance to ammonia in the Pacific white shrim",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2020.735421",
+      "year": 2020,
+      "title": "Evaluation of the utility of genomic information to improve genetic evaluation o",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1038/s41598-020-61382-8",
+      "year": 2020,
+      "title": "Integrative phenotypic and gene expression data identify myostatin as a muscle g",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2020.735577",
+      "year": 2020,
+      "title": "Using single-step genomic best linear unbiased prediction to improve the efficie",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2016.09.049",
+      "year": 2016,
+      "title": "Estimating genetic parameters for growth traits with molecular relatedness in tu",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s10499-017-0182-6",
+      "year": 2017,
+      "title": "Genetic evaluation of feed efficiency in the breeding population of Fenneropenae",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1093/mp/ssu092",
+      "year": 2014,
+      "title": "From Receptor-Like Kinases to Calcium Spikes: What Are the Missing Links?",
+      "reason": "venue blocklisted: Molecular Plant"
+    },
+    {
+      "doi": "10.1007/s13131-011-0093-8",
+      "year": 2011,
+      "title": "Estimation of genetic parameters and breeding values in shrimp Fenneropenaeus ch",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1371/journal.pone.0183801",
+      "year": 2017,
+      "title": "Evaluation of genetic parameters for growth and cold tolerance traits in Fennero",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3724/sp.j.1231.2012.28183",
+      "year": 2012,
+      "title": "The new variety of Fenneropenaeus chinensis \"Huanghai No.2\"",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aqrep.2021.100986",
+      "year": 2021,
+      "title": "Comparative transcriptomic analysis of Chinese shrimp Fenneropenaeus chinensis i",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2022.738631",
+      "year": 2022,
+      "title": "Estimates of heritability and genetic correlation for growth traits at harvest i",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s13131-016-0845-6",
+      "year": 2016,
+      "title": "Genetic parameters for cold tolerance and body weight of Chinese fleshy prawn, F",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/are.15841",
+      "year": 2022,
+      "title": "Insight into genetic potential for growth and survival of the Pacific white shri",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aqrep.2023.101572",
+      "year": 2023,
+      "title": "Comparisons and genetic assessments of WSSV resistance and growth in strain cros",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/biology13040218",
+      "year": 2024,
+      "title": "Reproductive Ability Disparity in the Pacific Whiteleg Shrimp (Penaeus vannamei)",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s13131-018-1150-3",
+      "year": 2018,
+      "title": "Genetic parameters and response to selection for body weight in turbot (Scophtha",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/are.14075",
+      "year": 2019,
+      "title": "Comparison of growth and reproduction performance of broodstock Pacific white sh",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ani14081137",
+      "year": 2024,
+      "title": "Molecular Characterization and Expression Analysis of the C-Type Lectin Domain F",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3724/sp.t.1231.2012.27961",
+      "year": 2012,
+      "title": "Genetic parameters for growth and survival of the base population in channel cat",
+      "reason": "suppressed by manual entry"
+    },
+    {
+      "doi": "10.3390/ani15091266",
+      "year": 2025,
+      "title": "Genetic Parameter Estimation of Body Weight and VpAHPND Resistance in Two Strain",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/biology13121012",
+      "year": 2024,
+      "title": "Quantitative Genetics of Feed-Efficiency-Related Traits for the Pacific Whiteleg",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.fsi.2025.110476",
+      "year": 2025,
+      "title": "Genome-wide DNA methylation and transcriptome analysis of the Pacific white shri",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ijms26178478",
+      "year": 2025,
+      "title": "Integrin β Regulates the Hepatopancreas Antiviral Innate Immune System by Affect",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/j.1365-2109.2006.01491.x",
+      "year": 2006,
+      "title": "Genetic variation of wild and cultured populations of the Kuruma prawn Marsupena",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1007/s00343-016-5250-7",
+      "year": 2015,
+      "title": "Genome-wide mining, characterization, and development of microsatellite markers ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s13131-015-0616-9",
+      "year": 2015,
+      "title": "Estimates of heritability and correlation for growth traits of turbot (Scophthal",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/are.12287",
+      "year": 2013,
+      "title": "Genetic parameters of survival for six generations in the giant freshwater prawn",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1007/s10499-013-9722-x",
+      "year": 2013,
+      "title": "Selection responses in survival of Macrobrachium rosenbergii after performing fi",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1111/are.12673",
+      "year": 2015,
+      "title": "Estimation of genetic parameters for early growth trait of turbot (Scophthalmus ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.fsi.2016.05.004",
+      "year": 2016,
+      "title": "Isolation and expression analysis of an MAPKK gene from Fenneropenaeus chinensis",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.fsi.2017.01.042",
+      "year": 2017,
+      "title": "cDNA cloning and expression analysis of a phosphopyruvate hydratase gene from th",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1038/s41598-020-78389-w",
+      "year": 2020,
+      "title": "Segregation distortion: high genetic load suggested by a Chinese shrimp family u",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1038/s41598-021-87237-4",
+      "year": 2021,
+      "title": "Genome survey and high-resolution genetic map provide valuable genetic resources",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/are.13673",
+      "year": 2018,
+      "title": "Genetic diversity and population structure of a giant freshwater prawn (Macrobra",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.fsi.2016.07.031",
+      "year": 2016,
+      "title": "Comparative microarray profile of the hepatopancreas in the response of “Huangha",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1186/s12711-020-00565-3",
+      "year": 2020,
+      "title": "Feed competition reduces heritable variation for body weight in Litopenaeus vann",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1371/journal.pone.0236343",
+      "year": 2020,
+      "title": "High accuracy of pooled DNA genotyping by 2b-RAD sequencing in the Pacific white",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s11802-020-4324-5",
+      "year": 2020,
+      "title": "Reducing the Common Environmental Effect on Litopenaeus vannamei Body Weight by ",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1016/j.gene.2020.145346",
+      "year": 2020,
+      "title": "Identification of two genes potentially related to myogenesis and muscle growth ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s10499-021-00827-x",
+      "year": 2022,
+      "title": "Effects of the individual rearing stage on the growth traits of candidate giant ",
+      "reason": "type not in ['article']: book-chapter"
+    },
+    {
+      "doi": "10.3390/ijms25094961",
+      "year": 2024,
+      "title": "Comparative Transcriptomic Analysis of WSSV-Challenged Penaeus vannamei with Var",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ani15020262",
+      "year": 2025,
+      "title": "Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2016.05.021",
+      "year": 2016,
+      "title": "Impact of pedigree depth and inclusion of historical data in the estimation of v",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ani15172467",
+      "year": 2025,
+      "title": "LvSlc12A2 Is a Negative Growth Regulator in Whiteleg Shrimp, Litopenaeus vanname",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ani15213069",
+      "year": 2025,
+      "title": "The Regulatory Effect and Molecular Mechanism of the Anti-Lipopolysaccharide Fac",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/j.1471-8286.2007.01943.x",
+      "year": 2007,
+      "title": "PERMANENT GENETIC RESOURCES: Twelve new microsatellite markers for the Chinese s",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3724/sp.j.1035.2012.00866",
+      "year": 2012,
+      "title": "EFFECT OF ARTIFICIAL CULTURE AND SELECTIVE BREEDING ON THE GENETIC DIVERSITY OF ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": null,
+      "year": 2013,
+      "title": "GENETIC PARAMETERS AND GENOTYPE BY ENVIRONMENT INTERACTION FOR BODY WEIGHT AND S",
+      "reason": "suppressed by manual entry (title)"
+    },
+    {
+      "doi": null,
+      "year": 2008,
+      "title": "Twelve new microsatellite markers for the Chinese shrimp Fenneropenaeus chinensi",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s11802-017-3136-8",
+      "year": 2017,
+      "title": "Screening white spot syndrome virus (WSSV)-resistant molecular markers from Fenn",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2019.734604",
+      "year": 2019,
+      "title": "Effect of white spot syndrome virus infection on a Ras gene in the Chinese shrim",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.11758/yykxjz.20161207002",
+      "year": 2018,
+      "title": "凡纳滨对虾氨氮急性胁迫应激敏感群体和耐受群体对 WSSV 敏感性的差异分析",
+      "reason": "venue not whitelisted: (none)"
+    },
+    {
+      "doi": "10.3390/biology13040268",
+      "year": 2024,
+      "title": "Analysis of Elimination Effects of Inbreeding on Genotype Frequency in Larval St",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s10535-009-0108-x",
+      "year": 2009,
+      "title": "Chloroplast DNA polymorphism in different types of cytoplasmic male sterile rice",
+      "reason": "venue blocklisted: Biologia Plantarum"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2024.741287",
+      "year": 2024,
+      "title": "Whole-genome mutagenesis of whiteleg shrimp (Litopenaeus vannamei) by ARTP and a",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3724/sp.j.1118.2017.16186",
+      "year": 2017,
+      "title": "A comparative study on growth and gonadal development of Litopenaeus vannamei br",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s11802-018-3429-6",
+      "year": 2018,
+      "title": "Comparisons of Growth and Survival Performance Among Selected Families and Wild ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.fsi.2018.09.043",
+      "year": 2018,
+      "title": "Isolation and characterization of a Raf gene from Chinese shrimp Fenneropenaeus ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.2983/035.030.0225",
+      "year": 2011,
+      "title": "Tolerance ofFenneropenaeus chinensis“Huanghai No. 2” To While Spot Syndrome Viru",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": null,
+      "year": 2006,
+      "title": "Heritability of auricularia larval body length for sea cucumber Apostichopus jap",
+      "reason": "venue not whitelisted: (none)"
+    },
+    {
+      "doi": "10.3724/sp.j.1231.2013.38339",
+      "year": 2013,
+      "title": "Combining ability of hybrid generation from the introduced populations of Litope",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.11693/hyhz20160700176",
+      "year": 2017,
+      "title": "凡纳滨对虾( Litopenaeus vannamei )亲虾繁殖期水体微生物多样性",
+      "reason": "venue not whitelisted: (none)"
+    },
+    {
+      "doi": "10.3724/sp.j.1118.2018.18015",
+      "year": 2018,
+      "title": "An analysis of the indirect genetic effect on the body weight of Fenneropenaeus ",
+      "reason": "suppressed by manual entry"
+    },
+    {
+      "doi": "10.1105/tpc.131140",
+      "year": 2001,
+      "title": "Renaming Genes and Duplication of Gene Names in the Literature",
+      "reason": "venue blocklisted: The Plant Cell"
+    },
+    {
+      "doi": "10.3724/sp.j.1035.2009.00094",
+      "year": 2009,
+      "title": "RELATIONSHIPS BETWEEN POLYMORPHISM AND TYPES OF SSR MOTIF-IN THE GENOME OF CHINE",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1371/journal.pone.0072541.g002",
+      "year": 2015,
+      "title": "Relative expression levels of three OsKATs genes of Dongjin rice in various tiss",
+      "reason": "venue blocklisted: Figshare"
+    },
+    {
+      "doi": "10.3724/sp.j.1231.2013.38327",
+      "year": 2013,
+      "title": "Correlation analysis of the viral loads with growth and white spot syndrome viru",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3724/sp.j.1118.2012.00989",
+      "year": 2013,
+      "title": "Quasi-immune response of Fenneropenaeus chinensis to WSSV and its verification",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": null,
+      "year": 2009,
+      "title": "Acquirement and Observation of the Overexpression Plants of the Magnesium Transp",
+      "reason": "venue blocklisted: Jiguang shengwu xuebao"
+    },
+    {
+      "doi": null,
+      "year": 2015,
+      "title": "DISCOVERY OF THE IMMUNE RELATED GENES IN RESPONSE TO WHITE SPOT SYNDROME VIRUS I",
+      "reason": "venue blocklisted: 한국수산과학회 양식분과 학술대회"
+    },
+    {
+      "doi": "10.11758/yykxjz.20160301001",
+      "year": 2017,
+      "title": "凡纳滨对虾( Litopenaeus vannamei )选育群体与杂交群体遗传多样性差异及其在低温条件下生长性能的比较",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.11964/jfc.20170510846",
+      "year": 2018,
+      "title": "中国明对虾 Dscam 基因的克隆及其在免疫致敏(类免疫)诱导反应中的表达分析",
+      "reason": "venue blocklisted: 中文版"
+    },
+    {
+      "doi": "10.3724/sp.j.1118.2017.16330",
+      "year": 2017,
+      "title": "Estimation of additive and dominant genetic effects for harvest body weight in a",
+      "reason": "suppressed by manual entry"
+    },
+    {
+      "doi": "10.3724/sp.j.1118.2019.18061",
+      "year": 2019,
+      "title": "Screening of differentially expressed genes related to the cold tolerance in Lit",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1007/s13131-021-1799-z",
+      "year": 2021,
+      "title": "Estimating genetic parameters with molecular relatedness and pedigree reconstruc",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": null,
+      "year": 2021,
+      "title": "Erratum: Calcium Signaling Mechanisms Across Kingdoms",
+      "reason": "type not in ['article']: erratum"
+    },
+    {
+      "doi": "10.3724/sp.j.1118.2021.20124",
+      "year": 2021,
+      "title": "An analysis of genetic variation in calcineurin B gene expression in &lt;italic&",
+      "reason": "suppressed: Chinese-language paper (中国水产科学 2021) with English-translated OpenAlex record; maintained manually"
+    },
+    {
+      "doi": "10.1016/j.aqrep.2023.101513",
+      "year": 2023,
+      "title": "Analysis of resistance against white spot syndrome virus infection in Fenneropen",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.2139/ssrn.4754200",
+      "year": 2024,
+      "title": "Whole-Genome Mutagenesis Of Whiteleg Shrimp (Litopenaeus Vannamei) by Artp and A",
+      "reason": "venue blocklisted: SSRN Electronic Journal"
+    },
+    {
+      "doi": "10.6084/m9.figshare.c.3844480_d2",
+      "year": 2017,
+      "title": "MOESM2 of Genetic assessment of residual feed intake as a feed efficiency trait ",
+      "reason": "venue blocklisted: Figshare"
+    },
+    {
+      "doi": "10.3724/issn1000-3207-2009-1-94-u",
+      "year": 2009,
+      "title": "RELATI ONSHIPS BETW EEN POLYMORPHISM AND TYPES OF SSRMOTIF IN THE GENOM E OF CHI",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.2139/ssrn.5077726",
+      "year": 2024,
+      "title": "Genetic Parameter Estimation of Body Weight and Vpahpnd Resistance in Two Strain",
+      "reason": "venue blocklisted: SSRN Electronic Journal"
+    },
+    {
+      "doi": "10.3390/biology14040328",
+      "year": 2025,
+      "title": "Genomic Evaluation of Harvest Weight Uniformity in Penaeus vannamei Under a 3FAM",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.3390/ani15081165",
+      "year": 2025,
+      "title": "Multi-Trait Genomic Prediction of Meat Yield in Pacific Whiteleg Shrimp (Penaeus",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1016/j.dci.2025.105517",
+      "year": 2025,
+      "title": "Characterization and function analysis of the peritrophin-1 in Penaeus vannamei ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1155/are/5556293",
+      "year": 2026,
+      "title": "Effects of Replacing Fishmeal With Soybean Meal and Peanut Meal in Low‐Protein D",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ijms27146202",
+      "year": 2026,
+      "title": "Local Enrichment of Multi-SNP Markers Improves Genomic Prediction from Low-Densi",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1093/bioadv/vbag210",
+      "year": 2026,
+      "title": "visPedigree: a comprehensive R package for tidying, analyzing, and visualizing b",
+      "reason": "already in database"
+    },
+    {
+      "doi": "10.1038/s41598-026-47716-y",
+      "year": 2026,
+      "title": "Pedigree-assisted genotype imputation enables cost-effective genomic prediction ",
+      "reason": "position middle, not in ['first', 'last']"
+    }
+  ],
+  "manual": [
+    {
+      "order": 4,
+      "display": "张士薇，代平，高广春，孟宪红，罗坤，隋娟，谭建，傅强，曹家旺，陈宝龙，李旭鹏，强光峰，邢群，戚云辉，孔杰，**栾生.** 基于深度学习算法的凡纳滨对虾生长表型测定系统研发及应用. 水产学报, 2025, 49, 059117--059117. <https://doi.org/10.11964/jfc.20240714612>.",
+      "year": 2025,
+      "doi": "10.11964/jfc.20240714612"
+    },
+    {
+      "order": 11,
+      "display": "孙犁, 卢霞, 孔杰, 孟宪红, 闫允君, 李波波, 仲伟鹏, 陈宝龙, 曹宝祥, 罗坤, **栾生**. 中国明对虾calcineurin B基因的克隆及其在竞争行为中作用的初探. 水产学报, 2020, 44(1):11~20.",
+      "year": 2020
+    },
+    {
+      "order": 12,
+      "display": "刘峻宇, 杨国梁, 孔杰, 夏正龙, 罗坤, 唐琼英, 卢霞, 孟宪红, 李景芬, **栾生**. 罗氏沼虾开放和闭锁核心育种群生长和存活性能分析. 中国水产科学, 2019, 26(5):861-868.",
+      "year": 2019
+    },
+    {
+      "order": 13,
+      "display": "刘峻宇, 刘均辉, 孔杰, 代平, 于洋, 孟宪红, 罗坤, 曹宝祥, 陈宝龙, **栾生***,* **高焕**. 凡纳滨对虾SNP标记开发与家系亲缘关系验证分析. 渔业科学进展, 2019, <https://doi.org/10.19663/j.issn2095-9869.20191022001>.",
+      "year": 2019,
+      "doi": "10.19663/j.issn2095-9869.20191022001"
+    },
+    {
+      "order": 14,
+      "display": "Sui Juan, **Luan Sheng**, Yang Guoliang, Xia Zhenglong, Luo Kun, Tang Qiongying, Lu Xia, Meng Xianhong, Kong Jie. Genetic parameters and selection response for the harvest body weight of the giant freshwater prawn (*Macrobrachium rosenbergii*) in a breeding program in China. PLOS ONE, 2019, 14(8): e0218379. <https://doi.org/10.1371/journal.pone.0218379>.",
+      "year": 2019,
+      "doi": "10.1371/journal.pone.0218379"
+    },
+    {
+      "order": 19,
+      "display": "**Luan Sheng**, Yang Guoliang, Wang Junyi, Luo Kun, Zhang Yufei, Gao Qiang, Hu Honglang, Kong Jie. Genetic parameters and response to selection for harvest body weight of the giant freshwater prawn *Macrobrachium rosenbergii*. Aquaculture, 2012, 362-363(1-4):88-96.",
+      "year": 2012
+    },
+    {
+      "order": 23,
+      "display": "TAN Jian, KONG Jie, LUO Kun, CAO Baoxiang, LIU Ning, MENG Xianghong, GUO Zhaojia, XU Shengyu, and **Luan Sheng***.* Genetic parameter estimation of reproductive traits of *Litopenaeus vannamei*. Journal of Ocean University of China. 2017, 16(1): 161-167.",
+      "year": 2017
+    },
+    {
+      "order": 24,
+      "display": "Sui Juan, **Luan Sheng**, Luo Kun, Meng Xianhong, Lu Xia, Cao Baoxiang, Li Wenjia, Chai Zhan, Liu Ning, Xu Shengyu, Kong Jie*.* Genetic parameters and response to selection for harvest body weight of pacific white shrimp, *Litopenaeus vannamei*. Aquaculture Research, 2015, 1-9. <DOI:10.1111/are.12729>.",
+      "year": 2015
+    },
+    {
+      "order": 25,
+      "display": "Sui Juan, **Luan Sheng**, Luo Kun, Meng Xianhong, Cao Baoxiang, Liu Ning, Li Wenjia, Lu Xia, Chai Zhan, Kong Jie. Genetic parameters and response to selection of harvest body weight of the Chinese shrimp *Fenneropenaeus chinensis* after five generations of multi-trait selection. Aquaculture, 2016, 452: 134--141.",
+      "year": 2016
+    },
+    {
+      "order": 26,
+      "display": "Sui Juan, **Luan Sheng**, Yang Guoliang, Chen Xuefeng, Luo Kun, Gao Qiang, Wang Junyi, Hu Honglang, Kong Jie. Impact of pedigree depth and inclusion of historical data in the estimation of variance components and breeding values in *Macrobrachium rosenbergii*. Aquaculture, 2016, 464:80-86.",
+      "year": 2016
+    },
+    {
+      "order": 27,
+      "display": "Lu Xia, **Luan Sheng**, Hu LongYang, Mao Yong, Tao Ye, Zhong ShengPing, Kong Jie. High resolution genetic linkage mapping, high temperature tolerance and growth related quantitative trait locus (QTL) identification in *Marsupenaeus japonicus*. Molecular Genetics and Genomics, 2016, <DOI:10.1007/S00438-016-1192-1>.",
+      "year": 2016
+    },
+    {
+      "order": 28,
+      "display": "Lu Xia, **Luan Sheng**, Hu Longyang, Mao Yong, Kongjie. Genome-wide mining, characterization, and development of microsatellite markers in *Marsupenaeus japonicus* by genome survey sequencing. Chinese Journal of Oceanology and limnology, 2015, DOI: 10.1007/s00343-016-5250-7.",
+      "year": 2015
+    },
+    {
+      "order": 29,
+      "display": "**栾生**, 仲伟鹏, 谭健, 罗坤, 陈宝龙, 孔杰. 凡纳滨对虾收获体重大规模家系选择效果的计算机模拟分析. 水产学报, 2018, 42(10): 1582-1588.",
+      "year": 2018
+    },
+    {
+      "order": 30,
+      "display": "仲伟鹏, 罗坤, 孟宪红, 陈宝龙, 隋娟, 孔杰, 曹宝祥, 邢群, **栾生**. 限制投喂环境下中国对虾体重的间接遗传效应分析. 中国水产科学, 2018, 25(6):1245-1251.",
+      "year": 2018,
+      "suppress_dois": [
+        "10.3724/sp.j.1118.2018.18015"
+      ]
+    },
+    {
+      "order": 31,
+      "display": "强光峰, 杨国梁, 陈雪峰, 孔杰, 夏正龙, 高强, 罗坤, **栾生**. 罗氏沼虾高世代育种群体收获体重加性和显性遗传效应. 中国水产科学, 2017, 24(5):1027-1034.",
+      "year": 2017,
+      "suppress_dois": [
+        "10.3724/sp.j.1118.2017.16330"
+      ]
+    },
+    {
+      "order": 32,
+      "display": "**栾生**, 边文冀, 邓伟, 胡红浪, 孔杰, 秦钦, 陈校辉, 钟立强, 黄太寿. 斑点叉尾鮰基础群体生长和存活性状遗传参数估计. 水产学报, 2012, 36(9): 1313-1321.",
+      "year": 2012,
+      "suppress_dois": [
+        "10.3724/sp.t.1231.2012.27961"
+      ]
+    },
+    {
+      "order": 33,
+      "display": "**栾生**, 罗坤, 阮晓红, 曹宝祥, 王浩, 杜学芳, 张凯, 孔杰. 凡纳滨对虾体重、存活性状的遗传参数和基因型与环境互作效应. 海洋与湖沼, 2013, 44(2): 445-452.",
+      "year": 2013,
+      "suppress_titles": [
+        "genetic parameters and genotype by environment interaction for body weight and survival of pacific white shrimp litopenaeus vannamei"
+      ]
+    },
+    {
+      "order": 34,
+      "display": "**栾生**, 金武, 孔杰, 罗坤, 孟宪红, 张天时, 王清印. 中国对虾(*Fenneropenaeus chinensis*)多性状复合育种方案的遗传和经济评估. 海洋学报, 2013, 35(2):133-142.",
+      "year": 2013
+    },
+    {
+      "order": 35,
+      "display": "**栾生**, 隋娟, 孟宪红, 罗坤, 曹宝祥, 孔杰. 最佳遗传贡献理论及其在水产动物选择育种中的应用前景. 渔业科学进展, 2014, 6(35):133-140.",
+      "year": 2014
+    },
+    {
+      "order": 36,
+      "display": "**栾生**, 孔杰, 王清印. 日本囊对虾三个地理群体的多元异速生长分析. 海洋与湖沼, 2006, 38(Supp.):60-65.",
+      "year": 2006
+    },
+    {
+      "order": 37,
+      "display": "**栾生**, 孔杰, 王清印, 高 焕, 王伟继, 张庆文.日本囊对虾(*Marsupenaeus japonicus*)基因组微卫星特征分析.自然科学进展, 2007, 17(6):731-740",
+      "year": 2007
+    },
+    {
+      "order": 38,
+      "display": "**栾生**, 孔杰, 王清印, 高 焕, 王伟继, 张庆文. 日本囊对虾基因组小卫星特征分析. 水产学报, 2007, 31(2) :88-95.",
+      "year": 2007
+    },
+    {
+      "order": 39,
+      "display": "**栾生**, 孔杰, 张天时, 罗坤, 杨翠华, 田燚, 王清印.基于表型值和育种值的中国对虾生长、抗逆性状相关分析.海洋水产研究, 2008, 29(3):14-20.",
+      "year": 2008
+    },
+    {
+      "order": 40,
+      "display": "**栾生**, 孙慧玲, 孔杰. 刺参耳状幼体体长遗传力的估计. 中国水产科学, 2006, 13(3):378-383.",
+      "year": 2006,
+      "suppress_titles": [
+        "heritability of auricularia larval body length for sea cucumber apostichopus japonicus selenka"
+      ]
+    }
+  ],
+  "auto": [
+    {
+      "doi": "10.1186/s12711-025-00949-3",
+      "title": "Genomic selection strategies to overcome genotype by environment interactions in biosecurity-based aquaculture breeding programs",
+      "authors": [
+        {
+          "name": "Kang Ziyi",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Li Qi",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Xing Qun",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2025,
+      "venue": "Genetics Selection Evolution",
+      "volume": "57",
+      "issue": "1",
+      "first_page": "2",
+      "last_page": "2",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2025.742576",
+      "title": "Genomic selection for hard-to-measure traits in aquaculture: Challenges in balancing genetic gain and diversity",
+      "authors": [
+        {
+          "name": "Kang Ziyi",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Li Qi",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Zhaoxin",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2025,
+      "venue": "Aquaculture",
+      "volume": "606",
+      "issue": null,
+      "first_page": "742576",
+      "last_page": "742576",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.3390/ani15020262",
+      "title": "Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid Shrimp Through Neighboring Gene Regulation",
+      "authors": [
+        {
+          "name": "Zhou Hao",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Xia Yan",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Meijia",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Li Xupeng",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Xing Qun",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2025,
+      "venue": "Animals",
+      "volume": "15",
+      "issue": "2",
+      "first_page": "262",
+      "last_page": "262",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2024.740760",
+      "title": "Optimal open nucleus breeding system for long-term genetic gain in the Pacific white shrimp using genomic selection",
+      "authors": [
+        {
+          "name": "Kang Ziyi",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Li Qi",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2024,
+      "venue": "Aquaculture",
+      "volume": "586",
+      "issue": null,
+      "first_page": "740760",
+      "last_page": "740760",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2022.739181",
+      "title": "Assessing accuracy of genomic breeding values of selection candidates under biosecurity restrictions by progeny testing in Chinese shrimp Fenneropenaeus chinensis",
+      "authors": [
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2022,
+      "venue": "Aquaculture",
+      "volume": "566",
+      "issue": null,
+      "first_page": "739181",
+      "last_page": "739181",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1186/s12711-020-00565-3",
+      "title": "Feed competition reduces heritable variation for body weight in Litopenaeus vannamei",
+      "authors": [
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        }
+      ],
+      "year": 2020,
+      "venue": "Genetics Selection Evolution",
+      "volume": "52",
+      "issue": "1",
+      "first_page": "45",
+      "last_page": "45",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1007/s11802-020-4324-5",
+      "title": "Reducing the Common Environmental Effect on Litopenaeus vannamei Body Weight by Rearing Communally at Early Developmental Stages and Using a Reconstructed Pedigree",
+      "authors": [
+        {
+          "name": "Kong Zhangwei",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Hao Dongchun",
+          "is_luan": false
+        },
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Li Xupeng",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2020,
+      "venue": "Journal of Ocean University of China",
+      "volume": "19",
+      "issue": "4",
+      "first_page": "923",
+      "last_page": "930",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2020.735577",
+      "title": "Using single-step genomic best linear unbiased prediction to improve the efficiency of genetic evaluation on body weight in Macrobrachium rosenbergii",
+      "authors": [
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Yang Guoliang",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Xia Zhenglong",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Tang Qiongying",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2020,
+      "venue": "Aquaculture",
+      "volume": "528",
+      "issue": null,
+      "first_page": "735577",
+      "last_page": "735577",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2020.735421",
+      "title": "Evaluation of the utility of genomic information to improve genetic evaluation of feed efficiency traits of the Pacific white shrimp Litopenaeus vannamei",
+      "authors": [
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2020,
+      "venue": "Aquaculture",
+      "volume": "527",
+      "issue": null,
+      "first_page": "735421",
+      "last_page": "735421",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2018.10.063",
+      "title": "Genotype by environment interaction for feed efficiency trait of the juvenile Pacific white shrimp Litopenaeus vannamei held in individuals vs. in groups",
+      "authors": [
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2018,
+      "venue": "Aquaculture",
+      "volume": "500",
+      "issue": null,
+      "first_page": "506",
+      "last_page": "513",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.fsi.2017.12.005",
+      "title": "Identification of SNP markers associated with tolerance to ammonia toxicity by selective genotyping from de novo assembled transcriptome in Litopenaeus vannamei",
+      "authors": [
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2017,
+      "venue": "Fish & Shellfish Immunology",
+      "volume": "73",
+      "issue": null,
+      "first_page": "158",
+      "last_page": "166",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2018.07.045",
+      "title": "Identification of SNPs associated with residual feed intake from the muscle of Litopenaeus vannamei using bulk segregant RNA-seq",
+      "authors": [
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Sen",
+          "is_luan": false
+        },
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2018,
+      "venue": "Aquaculture",
+      "volume": "497",
+      "issue": null,
+      "first_page": "56",
+      "last_page": "63",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1186/s12711-015-0164-y",
+      "title": "An analysis of indirect genetic effects on adult body weight of the Pacific white shrimp Litopenaeus vannamei at low rearing density",
+      "authors": [
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Chai Zhan",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Baoxiang",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Lu Xia",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Ning",
+          "is_luan": false
+        },
+        {
+          "name": "Xu Shengyu",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        }
+      ],
+      "year": 2015,
+      "venue": "Genetics Selection Evolution",
+      "volume": "47",
+      "issue": "1",
+      "first_page": "95",
+      "last_page": "95",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1111/are.12287",
+      "title": "Genetic parameters of survival for six generations in the giant freshwater prawn Macrobrachium rosenbergii",
+      "authors": [
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Wang Junyi",
+          "is_luan": false
+        },
+        {
+          "name": "Yang Guoliang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Xuefeng",
+          "is_luan": false
+        },
+        {
+          "name": "Gao Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Hu Honglang",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        }
+      ],
+      "year": 2013,
+      "venue": "Aquaculture Research",
+      "volume": "46",
+      "issue": "6",
+      "first_page": "1345",
+      "last_page": "1355",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1007/s10499-013-9722-x",
+      "title": "Selection responses in survival of Macrobrachium rosenbergii after performing five generations of multi-trait selection for growth and survival",
+      "authors": [
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Yang Guoliang",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Junyi",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Xuefeng",
+          "is_luan": false
+        },
+        {
+          "name": "Gao Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Hu Honglang",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        }
+      ],
+      "year": 2013,
+      "venue": "Aquaculture International",
+      "volume": "22",
+      "issue": "3",
+      "first_page": "993",
+      "last_page": "1007",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1111/j.1365-2109.2006.01491.x",
+      "title": "Genetic variation of wild and cultured populations of the Kuruma prawn Marsupenaeus japonicus (Bate 1888) using microsatellites",
+      "authors": [
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Qing Yin",
+          "is_luan": false
+        }
+      ],
+      "year": 2006,
+      "venue": "Aquaculture Research",
+      "volume": "37",
+      "issue": "8",
+      "first_page": "785",
+      "last_page": "792",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2023.739914",
+      "title": "Prediction of meat yield in the Pacific whiteleg shrimp Penaeus vannamei",
+      "authors": [
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Li Dongyan",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2023,
+      "venue": "Aquaculture",
+      "volume": "577",
+      "issue": null,
+      "first_page": "739914",
+      "last_page": "739914",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2024.741828",
+      "title": "Genomic selection of resistance to acute hepatopancreatic necrosis disease in Litopenaeus vannamei",
+      "authors": [
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Li Xupeng",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Hongjie",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2024,
+      "venue": "Aquaculture",
+      "volume": "596",
+      "issue": null,
+      "first_page": "741828",
+      "last_page": "741828",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1038/s41598-025-26048-3",
+      "title": "Multi-marker GWAS and variant-specific genomic prediction for growth traits in Pacific white shrimp",
+      "authors": [
+        {
+          "name": "Lv Tianzan",
+          "is_luan": false
+        },
+        {
+          "name": "Xia Yan",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Meijia",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Li Xupeng",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Xing Qun",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Zhou Hao",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2025,
+      "venue": "Scientific Reports",
+      "volume": "15",
+      "issue": "1",
+      "first_page": "42103",
+      "last_page": "42103",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.3390/biology14040328",
+      "title": "Genomic Evaluation of Harvest Weight Uniformity in Penaeus vannamei Under a 3FAM Design Incorporating Indirect Genetic Effect",
+      "authors": [
+        {
+          "name": "Gao Siqi",
+          "is_luan": false
+        },
+        {
+          "name": "Xia Yan",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Li Xupeng",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Xing Qun",
+          "is_luan": false
+        },
+        {
+          "name": "Tian Yi",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2025,
+      "venue": "Biology",
+      "volume": "14",
+      "issue": "4",
+      "first_page": "328",
+      "last_page": "328",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.3390/ani15081165",
+      "title": "Multi-Trait Genomic Prediction of Meat Yield in Pacific Whiteleg Shrimp (Penaeus vannamei)",
+      "authors": [
+        {
+          "name": "Zhang Shiwei",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Xing Qun",
+          "is_luan": false
+        },
+        {
+          "name": "Tian Yi",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2025,
+      "venue": "Animals",
+      "volume": "15",
+      "issue": "8",
+      "first_page": "1165",
+      "last_page": "1165",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.3390/ijms27146202",
+      "title": "Local Enrichment of Multi-SNP Markers Improves Genomic Prediction from Low-Density Genotyping in Pacific White Shrimp",
+      "authors": [
+        {
+          "name": "Lyu Tianzan",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Zhang Min",
+          "is_luan": false
+        },
+        {
+          "name": "Yan Maocang",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Li Xupeng",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Tan Jian",
+          "is_luan": false
+        },
+        {
+          "name": "Cao Jiawang",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Zhou Hao",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2026,
+      "venue": "International Journal of Molecular Sciences",
+      "volume": "27",
+      "issue": "14",
+      "first_page": "6202",
+      "last_page": "6202",
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1093/bioadv/vbag210",
+      "title": "visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees",
+      "authors": [
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Xia Zhenglong",
+          "is_luan": false
+        },
+        {
+          "name": "Kang Ziyi",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        }
+      ],
+      "year": 2026,
+      "venue": "Bioinformatics Advances",
+      "volume": null,
+      "issue": null,
+      "first_page": null,
+      "last_page": null,
+      "added": "2026-08-07"
+    },
+    {
+      "doi": "10.1038/s41598-026-47716-y",
+      "title": "Pedigree-assisted genotype imputation enables cost-effective genomic prediction in Penaeus vannamei",
+      "authors": [
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Xu Pao",
+          "is_luan": false
+        }
+      ],
+      "year": 2026,
+      "venue": "Scientific Reports",
+      "volume": "16",
+      "issue": "1",
+      "first_page": "16656",
+      "last_page": "16656",
+      "added": "2026-08-08"
+    },
+    {
+      "doi": "10.3390/ijms27114665",
+      "title": "Development and Applications of a 1K SNP Panel for Whiteleg Shrimp: From Pedigree Reconstruction to Genomic Selection",
+      "authors": [
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Wang Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Chen Baolong",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Zou Xiang",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Junyu",
+          "is_luan": false
+        },
+        {
+          "name": "Zhang Shiwei",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2026,
+      "venue": "International Journal of Molecular Sciences",
+      "volume": "27",
+      "issue": "11",
+      "first_page": "4665",
+      "last_page": "4665",
+      "added": "2026-08-08"
+    },
+    {
+      "doi": "10.1038/s41598-026-37622-8",
+      "title": "A genome-structure adaptive framework for ROH-based inbreeding estimation in Penaeus vannamei",
+      "authors": [
+        {
+          "name": "Zou Xiang",
+          "is_luan": false
+        },
+        {
+          "name": "Zhou Hao",
+          "is_luan": false
+        },
+        {
+          "name": "Liu Mianyu",
+          "is_luan": false
+        },
+        {
+          "name": "Qiang Guangfeng",
+          "is_luan": false
+        },
+        {
+          "name": "Dai Ping",
+          "is_luan": false
+        },
+        {
+          "name": "Sui Juan",
+          "is_luan": false
+        },
+        {
+          "name": "Kong Jie",
+          "is_luan": false
+        },
+        {
+          "name": "Luo Kun",
+          "is_luan": false
+        },
+        {
+          "name": "Meng Xianhong",
+          "is_luan": false
+        },
+        {
+          "name": "Xing Qun",
+          "is_luan": false
+        },
+        {
+          "name": "Fu Qiang",
+          "is_luan": false
+        },
+        {
+          "name": "Luan Sheng",
+          "is_luan": true
+        }
+      ],
+      "year": 2026,
+      "venue": "Scientific Reports",
+      "volume": "16",
+      "issue": "1",
+      "first_page": "6769",
+      "last_page": "6769",
+      "added": "2026-08-08"
+    }
+  ]
+}
