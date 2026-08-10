@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-08",
+  "updated": "2026-08-10",
   "openalex_author_id": "A5040332583",
   "filter": {
     "positions": [
@@ -71,18 +71,6 @@
     ]
   },
   "skip_log": [
-    {
-      "doi": "10.1186/s12711-025-00949-3",
-      "year": 2025,
-      "title": "Genomic selection strategies to overcome genotype by environment interactions in",
-      "reason": "already in database"
-    },
-    {
-      "doi": "10.3390/ani14121817",
-      "year": 2024,
-      "title": "Estimation of Genetic Parameters for Growth and WSSV Resistance Traits in Litope",
-      "reason": "position middle, not in ['first', 'last']"
-    },
     {
       "doi": "10.3390/biology13100758",
       "year": 2024,
@@ -375,7 +363,7 @@
       "doi": "10.1007/s10499-021-00827-x",
       "year": 2022,
       "title": "Effects of the individual rearing stage on the growth traits of candidate giant ",
-      "reason": "type not in ['article']: book-chapter"
+      "reason": "position middle, not in ['first', 'last']"
     },
     {
       "doi": "10.3390/ijms25094961",
@@ -435,7 +423,7 @@
       "doi": "10.1007/s11802-017-3136-8",
       "year": 2017,
       "title": "Screening white spot syndrome virus (WSSV)-resistant molecular markers from Fenn",
-      "reason": "position middle, not in ['first', 'last']"
+      "reason": "type not in ['article']: book-chapter"
     },
     {
       "doi": "10.1016/j.aquaculture.2019.734604",
@@ -666,10 +654,22 @@
       "reason": "already in database"
     },
     {
+      "doi": "10.3390/ijms27114665",
+      "year": 2026,
+      "title": "Development and Applications of a 1K SNP Panel for Whiteleg Shrimp: From Pedigre",
+      "reason": "already in database"
+    },
+    {
       "doi": "10.1038/s41598-026-47716-y",
       "year": 2026,
       "title": "Pedigree-assisted genotype imputation enables cost-effective genomic prediction ",
       "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1038/s41598-026-37622-8",
+      "year": 2026,
+      "title": "A genome-structure adaptive framework for ROH-based inbreeding estimation in Pen",
+      "reason": "already in database"
     }
   ],
   "manual": [
