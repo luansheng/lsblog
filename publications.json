@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-10",
+  "updated": "2026-08-17",
   "openalex_author_id": "A5040332583",
   "filter": {
     "positions": [
@@ -132,6 +132,12 @@
       "reason": "already in database"
     },
     {
+      "doi": "10.1016/j.aquaculture.2016.09.049",
+      "year": 2016,
+      "title": "Estimating genetic parameters for growth traits with molecular relatedness in tu",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
       "doi": "10.1038/s41598-020-61382-8",
       "year": 2020,
       "title": "Integrative phenotypic and gene expression data identify myostatin as a muscle g",
@@ -142,12 +148,6 @@
       "year": 2020,
       "title": "Using single-step genomic best linear unbiased prediction to improve the efficie",
       "reason": "already in database"
-    },
-    {
-      "doi": "10.1016/j.aquaculture.2016.09.049",
-      "year": 2016,
-      "title": "Estimating genetic parameters for growth traits with molecular relatedness in tu",
-      "reason": "position middle, not in ['first', 'last']"
     },
     {
       "doi": "10.1007/s10499-017-0182-6",
@@ -238,6 +238,12 @@
       "year": 2012,
       "title": "Genetic parameters for growth and survival of the base population in channel cat",
       "reason": "suppressed by manual entry"
+    },
+    {
+      "doi": "10.3390/ani15020262",
+      "year": 2025,
+      "title": "Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid",
+      "reason": "already in database"
     },
     {
       "doi": "10.3390/ani15091266",
@@ -372,12 +378,6 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.3390/ani15020262",
-      "year": 2025,
-      "title": "Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid",
-      "reason": "already in database"
-    },
-    {
       "doi": "10.1016/j.aquaculture.2016.05.021",
       "year": 2016,
       "title": "Impact of pedigree depth and inclusion of historical data in the estimation of v",
@@ -423,7 +423,7 @@
       "doi": "10.1007/s11802-017-3136-8",
       "year": 2017,
       "title": "Screening white spot syndrome virus (WSSV)-resistant molecular markers from Fenn",
-      "reason": "type not in ['article']: book-chapter"
+      "reason": "position middle, not in ['first', 'last']"
     },
     {
       "doi": "10.1016/j.aquaculture.2019.734604",
