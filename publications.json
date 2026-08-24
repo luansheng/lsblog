@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-17",
+  "updated": "2026-08-24",
   "openalex_author_id": "A5040332583",
   "filter": {
     "positions": [
@@ -71,6 +71,12 @@
     ]
   },
   "skip_log": [
+    {
+      "doi": "10.3390/ani14121817",
+      "year": 2024,
+      "title": "Estimation of Genetic Parameters for Growth and WSSV Resistance Traits in Litope",
+      "reason": "position middle, not in ['first', 'last']"
+    },
     {
       "doi": "10.3390/biology13100758",
       "year": 2024,
@@ -336,12 +342,6 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.fsi.2016.07.031",
-      "year": 2016,
-      "title": "Comparative microarray profile of the hepatopancreas in the response of “Huangha",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
       "doi": "10.1186/s12711-020-00565-3",
       "year": 2020,
       "title": "Feed competition reduces heritable variation for body weight in Litopenaeus vann",
@@ -393,6 +393,12 @@
       "doi": "10.3390/ani15213069",
       "year": 2025,
       "title": "The Regulatory Effect and Molecular Mechanism of the Anti-Lipopolysaccharide Fac",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.fsi.2016.07.031",
+      "year": 2016,
+      "title": "Comparative microarray profile of the hepatopancreas in the response of “Huangha",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
@@ -516,12 +522,6 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1371/journal.pone.0072541.g002",
-      "year": 2015,
-      "title": "Relative expression levels of three OsKATs genes of Dongjin rice in various tiss",
-      "reason": "venue blocklisted: Figshare"
-    },
-    {
       "doi": "10.3724/sp.j.1231.2013.38327",
       "year": 2013,
       "title": "Correlation analysis of the viral loads with growth and white spot syndrome viru",
@@ -584,7 +584,7 @@
     {
       "doi": "10.3724/sp.j.1118.2021.20124",
       "year": 2021,
-      "title": "An analysis of genetic variation in calcineurin B gene expression in &lt;italic&",
+      "title": "An analysis of genetic variation in calcineurin B gene expression in Fenneropena",
       "reason": "suppressed: Chinese-language paper (中国水产科学 2021) with English-translated OpenAlex record; maintained manually"
     },
     {
