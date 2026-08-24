@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Sheng Luan">
+<meta name="dcterms.date" content="2026-08-24">
+<meta name="description" content="Seven R packages can plot a pedigree — kinship2, Pedixplorer, ggpedigree, pedtricks, optiSel, purgeR and visPedigree. We run the same breeding pedigree through each of them, time the results, and show which one fits which workflow.">
+
+<title>Plot a pedigree in R: seven packages, each built for a different job – metabreeding</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-829fa26f51d673a98a9fd19d98fc2a03.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">metabreeding</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../publication.html"> 
+<span class="menu-text">Publication</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://www.r-bloggers.com"> 
+<span class="menu-text">R-bloggers</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Plot a pedigree in R: seven packages, each built for a different job</h1>
+                  <div>
+        <div class="description">
+          Seven R packages can plot a pedigree — kinship2, Pedixplorer, ggpedigree, pedtricks, optiSel, purgeR and visPedigree. We run the same breeding pedigree through each of them, time the results, and show which one fits which workflow.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Pedigree</div>
+                <div class="quarto-category">Visualization</div>
+                <div class="quarto-category">Breeding</div>
+                <div class="quarto-category">r-bloggers</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Sheng Luan </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">August 24, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<p>Search “plot pedigree in R” and you will meet a crowd: kinship2, the two-decade-old grandparent of the field; its modern descendants Pedixplorer and ggpedigree; pedtricks, written for quantitative genetics in wild populations; optiSel’s <code>pedplot()</code>, tucked inside a breeding-program optimization suite; and visPedigree, which I maintain. Seven packages, six plot functions — and several different purposes, because these packages are not really in competition with one another.</p>
+<p>kinship2 and its descendants were designed for human family studies, where pedigrees are small, curated by hand, and complete on both parental sides. visPedigree was designed for animal and plant breeding populations, where pedigrees are large, often messy, and full of partial parentage. Each package is good at the job it was built for, and the right choice simply depends on which job is yours. For a breeding pedigree, visPedigree is the natural first choice; the others shine in the settings they were designed for.</p>
+<p>To show what this means in practice, this article feeds the same real Hinterwald cattle pedigree to all six plotting functions, timed on the same machine, and reports what each package asks of the data along the way — because that is where the packages differ most.</p>
+<section id="the-landscape" class="level2">
+<h2 class="anchored" data-anchor-id="the-landscape">The landscape</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Package</th>
+<th>First released</th>
+<th>Plot function</th>
+<th>Graphics</th>
+<th>Built for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=kinship2">kinship2</a></td>
+<td>2004</td>
+<td><code>plot.pedigree()</code></td>
+<td>base R</td>
+<td>Human family studies (aligned pedigree layouts)</td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=pedtricks">pedtricks</a></td>
+<td>2016</td>
+<td><code>draw_ped()</code></td>
+<td>base R</td>
+<td>Natural populations, quantitative genetic inference</td>
+</tr>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=visPedigree">visPedigree</a></td>
+<td>2018</td>
+<td><code>visped()</code></td>
+<td>base R</td>
+<td>Breeding pedigrees, any size, integrated analysis</td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=optiSel">optiSel</a></td>
+<td>2018</td>
+<td><code>pedplot()</code></td>
+<td>base R (kinship2)</td>
+<td>Optimum contribution selection</td>
+</tr>
+<tr class="odd">
+<td><a href="https://bioconductor.org/packages/Pedixplorer">Pedixplorer</a></td>
+<td>2022</td>
+<td><code>plot(Pedigree)</code></td>
+<td>ggplot2</td>
+<td>Bioconductor pedigree explorer with a Shiny app</td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=ggpedigree">ggpedigree</a></td>
+<td>2024</td>
+<td><code>ggPedigree()</code></td>
+<td>ggplot2 + plotly</td>
+<td>Custom-styled and interactive pedigree diagrams</td>
+</tr>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=purgeR">purgeR</a></td>
+<td>2018</td>
+<td>— (<code>ped_graph()</code> builds igraph input only)</td>
+<td>—</td>
+<td>Inbreeding and purging analysis</td>
+</tr>
+</tbody>
+</table>
+<p>Three of them are related: optiSel’s <code>pedplot()</code> calls kinship2’s <code>plot.pedigree()</code> under the hood, and ggpedigree incorporated kinship2’s alignment algorithms in version 1.0 as kinship2 approaches deprecation. Pedixplorer is the Bioconductor re-implementation of the kinship2 data model, with a ggplot2 plot layer and a Shiny explorer.</p>
+</section>
+<section id="the-same-pedigree-six-ways" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-same-pedigree-six-ways">The same pedigree, six ways</h2>
+<p>To compare them on equal footing, I took a real pedigree down to a manageable size. From the Hinterwald cattle demo pedigree distributed with optiSel (<code>optiSel::ExamplePed</code>, 1,179 animals born 1947–1995), I took the ten animals born in 1995 and traced each one’s ancestry back two generations with <code>tidyped(..., cand = ..., trace = "up", tracegen = 2)</code>. Parents that fall outside the traced set are coded as unknown — the preparation the kinship2-family tools expect — leaving a 30-animal breeding pedigree with overlapping generations, used for every panel and every small-pedigree timing below. To keep the figures readable, the labels show only the last four digits of each animal’s ID.</p>
+<div class="column-screen-inset">
+<div class="quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="a_visped.svg" class="img-fluid figure-img" alt="Pedigree plot by visPedigree showing 30 Hinterwald cattle"></p>
+<figcaption>visPedigree <code>visped()</code> — sex-coded shapes (circle female, square male), ancestors on top, descendants at the bottom, inbreeding coefficients optional.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="b_kinship2.svg" class="img-fluid figure-img" alt="Pedigree plot by kinship2"></p>
+<figcaption>kinship2 <code>plot.pedigree()</code> — the classic aligned layout with couples side by side.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="c_ggpedigree.svg" class="img-fluid figure-img" alt="Pedigree plot by ggpedigree"></p>
+<figcaption>ggpedigree <code>ggPedigree()</code> — the same data through ggplot2, with fully configurable colors and shapes.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="d_pedtricks.svg" class="img-fluid figure-img" alt="Pedigree plot by pedtricks"></p>
+<figcaption>pedtricks <code>draw_ped()</code> — individuals as dots, parents above offspring, maternal and paternal links overlaid.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="e_pedplot.svg" class="img-fluid figure-img" alt="Pedigree plot by optiSel pedplot"></p>
+<figcaption>optiSel <code>pedplot()</code> — a kinship2 layout wrapped for breeding datasets, with breed-coding built in.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="f_pedixplorer.svg" class="img-fluid figure-img" alt="Pedigree plot by Pedixplorer"></p>
+<figcaption>Pedixplorer <code>plot(Pedigree)</code> — ggplot2 rendering of the kinship2 data model.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>The same 30-animal Hinterwald pedigree plotted by six packages; labels show the last four digits of each animal’s ID. Nothing here required a synthetic dataset — every panel is a documented call on real breeding data.</em></p>
+</div>
+<p>The panels show the design trade-offs directly. kinship2 and its descendants put couples side by side in an aligned layout designed for human family studies. pedtricks stacks generations vertically with dots, designed to overlay trait data. visPedigree uses a Sugiyama layered layout — the topological sort places ancestors strictly above descendants, which is what you want when reading inheritance paths in a breeding pedigree.</p>
+</section>
+<section id="one-individual-traced-back-to-the-founders" class="level2">
+<h2 class="anchored" data-anchor-id="one-individual-traced-back-to-the-founders">One individual, traced back to the founders</h2>
+<p>The 30-animal pedigree above is small enough that every package handles it comfortably. The figure below shows the other direction visPedigree was designed for: depth. One 1995-born Hinterwald animal, traced back through thirteen generations to the founders — 205 animals in total — and drawn with a single <code>visped()</code> call. The layered layout places every generation on its own level, ancestors strictly above descendants, so an inheritance path reads from top to bottom:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="g_visped_deep.svg" class="img-fluid figure-img" style="width:100.0%" alt="Deep pedigree plot of one animal traced back thirteen generations to founders"></p>
+<figcaption>One 1995-born Hinterwald animal traced back through thirteen generations to the founders. Each generation sits on its own level, with generation labels on the left and the last four digits of each animal’s ID as node labels.</figcaption>
+</figure>
+</div>
+<p><em>One call: <code>visped()</code> on the traced pedigree, with generation labels on the left. Labels show the last four digits of each animal’s ID.</em></p>
+<p>For comparison, the timings below are measured on the complete 1,179-animal pedigree behind this figure — the size where the packages show their different design targets: Pedixplorer’s default label scaling declines to render until the label size is set by hand, and the kinship2-family alignment solver spends the better part of a minute on layout. Neither is a flaw — those packages were tuned for the small, hand-curated pedigrees of human family studies. It is simply a different job.</p>
+</section>
+<section id="data-preparation-what-each-package-asks-of-you" class="level2">
+<h2 class="anchored" data-anchor-id="data-preparation-what-each-package-asks-of-you">Data preparation: what each package asks of you</h2>
+<p>Before timing anything, each package had to accept the data. This is where the packages differ most, and it is worth knowing before you start:</p>
+<ul>
+<li><strong>kinship2 assumes complete parentage.</strong> Its <code>pedigree()</code> constructor expects every individual to have both parents known or neither — the natural assumption for human-study pedigrees, less so for breeding records. The union of all ten candidates’ two-generation traces (59 animals) does not satisfy it as-is, and even the 30-animal pedigree above must have its out-of-set parents coded as unknown first. The full 1,179-animal pedigree happens to be complete, so it passes unmodified. optiSel’s <code>pedplot()</code> and ggpedigree’s <code>ggPedigree()</code> follow the same rule.</li>
+<li><strong>Pedixplorer needs hand-tuned labels on larger pedigrees.</strong> On the full 1,179-animal pedigree, the default label auto-scaling reports that labels “leave no room for the graph”. It renders after manually setting a small <code>cex</code>.</li>
+<li><strong>ggpedigree expects a specific column contract</strong> — <code>personID</code>, <code>momID</code>, <code>dadID</code>, <code>famID</code>, <code>sex</code>, and a <code>spouseID</code> column that must exist even when every value is missing. ID columns must also agree on class: ExamplePed’s factor-coded IDs read as numeric against the character <code>spouseID</code> column, and the mixed classes abort the plot. One <code>as.character()</code> call fixes it.</li>
+<li><strong>pedtricks wants a sex vector as a separate argument</strong>, coded 0/1, with unknown sex mapped to one of the codes.</li>
+<li><strong>optiSel’s <code>pedplot()</code> requires sex as <code>"male"</code>/<code>"female"</code> character values</strong> — numeric codes 1/2 are rejected.</li>
+<li><strong>purgeR’s <code>ped_graph()</code> requires integer ID columns</strong> — ExamplePed’s 15-digit IDs exceed R’s integer range, so they had to be remapped to 1..1179 — and unknown parents must be coded 0: <code>NA</code> values make its C-level inbreeding functions crash. And it does not plot at all: it only builds an edge list for igraph, which you must plot yourself.</li>
+<li><strong>visPedigree accepts the raw three-column table.</strong> Missing parents coded as <code>NA</code>, <code>0</code>, <code>*</code>, or blank are standardized by <code>tidyped()</code>; sex is inferred or passed as-is; partial parentage, overlapping generations, and selfing are all handled. The same object then feeds analysis functions directly.</li>
+</ul>
+<p>None of these are shortcomings. They are design priorities: kinship2-family tools optimize for human-study pedigree validity, visPedigree for breeding records at scale.</p>
+</section>
+<section id="timings" class="level2">
+<h2 class="anchored" data-anchor-id="timings">Timings</h2>
+<p>All timings below were measured on the same machine (Apple M2, 16 GB RAM, R 4.5.2), with one warm-up call followed by five timed repetitions, median reported. Each package’s plot call was timed inside a null PDF device, so layout computation is included and disk rendering is excluded; data and pedigree objects were prepared once, outside the timed region. Label sizes were reduced where a package required it (Pedixplorer on the full pedigree); label size changes only the text rendering, not the layout being solved.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Package</th>
+<th style="text-align: right;">30 animals (median, s)</th>
+<th style="text-align: right;">1,179 animals (median, s)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>pedtricks <code>draw_ped()</code></td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.036</td>
+</tr>
+<tr class="even">
+<td>optiSel <code>pedplot()</code></td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: right;">45.7</td>
+</tr>
+<tr class="odd">
+<td>kinship2 <code>plot.pedigree()</code></td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: right;">45.8</td>
+</tr>
+<tr class="even">
+<td>Pedixplorer <code>plot()</code></td>
+<td style="text-align: right;">0.042</td>
+<td style="text-align: right;">49.0</td>
+</tr>
+<tr class="odd">
+<td>visPedigree <code>visped()</code></td>
+<td style="text-align: right;">0.059</td>
+<td style="text-align: right;">1.94</td>
+</tr>
+<tr class="even">
+<td>ggpedigree <code>ggPedigree()</code></td>
+<td style="text-align: right;">0.144</td>
+<td style="text-align: right;">44.5</td>
+</tr>
+</tbody>
+</table>
+<p>Two readings from this table. On a small pedigree, everything is fast — the slowest call is 0.14 seconds, and at that size the choice is purely a matter of style and of what your downstream workflow needs.</p>
+<p>On a realistic breeding pedigree the ranking changes and the spread widens to three orders of magnitude. The gap comes from the layout algorithms, not from carelessness: kinship2 spends most of its 45.8 seconds solving an alignment problem (75 seconds with <code>autohint()</code> hints enabled); optiSel’s <code>pedplot()</code> pays the same bill because it wraps the same solver, and ggpedigree inherited kinship2’s alignment algorithms at 44.5 seconds. Pedixplorer’s ggplot2 rendering is slowest at 49.0 seconds — and that is with the label size hand-tuned, because the default declines to run at that size. pedtricks stays fast because it only sorts by depth. visPedigree sits in between: its Sugiyama layout iterates up to <code>maxiter = 1000</code> passes to reduce edge crossings by default, which is the bulk of its 1.94 seconds — you can lower <code>maxiter</code> for draft views and raise it for final figures. purgeR has no row in the table because it has no plot function: <code>ped_graph()</code> builds the igraph edge list in 0.001 seconds and leaves the drawing to you.</p>
+<p>Read the table together with the data-preparation section above: each number is the time <em>after</em> its package’s documented requirements were met. The requirements themselves are usually the more relevant information.</p>
+</section>
+<section id="scaling-beyond-plotting-the-full-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="scaling-beyond-plotting-the-full-workflow">Scaling beyond plotting: the full workflow</h2>
+<p>For comparison, the full visPedigree workflow benchmark from our recent paper <a href="https://doi.org/10.1093/bioadv/vbag210">Luan et al.&nbsp;2026, <em>Bioinformatics Advances</em></a> (reported as Table S2 there; ~20,000 individuals per generation):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Workflow</th>
+<th style="text-align: right;">100k</th>
+<th style="text-align: right;">500k</th>
+<th style="text-align: right;">1M</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>tidyped()</code> + <code>inbreed()</code></td>
+<td style="text-align: right;">0.19 s</td>
+<td style="text-align: right;">0.88 s</td>
+<td style="text-align: right;">1.90 s</td>
+</tr>
+<tr class="even">
+<td><code>tidyped()</code> + <code>pedstats()</code></td>
+<td style="text-align: right;">0.55 s</td>
+<td style="text-align: right;">2.64 s</td>
+<td style="text-align: right;">5.61 s</td>
+</tr>
+<tr class="odd">
+<td><code>tidyped()</code> + <code>pediv()</code></td>
+<td style="text-align: right;">0.57 s</td>
+<td style="text-align: right;">2.61 s</td>
+<td style="text-align: right;">5.46 s</td>
+</tr>
+<tr class="even">
+<td><code>tidyped()</code> + <code>pedprod()</code></td>
+<td style="text-align: right;">0.17 s</td>
+<td style="text-align: right;">0.86 s</td>
+<td style="text-align: right;">1.96 s</td>
+</tr>
+</tbody>
+</table>
+<p>These are end-to-end times on a simulated pedigree with 150 founders and 20,000 offspring per generation (1,000,150 records at the 1M scale). Benchmark data and scripts are on Zenodo (<a href="https://doi.org/10.5281/zenodo.21320956">doi:10.5281/zenodo.21320956</a>). No other package in the comparison offers a documented pipeline at this scale; this table documents where visPedigree’s design budget went — into the analysis chain behind the plot, not only into the plot.</p>
+</section>
+<section id="feature-chain-what-each-package-can-do-beyond-the-plot" class="level2">
+<h2 class="anchored" data-anchor-id="feature-chain-what-each-package-can-do-beyond-the-plot">Feature chain: what each package can do beyond the plot</h2>
+<p>The table below adapts Table S1 from <a href="https://doi.org/10.1093/bioadv/vbag210">Luan et al.&nbsp;2026</a>, extended with two plotting-focused packages (ggpedigree, pedtricks) that the paper did not cover. “Yes” means a documented end-user workflow; “Partial” means the quantity is derivable indirectly or exposed only as a by-product; “No” means no documented support.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Workflow component</th>
+<th>visPedigree</th>
+<th>Pedixplorer</th>
+<th>purgeR</th>
+<th>optiSel</th>
+<th>nadiv</th>
+<th>kinship2</th>
+<th>ggpedigree</th>
+<th>pedtricks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pedigree standardization / validation</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Candidate-centered tracing / trimming</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+</tr>
+<tr class="odd">
+<td>Inbreeding coefficients</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Exact partial inbreeding</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Founder / ancestor diversity (f<sub>e</sub>, f<sub>a</sub>, f<sub>g</sub>)</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Effective population size summaries</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Relationship summaries / kinship</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Relationship matrices (A, A⁻¹, non-additive)</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Pedigree plotting / visualization</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Explicit full-sib compaction for display</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Temporal diversity diagnostics</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>Notes (following the paper’s conservative coding): nadiv returns inbreeding coefficients as a by-product of <code>makeDiiF()</code>; kinship2 and Pedixplorer inbreeding values can be derived from the kinship-matrix diagonal; purgeR’s <code>ped_graph()</code> builds igraph input but the package exports no plot function; pedtricks’ <code>draw_ped(focal = ...)</code> plots the relatives of a focal individual (offspring, descendants, parents, ancestors, kin) and can prune to informative links, hence “Partial” for tracing.</p>
+<p>The pattern in the table is not “which package is best” — it is “which job each package was built for”. kinship2/Pedixplorer/ggpedigree/pedtricks are plotting-and-structure tools; purgeR and optiSel are analysis tools with specific targets (purging, optimum contribution); nadiv is a matrix workbench. visPedigree is the only one whose <code>tidyped()</code> object carries the whole chain from standardization to analysis to plotting — which also means that users who only want a quick plot, and already have a tidy pedigree, may find it more than they need.</p>
+</section>
+<section id="which-one-should-you-use" class="level2">
+<h2 class="anchored" data-anchor-id="which-one-should-you-use">Which one should you use?</h2>
+<ul>
+<li><strong>You work with an animal or plant breeding pedigree</strong> — large, with overlapping generations and partial parentage — and you want analysis plus a figure (inbreeding, diversity, effective size, matrix-free products): visPedigree is the first choice, with <code>visped()</code> for the plot.</li>
+<li><strong>You have a human family-study pedigree and want the classic aligned layout</strong>: kinship2 today, Pedixplorer or ggpedigree as the maintained successors.</li>
+<li><strong>You want interactive pedigree plots with tooltips</strong>: ggpedigree’s plotly wrapper.</li>
+<li><strong>You work with natural populations and want to overlay trait data or focal relatives on the pedigree</strong>: pedtricks.</li>
+<li><strong>You are already inside an optiSel workflow</strong> (kinships, native contributions): <code>pedplot()</code> keeps your pipeline in one package.</li>
+<li><strong>You need purging or inbreeding-load statistics</strong>: purgeR — pair it with a plotting package, because it has none of its own.</li>
+</ul>
+</section>
+<section id="disclosure-and-reproducibility" class="level2">
+<h2 class="anchored" data-anchor-id="disclosure-and-reproducibility">Disclosure and reproducibility</h2>
+<p>I am the maintainer of visPedigree. The feature-chain table adapts the published supplementary material of our paper (<a href="https://doi.org/10.1093/bioadv/vbag210">DOI 10.1093/bioadv/vbag210</a>); the two added columns were verified against the current CRAN documentation of ggpedigree 1.2.0 and pedtricks 0.5.0. Every other “Yes/Partial/No” entry was re-verified against locally installed packages on 2026-08-24 before writing.</p>
+<p>All scripts used to produce the figures and timings in this article are available in the blog repository (<a href="https://github.com/luansheng/lsblog/blob/main/scripts/plot-pedigree-comparison.R"><code>scripts/plot-pedigree-comparison.R</code></a> for the figures, <a href="https://github.com/luansheng/lsblog/blob/main/scripts/plot-pedigree-timings.R"><code>scripts/plot-pedigree-timings.R</code></a> for the timings). The timing protocol is the same one used in the paper: warm-up plus five repetitions, median reported.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/luansheng\.github\.io\/lsblog");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

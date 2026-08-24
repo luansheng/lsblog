@@ -9,8 +9,448 @@
 <link>https://luansheng.github.io/lsblog/</link>
 <atom:link href="https://luansheng.github.io/lsblog/index.xml" rel="self" type="application/rss+xml"/>
 <description>A blog built with Quarto</description>
-<generator>quarto-1.8.27</generator>
-<lastBuildDate>Wed, 05 Aug 2026 16:00:00 GMT</lastBuildDate>
+<generator>quarto-1.10.18</generator>
+<lastBuildDate>Sun, 23 Aug 2026 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>Plot a pedigree in R: seven packages, each built for a different job</title>
+  <dc:creator>Sheng Luan</dc:creator>
+  <link>https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Search “plot pedigree in R” and you will meet a crowd: kinship2, the two-decade-old grandparent of the field; its modern descendants Pedixplorer and ggpedigree; pedtricks, written for quantitative genetics in wild populations; optiSel’s <code>pedplot()</code>, tucked inside a breeding-program optimization suite; and visPedigree, which I maintain. Seven packages, six plot functions — and several different purposes, because these packages are not really in competition with one another.</p>
+<p>kinship2 and its descendants were designed for human family studies, where pedigrees are small, curated by hand, and complete on both parental sides. visPedigree was designed for animal and plant breeding populations, where pedigrees are large, often messy, and full of partial parentage. Each package is good at the job it was built for, and the right choice simply depends on which job is yours. For a breeding pedigree, visPedigree is the natural first choice; the others shine in the settings they were designed for.</p>
+<p>To show what this means in practice, this article feeds the same real Hinterwald cattle pedigree to all six plotting functions, timed on the same machine, and reports what each package asks of the data along the way — because that is where the packages differ most.</p>
+<section id="the-landscape" class="level2">
+<h2 class="anchored" data-anchor-id="the-landscape">The landscape</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Package</th>
+<th>First released</th>
+<th>Plot function</th>
+<th>Graphics</th>
+<th>Built for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=kinship2">kinship2</a></td>
+<td>2004</td>
+<td><code>plot.pedigree()</code></td>
+<td>base R</td>
+<td>Human family studies (aligned pedigree layouts)</td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=pedtricks">pedtricks</a></td>
+<td>2016</td>
+<td><code>draw_ped()</code></td>
+<td>base R</td>
+<td>Natural populations, quantitative genetic inference</td>
+</tr>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=visPedigree">visPedigree</a></td>
+<td>2018</td>
+<td><code>visped()</code></td>
+<td>base R</td>
+<td>Breeding pedigrees, any size, integrated analysis</td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=optiSel">optiSel</a></td>
+<td>2018</td>
+<td><code>pedplot()</code></td>
+<td>base R (kinship2)</td>
+<td>Optimum contribution selection</td>
+</tr>
+<tr class="odd">
+<td><a href="https://bioconductor.org/packages/Pedixplorer">Pedixplorer</a></td>
+<td>2022</td>
+<td><code>plot(Pedigree)</code></td>
+<td>ggplot2</td>
+<td>Bioconductor pedigree explorer with a Shiny app</td>
+</tr>
+<tr class="even">
+<td><a href="https://cran.r-project.org/package=ggpedigree">ggpedigree</a></td>
+<td>2024</td>
+<td><code>ggPedigree()</code></td>
+<td>ggplot2 + plotly</td>
+<td>Custom-styled and interactive pedigree diagrams</td>
+</tr>
+<tr class="odd">
+<td><a href="https://cran.r-project.org/package=purgeR">purgeR</a></td>
+<td>2018</td>
+<td>— (<code>ped_graph()</code> builds igraph input only)</td>
+<td>—</td>
+<td>Inbreeding and purging analysis</td>
+</tr>
+</tbody>
+</table>
+<p>Three of them are related: optiSel’s <code>pedplot()</code> calls kinship2’s <code>plot.pedigree()</code> under the hood, and ggpedigree incorporated kinship2’s alignment algorithms in version 1.0 as kinship2 approaches deprecation. Pedixplorer is the Bioconductor re-implementation of the kinship2 data model, with a ggplot2 plot layer and a Shiny explorer.</p>
+</section>
+<section id="the-same-pedigree-six-ways" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-same-pedigree-six-ways">The same pedigree, six ways</h2>
+<p>To compare them on equal footing, I took a real pedigree down to a manageable size. From the Hinterwald cattle demo pedigree distributed with optiSel (<code>optiSel::ExamplePed</code>, 1,179 animals born 1947–1995), I took the ten animals born in 1995 and traced each one’s ancestry back two generations with <code>tidyped(..., cand = ..., trace = "up", tracegen = 2)</code>. Parents that fall outside the traced set are coded as unknown — the preparation the kinship2-family tools expect — leaving a 30-animal breeding pedigree with overlapping generations, used for every panel and every small-pedigree timing below. To keep the figures readable, the labels show only the last four digits of each animal’s ID.</p>
+<div class="column-screen-inset">
+<div class="quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/a_visped.svg" class="img-fluid figure-img" alt="Pedigree plot by visPedigree showing 30 Hinterwald cattle"></p>
+<figcaption>visPedigree <code>visped()</code> — sex-coded shapes (circle female, square male), ancestors on top, descendants at the bottom, inbreeding coefficients optional.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/b_kinship2.svg" class="img-fluid figure-img" alt="Pedigree plot by kinship2"></p>
+<figcaption>kinship2 <code>plot.pedigree()</code> — the classic aligned layout with couples side by side.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/c_ggpedigree.svg" class="img-fluid figure-img" alt="Pedigree plot by ggpedigree"></p>
+<figcaption>ggpedigree <code>ggPedigree()</code> — the same data through ggplot2, with fully configurable colors and shapes.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/d_pedtricks.svg" class="img-fluid figure-img" alt="Pedigree plot by pedtricks"></p>
+<figcaption>pedtricks <code>draw_ped()</code> — individuals as dots, parents above offspring, maternal and paternal links overlaid.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/e_pedplot.svg" class="img-fluid figure-img" alt="Pedigree plot by optiSel pedplot"></p>
+<figcaption>optiSel <code>pedplot()</code> — a kinship2 layout wrapped for breeding datasets, with breed-coding built in.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/f_pedixplorer.svg" class="img-fluid figure-img" alt="Pedigree plot by Pedixplorer"></p>
+<figcaption>Pedixplorer <code>plot(Pedigree)</code> — ggplot2 rendering of the kinship2 data model.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p><em>The same 30-animal Hinterwald pedigree plotted by six packages; labels show the last four digits of each animal’s ID. Nothing here required a synthetic dataset — every panel is a documented call on real breeding data.</em></p>
+</div>
+<p>The panels show the design trade-offs directly. kinship2 and its descendants put couples side by side in an aligned layout designed for human family studies. pedtricks stacks generations vertically with dots, designed to overlay trait data. visPedigree uses a Sugiyama layered layout — the topological sort places ancestors strictly above descendants, which is what you want when reading inheritance paths in a breeding pedigree.</p>
+</section>
+<section id="one-individual-traced-back-to-the-founders" class="level2">
+<h2 class="anchored" data-anchor-id="one-individual-traced-back-to-the-founders">One individual, traced back to the founders</h2>
+<p>The 30-animal pedigree above is small enough that every package handles it comfortably. The figure below shows the other direction visPedigree was designed for: depth. One 1995-born Hinterwald animal, traced back through thirteen generations to the founders — 205 animals in total — and drawn with a single <code>visped()</code> call. The layered layout places every generation on its own level, ancestors strictly above descendants, so an inheritance path reads from top to bottom:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/g_visped_deep.svg" class="img-fluid figure-img" style="width:100.0%" alt="Deep pedigree plot of one animal traced back thirteen generations to founders"></p>
+<figcaption>One 1995-born Hinterwald animal traced back through thirteen generations to the founders. Each generation sits on its own level, with generation labels on the left and the last four digits of each animal’s ID as node labels.</figcaption>
+</figure>
+</div>
+<p><em>One call: <code>visped()</code> on the traced pedigree, with generation labels on the left. Labels show the last four digits of each animal’s ID.</em></p>
+<p>For comparison, the timings below are measured on the complete 1,179-animal pedigree behind this figure — the size where the packages show their different design targets: Pedixplorer’s default label scaling declines to render until the label size is set by hand, and the kinship2-family alignment solver spends the better part of a minute on layout. Neither is a flaw — those packages were tuned for the small, hand-curated pedigrees of human family studies. It is simply a different job.</p>
+</section>
+<section id="data-preparation-what-each-package-asks-of-you" class="level2">
+<h2 class="anchored" data-anchor-id="data-preparation-what-each-package-asks-of-you">Data preparation: what each package asks of you</h2>
+<p>Before timing anything, each package had to accept the data. This is where the packages differ most, and it is worth knowing before you start:</p>
+<ul>
+<li><strong>kinship2 assumes complete parentage.</strong> Its <code>pedigree()</code> constructor expects every individual to have both parents known or neither — the natural assumption for human-study pedigrees, less so for breeding records. The union of all ten candidates’ two-generation traces (59 animals) does not satisfy it as-is, and even the 30-animal pedigree above must have its out-of-set parents coded as unknown first. The full 1,179-animal pedigree happens to be complete, so it passes unmodified. optiSel’s <code>pedplot()</code> and ggpedigree’s <code>ggPedigree()</code> follow the same rule.</li>
+<li><strong>Pedixplorer needs hand-tuned labels on larger pedigrees.</strong> On the full 1,179-animal pedigree, the default label auto-scaling reports that labels “leave no room for the graph”. It renders after manually setting a small <code>cex</code>.</li>
+<li><strong>ggpedigree expects a specific column contract</strong> — <code>personID</code>, <code>momID</code>, <code>dadID</code>, <code>famID</code>, <code>sex</code>, and a <code>spouseID</code> column that must exist even when every value is missing. ID columns must also agree on class: ExamplePed’s factor-coded IDs read as numeric against the character <code>spouseID</code> column, and the mixed classes abort the plot. One <code>as.character()</code> call fixes it.</li>
+<li><strong>pedtricks wants a sex vector as a separate argument</strong>, coded 0/1, with unknown sex mapped to one of the codes.</li>
+<li><strong>optiSel’s <code>pedplot()</code> requires sex as <code>"male"</code>/<code>"female"</code> character values</strong> — numeric codes 1/2 are rejected.</li>
+<li><strong>purgeR’s <code>ped_graph()</code> requires integer ID columns</strong> — ExamplePed’s 15-digit IDs exceed R’s integer range, so they had to be remapped to 1..1179 — and unknown parents must be coded 0: <code>NA</code> values make its C-level inbreeding functions crash. And it does not plot at all: it only builds an edge list for igraph, which you must plot yourself.</li>
+<li><strong>visPedigree accepts the raw three-column table.</strong> Missing parents coded as <code>NA</code>, <code>0</code>, <code>*</code>, or blank are standardized by <code>tidyped()</code>; sex is inferred or passed as-is; partial parentage, overlapping generations, and selfing are all handled. The same object then feeds analysis functions directly.</li>
+</ul>
+<p>None of these are shortcomings. They are design priorities: kinship2-family tools optimize for human-study pedigree validity, visPedigree for breeding records at scale.</p>
+</section>
+<section id="timings" class="level2">
+<h2 class="anchored" data-anchor-id="timings">Timings</h2>
+<p>All timings below were measured on the same machine (Apple M2, 16 GB RAM, R 4.5.2), with one warm-up call followed by five timed repetitions, median reported. Each package’s plot call was timed inside a null PDF device, so layout computation is included and disk rendering is excluded; data and pedigree objects were prepared once, outside the timed region. Label sizes were reduced where a package required it (Pedixplorer on the full pedigree); label size changes only the text rendering, not the layout being solved.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Package</th>
+<th style="text-align: right;">30 animals (median, s)</th>
+<th style="text-align: right;">1,179 animals (median, s)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>pedtricks <code>draw_ped()</code></td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.036</td>
+</tr>
+<tr class="even">
+<td>optiSel <code>pedplot()</code></td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: right;">45.7</td>
+</tr>
+<tr class="odd">
+<td>kinship2 <code>plot.pedigree()</code></td>
+<td style="text-align: right;">0.005</td>
+<td style="text-align: right;">45.8</td>
+</tr>
+<tr class="even">
+<td>Pedixplorer <code>plot()</code></td>
+<td style="text-align: right;">0.042</td>
+<td style="text-align: right;">49.0</td>
+</tr>
+<tr class="odd">
+<td>visPedigree <code>visped()</code></td>
+<td style="text-align: right;">0.059</td>
+<td style="text-align: right;">1.94</td>
+</tr>
+<tr class="even">
+<td>ggpedigree <code>ggPedigree()</code></td>
+<td style="text-align: right;">0.144</td>
+<td style="text-align: right;">44.5</td>
+</tr>
+</tbody>
+</table>
+<p>Two readings from this table. On a small pedigree, everything is fast — the slowest call is 0.14 seconds, and at that size the choice is purely a matter of style and of what your downstream workflow needs.</p>
+<p>On a realistic breeding pedigree the ranking changes and the spread widens to three orders of magnitude. The gap comes from the layout algorithms, not from carelessness: kinship2 spends most of its 45.8 seconds solving an alignment problem (75 seconds with <code>autohint()</code> hints enabled); optiSel’s <code>pedplot()</code> pays the same bill because it wraps the same solver, and ggpedigree inherited kinship2’s alignment algorithms at 44.5 seconds. Pedixplorer’s ggplot2 rendering is slowest at 49.0 seconds — and that is with the label size hand-tuned, because the default declines to run at that size. pedtricks stays fast because it only sorts by depth. visPedigree sits in between: its Sugiyama layout iterates up to <code>maxiter = 1000</code> passes to reduce edge crossings by default, which is the bulk of its 1.94 seconds — you can lower <code>maxiter</code> for draft views and raise it for final figures. purgeR has no row in the table because it has no plot function: <code>ped_graph()</code> builds the igraph edge list in 0.001 seconds and leaves the drawing to you.</p>
+<p>Read the table together with the data-preparation section above: each number is the time <em>after</em> its package’s documented requirements were met. The requirements themselves are usually the more relevant information.</p>
+</section>
+<section id="scaling-beyond-plotting-the-full-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="scaling-beyond-plotting-the-full-workflow">Scaling beyond plotting: the full workflow</h2>
+<p>For comparison, the full visPedigree workflow benchmark from our recent paper <a href="https://doi.org/10.1093/bioadv/vbag210">Luan et al.&nbsp;2026, <em>Bioinformatics Advances</em></a> (reported as Table S2 there; ~20,000 individuals per generation):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Workflow</th>
+<th style="text-align: right;">100k</th>
+<th style="text-align: right;">500k</th>
+<th style="text-align: right;">1M</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>tidyped()</code> + <code>inbreed()</code></td>
+<td style="text-align: right;">0.19 s</td>
+<td style="text-align: right;">0.88 s</td>
+<td style="text-align: right;">1.90 s</td>
+</tr>
+<tr class="even">
+<td><code>tidyped()</code> + <code>pedstats()</code></td>
+<td style="text-align: right;">0.55 s</td>
+<td style="text-align: right;">2.64 s</td>
+<td style="text-align: right;">5.61 s</td>
+</tr>
+<tr class="odd">
+<td><code>tidyped()</code> + <code>pediv()</code></td>
+<td style="text-align: right;">0.57 s</td>
+<td style="text-align: right;">2.61 s</td>
+<td style="text-align: right;">5.46 s</td>
+</tr>
+<tr class="even">
+<td><code>tidyped()</code> + <code>pedprod()</code></td>
+<td style="text-align: right;">0.17 s</td>
+<td style="text-align: right;">0.86 s</td>
+<td style="text-align: right;">1.96 s</td>
+</tr>
+</tbody>
+</table>
+<p>These are end-to-end times on a simulated pedigree with 150 founders and 20,000 offspring per generation (1,000,150 records at the 1M scale). Benchmark data and scripts are on Zenodo (<a href="https://doi.org/10.5281/zenodo.21320956">doi:10.5281/zenodo.21320956</a>). No other package in the comparison offers a documented pipeline at this scale; this table documents where visPedigree’s design budget went — into the analysis chain behind the plot, not only into the plot.</p>
+</section>
+<section id="feature-chain-what-each-package-can-do-beyond-the-plot" class="level2">
+<h2 class="anchored" data-anchor-id="feature-chain-what-each-package-can-do-beyond-the-plot">Feature chain: what each package can do beyond the plot</h2>
+<p>The table below adapts Table S1 from <a href="https://doi.org/10.1093/bioadv/vbag210">Luan et al.&nbsp;2026</a>, extended with two plotting-focused packages (ggpedigree, pedtricks) that the paper did not cover. “Yes” means a documented end-user workflow; “Partial” means the quantity is derivable indirectly or exposed only as a by-product; “No” means no documented support.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Workflow component</th>
+<th>visPedigree</th>
+<th>Pedixplorer</th>
+<th>purgeR</th>
+<th>optiSel</th>
+<th>nadiv</th>
+<th>kinship2</th>
+<th>ggpedigree</th>
+<th>pedtricks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pedigree standardization / validation</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Candidate-centered tracing / trimming</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+</tr>
+<tr class="odd">
+<td>Inbreeding coefficients</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Exact partial inbreeding</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Founder / ancestor diversity (f<sub>e</sub>, f<sub>a</sub>, f<sub>g</sub>)</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Effective population size summaries</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Relationship summaries / kinship</td>
+<td>Yes</td>
+<td>Partial</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>Relationship matrices (A, A⁻¹, non-additive)</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Pedigree plotting / visualization</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Partial</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Explicit full-sib compaction for display</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Temporal diversity diagnostics</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>Notes (following the paper’s conservative coding): nadiv returns inbreeding coefficients as a by-product of <code>makeDiiF()</code>; kinship2 and Pedixplorer inbreeding values can be derived from the kinship-matrix diagonal; purgeR’s <code>ped_graph()</code> builds igraph input but the package exports no plot function; pedtricks’ <code>draw_ped(focal = ...)</code> plots the relatives of a focal individual (offspring, descendants, parents, ancestors, kin) and can prune to informative links, hence “Partial” for tracing.</p>
+<p>The pattern in the table is not “which package is best” — it is “which job each package was built for”. kinship2/Pedixplorer/ggpedigree/pedtricks are plotting-and-structure tools; purgeR and optiSel are analysis tools with specific targets (purging, optimum contribution); nadiv is a matrix workbench. visPedigree is the only one whose <code>tidyped()</code> object carries the whole chain from standardization to analysis to plotting — which also means that users who only want a quick plot, and already have a tidy pedigree, may find it more than they need.</p>
+</section>
+<section id="which-one-should-you-use" class="level2">
+<h2 class="anchored" data-anchor-id="which-one-should-you-use">Which one should you use?</h2>
+<ul>
+<li><strong>You work with an animal or plant breeding pedigree</strong> — large, with overlapping generations and partial parentage — and you want analysis plus a figure (inbreeding, diversity, effective size, matrix-free products): visPedigree is the first choice, with <code>visped()</code> for the plot.</li>
+<li><strong>You have a human family-study pedigree and want the classic aligned layout</strong>: kinship2 today, Pedixplorer or ggpedigree as the maintained successors.</li>
+<li><strong>You want interactive pedigree plots with tooltips</strong>: ggpedigree’s plotly wrapper.</li>
+<li><strong>You work with natural populations and want to overlay trait data or focal relatives on the pedigree</strong>: pedtricks.</li>
+<li><strong>You are already inside an optiSel workflow</strong> (kinships, native contributions): <code>pedplot()</code> keeps your pipeline in one package.</li>
+<li><strong>You need purging or inbreeding-load statistics</strong>: purgeR — pair it with a plotting package, because it has none of its own.</li>
+</ul>
+</section>
+<section id="disclosure-and-reproducibility" class="level2">
+<h2 class="anchored" data-anchor-id="disclosure-and-reproducibility">Disclosure and reproducibility</h2>
+<p>I am the maintainer of visPedigree. The feature-chain table adapts the published supplementary material of our paper (<a href="https://doi.org/10.1093/bioadv/vbag210">DOI 10.1093/bioadv/vbag210</a>); the two added columns were verified against the current CRAN documentation of ggpedigree 1.2.0 and pedtricks 0.5.0. Every other “Yes/Partial/No” entry was re-verified against locally installed packages on 2026-08-24 before writing.</p>
+<p>All scripts used to produce the figures and timings in this article are available in the blog repository (<a href="https://github.com/luansheng/lsblog/blob/main/scripts/plot-pedigree-comparison.R"><code>scripts/plot-pedigree-comparison.R</code></a> for the figures, <a href="https://github.com/luansheng/lsblog/blob/main/scripts/plot-pedigree-timings.R"><code>scripts/plot-pedigree-timings.R</code></a> for the timings). The timing protocol is the same one used in the paper: warm-up plus five repetitions, median reported.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <category>Pedigree</category>
+  <category>Visualization</category>
+  <category>Breeding</category>
+  <category>r-bloggers</category>
+  <guid>https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/</guid>
+  <pubDate>Sun, 23 Aug 2026 16:00:00 GMT</pubDate>
+  <media:content url="https://luansheng.github.io/lsblog/posts/plot-pedigree-comparison-20260824/cover.png" medium="image" type="image/png" height="84" width="144"/>
+</item>
 <item>
   <title>From pedigree records to genetic diversity analysis in R with visPedigree</title>
   <dc:creator>Sheng Luan</dc:creator>
