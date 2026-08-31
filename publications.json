@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-24",
+  "updated": "2026-08-31",
   "openalex_author_id": "A5040332583",
   "filter": {
     "positions": [
@@ -90,6 +90,12 @@
       "reason": "already in database"
     },
     {
+      "doi": "10.3390/ani15020262",
+      "year": 2025,
+      "title": "Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid",
+      "reason": "already in database"
+    },
+    {
       "doi": "10.1038/s41598-025-26048-3",
       "year": 2025,
       "title": "Multi-marker GWAS and variant-specific genomic prediction for growth traits in P",
@@ -126,15 +132,21 @@
       "reason": "already in database"
     },
     {
+      "doi": "10.1016/j.aquaculture.2020.735421",
+      "year": 2020,
+      "title": "Evaluation of the utility of genomic information to improve genetic evaluation o",
+      "reason": "already in database"
+    },
+    {
       "doi": "10.1007/s00343-016-5034-0",
       "year": 2016,
       "title": "Heritability of body weight and resistance to ammonia in the Pacific white shrim",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.aquaculture.2020.735421",
+      "doi": "10.1016/j.aquaculture.2020.735577",
       "year": 2020,
-      "title": "Evaluation of the utility of genomic information to improve genetic evaluation o",
+      "title": "Using single-step genomic best linear unbiased prediction to improve the efficie",
       "reason": "already in database"
     },
     {
@@ -148,12 +160,6 @@
       "year": 2020,
       "title": "Integrative phenotypic and gene expression data identify myostatin as a muscle g",
       "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1016/j.aquaculture.2020.735577",
-      "year": 2020,
-      "title": "Using single-step genomic best linear unbiased prediction to improve the efficie",
-      "reason": "already in database"
     },
     {
       "doi": "10.1007/s10499-017-0182-6",
@@ -186,12 +192,6 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.aqrep.2021.100986",
-      "year": 2021,
-      "title": "Comparative transcriptomic analysis of Chinese shrimp Fenneropenaeus chinensis i",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
       "doi": "10.1016/j.aquaculture.2022.738631",
       "year": 2022,
       "title": "Estimates of heritability and genetic correlation for growth traits at harvest i",
@@ -210,27 +210,9 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.aqrep.2023.101572",
-      "year": 2023,
-      "title": "Comparisons and genetic assessments of WSSV resistance and growth in strain cros",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
       "doi": "10.3390/biology13040218",
       "year": 2024,
       "title": "Reproductive Ability Disparity in the Pacific Whiteleg Shrimp (Penaeus vannamei)",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1007/s13131-018-1150-3",
-      "year": 2018,
-      "title": "Genetic parameters and response to selection for body weight in turbot (Scophtha",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1111/are.14075",
-      "year": 2019,
-      "title": "Comparison of growth and reproduction performance of broodstock Pacific white sh",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
@@ -240,16 +222,16 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
+      "doi": "10.1007/s13131-018-1150-3",
+      "year": 2018,
+      "title": "Genetic parameters and response to selection for body weight in turbot (Scophtha",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
       "doi": "10.3724/sp.t.1231.2012.27961",
       "year": 2012,
       "title": "Genetic parameters for growth and survival of the base population in channel cat",
       "reason": "suppressed by manual entry"
-    },
-    {
-      "doi": "10.3390/ani15020262",
-      "year": 2025,
-      "title": "Copy Number Variations in Short Tandem Repeats Modulate Growth Traits in Penaeid",
-      "reason": "already in database"
     },
     {
       "doi": "10.3390/ani15091266",
@@ -336,6 +318,12 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
+      "doi": "10.1016/j.aqrep.2021.100986",
+      "year": 2021,
+      "title": "Comparative transcriptomic analysis of Chinese shrimp Fenneropenaeus chinensis i",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
       "doi": "10.1111/are.13673",
       "year": 2018,
       "title": "Genetic diversity and population structure of a giant freshwater prawn (Macrobra",
@@ -346,6 +334,18 @@
       "year": 2020,
       "title": "Feed competition reduces heritable variation for body weight in Litopenaeus vann",
       "reason": "already in database"
+    },
+    {
+      "doi": "10.1016/j.aqrep.2023.101572",
+      "year": 2023,
+      "title": "Comparisons and genetic assessments of WSSV resistance and growth in strain cros",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1111/are.14075",
+      "year": 2019,
+      "title": "Comparison of growth and reproduction performance of broodstock Pacific white sh",
+      "reason": "position middle, not in ['first', 'last']"
     },
     {
       "doi": "10.1371/journal.pone.0236343",
@@ -432,12 +432,6 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.aquaculture.2019.734604",
-      "year": 2019,
-      "title": "Effect of white spot syndrome virus infection on a Ras gene in the Chinese shrim",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
       "doi": "10.11758/yykxjz.20161207002",
       "year": 2018,
       "title": "凡纳滨对虾氨氮急性胁迫应激敏感群体和耐受群体对 WSSV 敏感性的差异分析",
@@ -456,9 +450,9 @@
       "reason": "venue blocklisted: Biologia Plantarum"
     },
     {
-      "doi": "10.1016/j.aquaculture.2024.741287",
-      "year": 2024,
-      "title": "Whole-genome mutagenesis of whiteleg shrimp (Litopenaeus vannamei) by ARTP and a",
+      "doi": "10.1016/j.aquaculture.2019.734604",
+      "year": 2019,
+      "title": "Effect of white spot syndrome virus infection on a Ras gene in the Chinese shrim",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
@@ -477,6 +471,12 @@
       "doi": "10.1016/j.fsi.2018.09.043",
       "year": 2018,
       "title": "Isolation and characterization of a Raf gene from Chinese shrimp Fenneropenaeus ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2024.741287",
+      "year": 2024,
+      "title": "Whole-genome mutagenesis of whiteleg shrimp (Litopenaeus vannamei) by ARTP and a",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
