@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-31",
+  "updated": "2026-09-07",
   "openalex_author_id": "A5040332583",
   "filter": {
     "positions": [
@@ -177,7 +177,7 @@
       "doi": "10.1007/s13131-011-0093-8",
       "year": 2011,
       "title": "Estimation of genetic parameters and breeding values in shrimp Fenneropenaeus ch",
-      "reason": "position middle, not in ['first', 'last']"
+      "reason": "type not in ['article']: book-chapter"
     },
     {
       "doi": "10.1371/journal.pone.0183801",
@@ -444,6 +444,12 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
+      "doi": "10.1155/are/5556293",
+      "year": 2026,
+      "title": "Effects of Replacing Fishmeal With Soybean Meal and Peanut Meal in Low‐Protein D",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
       "doi": "10.1007/s10535-009-0108-x",
       "year": 2009,
       "title": "Chloroplast DNA polymorphism in different types of cytoplasmic male sterile rice",
@@ -633,12 +639,6 @@
       "doi": "10.1016/j.dci.2025.105517",
       "year": 2025,
       "title": "Characterization and function analysis of the peritrophin-1 in Penaeus vannamei ",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1155/are/5556293",
-      "year": 2026,
-      "title": "Effects of Replacing Fishmeal With Soybean Meal and Peanut Meal in Low‐Protein D",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
