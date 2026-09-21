@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-14",
+  "updated": "2026-09-21",
   "openalex_author_id": "A5040332583",
   "filter": {
     "positions": [
@@ -90,22 +90,10 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.aquaculture.2025.742576",
-      "year": 2025,
-      "title": "Genomic selection for hard-to-measure traits in aquaculture: Challenges in balan",
-      "reason": "already in database"
-    },
-    {
       "doi": "10.3390/ijms26178478",
       "year": 2025,
       "title": "Integrin β Regulates the Hepatopancreas Antiviral Innate Immune System by Affect",
       "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1038/s41598-025-26048-3",
-      "year": 2025,
-      "title": "Multi-marker GWAS and variant-specific genomic prediction for growth traits in P",
-      "reason": "already in database"
     },
     {
       "doi": "10.1016/j.fsi.2013.09.004",
@@ -150,16 +138,16 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1016/j.aquaculture.2020.735577",
-      "year": 2020,
-      "title": "Using single-step genomic best linear unbiased prediction to improve the efficie",
-      "reason": "already in database"
-    },
-    {
       "doi": "10.1016/j.aquaculture.2016.09.049",
       "year": 2016,
       "title": "Estimating genetic parameters for growth traits with molecular relatedness in tu",
       "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2020.735577",
+      "year": 2020,
+      "title": "Using single-step genomic best linear unbiased prediction to improve the efficie",
+      "reason": "already in database"
     },
     {
       "doi": "10.1038/s41598-020-61382-8",
@@ -168,16 +156,16 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1007/s10499-017-0182-6",
-      "year": 2017,
-      "title": "Genetic evaluation of feed efficiency in the breeding population of Fenneropenae",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
       "doi": "10.1093/mp/ssu092",
       "year": 2014,
       "title": "From Receptor-Like Kinases to Calcium Spikes: What Are the Missing Links?",
       "reason": "venue blocklisted: Molecular Plant"
+    },
+    {
+      "doi": "10.1007/s10499-017-0182-6",
+      "year": 2017,
+      "title": "Genetic evaluation of feed efficiency in the breeding population of Fenneropenae",
+      "reason": "position middle, not in ['first', 'last']"
     },
     {
       "doi": "10.1007/s13131-011-0093-8",
@@ -201,12 +189,6 @@
       "doi": "10.1016/j.aquaculture.2022.738631",
       "year": 2022,
       "title": "Estimates of heritability and genetic correlation for growth traits at harvest i",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1007/s13131-016-0845-6",
-      "year": 2016,
-      "title": "Genetic parameters for cold tolerance and body weight of Chinese fleshy prawn, F",
       "reason": "position middle, not in ['first', 'last']"
     },
     {
@@ -234,10 +216,10 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.3724/sp.t.1231.2012.27961",
-      "year": 2012,
-      "title": "Genetic parameters for growth and survival of the base population in channel cat",
-      "reason": "suppressed by manual entry"
+      "doi": "10.1016/j.aquaculture.2025.742576",
+      "year": 2025,
+      "title": "Genomic selection for hard-to-measure traits in aquaculture: Challenges in balan",
+      "reason": "already in database"
     },
     {
       "doi": "10.3390/ani15020262",
@@ -250,6 +232,12 @@
       "year": 2025,
       "title": "Genetic Parameter Estimation of Body Weight and VpAHPND Resistance in Two Strain",
       "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1038/s41598-025-26048-3",
+      "year": 2025,
+      "title": "Multi-marker GWAS and variant-specific genomic prediction for growth traits in P",
+      "reason": "already in database"
     },
     {
       "doi": "10.3390/biology13121012",
@@ -342,6 +330,12 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
+      "doi": "10.1007/s13131-016-0845-6",
+      "year": 2016,
+      "title": "Genetic parameters for cold tolerance and body weight of Chinese fleshy prawn, F",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
       "doi": "10.1016/j.aqrep.2023.101572",
       "year": 2023,
       "title": "Comparisons and genetic assessments of WSSV resistance and growth in strain cros",
@@ -372,30 +366,6 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.3390/ijms25094961",
-      "year": 2024,
-      "title": "Comparative Transcriptomic Analysis of WSSV-Challenged Penaeus vannamei with Var",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.1016/j.aquaculture.2016.05.021",
-      "year": 2016,
-      "title": "Impact of pedigree depth and inclusion of historical data in the estimation of v",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.3390/ani15172467",
-      "year": 2025,
-      "title": "LvSlc12A2 Is a Negative Growth Regulator in Whiteleg Shrimp, Litopenaeus vanname",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.3390/ani15213069",
-      "year": 2025,
-      "title": "The Regulatory Effect and Molecular Mechanism of the Anti-Lipopolysaccharide Fac",
-      "reason": "position middle, not in ['first', 'last']"
-    },
-    {
       "doi": "10.1016/j.fsi.2016.07.031",
       "year": 2016,
       "title": "Comparative microarray profile of the hepatopancreas in the response of “Huangha",
@@ -418,6 +388,12 @@
       "year": 2012,
       "title": "EFFECT OF ARTIFICIAL CULTURE AND SELECTIVE BREEDING ON THE GENETIC DIVERSITY OF ",
       "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3724/sp.t.1231.2012.27961",
+      "year": 2012,
+      "title": "Genetic parameters for growth and survival of the base population in channel cat",
+      "reason": "suppressed by manual entry"
     },
     {
       "doi": null,
@@ -456,10 +432,28 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1007/s10535-009-0108-x",
-      "year": 2009,
-      "title": "Chloroplast DNA polymorphism in different types of cytoplasmic male sterile rice",
-      "reason": "venue blocklisted: Biologia Plantarum"
+      "doi": "10.3390/ijms25094961",
+      "year": 2024,
+      "title": "Comparative Transcriptomic Analysis of WSSV-Challenged Penaeus vannamei with Var",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.1016/j.aquaculture.2016.05.021",
+      "year": 2016,
+      "title": "Impact of pedigree depth and inclusion of historical data in the estimation of v",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ani15172467",
+      "year": 2025,
+      "title": "LvSlc12A2 Is a Negative Growth Regulator in Whiteleg Shrimp, Litopenaeus vanname",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
+      "doi": "10.3390/ani15213069",
+      "year": 2025,
+      "title": "The Regulatory Effect and Molecular Mechanism of the Anti-Lipopolysaccharide Fac",
+      "reason": "position middle, not in ['first', 'last']"
     },
     {
       "doi": "10.1016/j.aquaculture.2019.734604",
@@ -474,10 +468,10 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
-      "doi": "10.1007/s11802-018-3429-6",
-      "year": 2018,
-      "title": "Comparisons of Growth and Survival Performance Among Selected Families and Wild ",
-      "reason": "position middle, not in ['first', 'last']"
+      "doi": "10.1007/s10535-009-0108-x",
+      "year": 2009,
+      "title": "Chloroplast DNA polymorphism in different types of cytoplasmic male sterile rice",
+      "reason": "venue blocklisted: Biologia Plantarum"
     },
     {
       "doi": "10.1016/j.fsi.2018.09.043",
@@ -492,6 +486,18 @@
       "reason": "position middle, not in ['first', 'last']"
     },
     {
+      "doi": "10.11693/hyhz20160700176",
+      "year": 2017,
+      "title": "凡纳滨对虾( Litopenaeus vannamei )亲虾繁殖期水体微生物多样性",
+      "reason": "venue not whitelisted: (none)"
+    },
+    {
+      "doi": "10.1007/s11802-018-3429-6",
+      "year": 2018,
+      "title": "Comparisons of Growth and Survival Performance Among Selected Families and Wild ",
+      "reason": "position middle, not in ['first', 'last']"
+    },
+    {
       "doi": "10.2983/035.030.0225",
       "year": 2011,
       "title": "Tolerance ofFenneropenaeus chinensis“Huanghai No. 2” To While Spot Syndrome Viru",
@@ -502,12 +508,6 @@
       "year": 2013,
       "title": "Combining ability of hybrid generation from the introduced populations of Litope",
       "reason": "position middle, not in ['first', 'last']"
-    },
-    {
-      "doi": "10.11693/hyhz20160700176",
-      "year": 2017,
-      "title": "凡纳滨对虾( Litopenaeus vannamei )亲虾繁殖期水体微生物多样性",
-      "reason": "venue not whitelisted: (none)"
     },
     {
       "doi": "10.3724/sp.j.1118.2018.18015",
