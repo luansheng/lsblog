@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Sheng Luan">
+<meta name="dcterms.date" content="2026-09-23">
+<meta name="description" content="Additive, dominance and epistatic relationship matrices, O(n) inversion, full-sib compaction, and matrix-free products on a million-record pedigree.">
+
+<title>Relationship matrices without the matrix: fast pedigree computation in R with visPedigree – metabreeding</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-829fa26f51d673a98a9fd19d98fc2a03.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">metabreeding</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../publication.html"> 
+<span class="menu-text">Publication</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://www.r-bloggers.com"> 
+<span class="menu-text">R-bloggers</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Relationship matrices without the matrix: fast pedigree computation in R with visPedigree</h1>
+                  <div>
+        <div class="description">
+          Additive, dominance and epistatic relationship matrices, O(n) inversion, full-sib compaction, and matrix-free products on a million-record pedigree.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Genetics</div>
+                <div class="quarto-category">Pedigree</div>
+                <div class="quarto-category">Breeding</div>
+                <div class="quarto-category">r-bloggers</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Sheng Luan </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 23, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Every genetic evaluation runs on one object: the additive relationship matrix <strong>A</strong>. BLUP breeding values, variance-component estimation, mate allocation, diversity management — all of them reduce, sooner or later, to multiplying or inverting a matrix built from the pedigree. The problem is that <strong>A</strong> is an n × n object, and n is the number of individuals you have ever recorded. A pedigree of ten thousand individuals needs 800 MB for a single dense matrix; a pedigree of one million would need about 8 TB. Long before your pedigree is “large” by breeding standards, the matrix itself becomes the bottleneck.</p>
+<p>In the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">first tutorial</a> of this series I showed how <a href="https://github.com/luansheng/visPedigree">visPedigree</a> turns raw pedigree tables into publication-ready graphs; the <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">second</a> covered the diversity-analysis pipeline. This closing article is about the computational core underneath both: how the package builds relationship matrices fast when you need them — and how it avoids building them at all when you don’t.</p>
+<ol type="1">
+<li><strong>What does the A matrix look like?</strong> — building and visualizing it.</li>
+<li><strong>Who is inbred?</strong> — inbreeding coefficients without the matrix.</li>
+<li><strong>What about dominance and epistasis?</strong> — the D and AA matrices.</li>
+<li><strong>What if I need the inverse?</strong> — A⁻¹ in O(n) time.</li>
+<li><strong>What if full-sib families explode the matrix?</strong> — compact mode.</li>
+<li><strong>What if the pedigree has a million records?</strong> — matrix-free products.</li>
+</ol>
+<section id="one-tidy-step-every-computation-after" class="level2">
+<h2 class="anchored" data-anchor-id="one-tidy-step-every-computation-after">One tidy step, every computation after</h2>
+<p>As in the previous articles, everything starts from <code>tidyped()</code>. It checks, orders, and indexes the pedigree once; every matrix routine then works on the tidied object:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(visPedigree)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(deep_ped)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>tp <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(deep_ped)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>tp</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Tidy Pedigree Object
+           Ind      Sire       Dam    Sex              Family FamilySize   Gen
+        &lt;char&gt;    &lt;char&gt;    &lt;char&gt; &lt;char&gt;              &lt;char&gt;      &lt;int&gt; &lt;int&gt;
+   1: K00044N4      &lt;NA&gt;      &lt;NA&gt;   male                &lt;NA&gt;          1     1
+   2: K000F533      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+   3: K000F535      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+   4: K000F544      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+   5: K000F591      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+  ---                                                                         
+4395: K110997Z  K010903A  K010729D   male   K010903AxK010729D         29    13
+4396: K110998Q K010878YZ K010936YZ female K010878YZxK010936YZ         29    13
+4397: K110998Z  K010709D  K010809D   male   K010709DxK010809D         17    13
+4398: K110999Q  K010527D K010110YZ   male  K010527DxK010110YZ         28    13
+4399: K110999Z  K010077A  K010445D   &lt;NA&gt;   K010077AxK010445D         29    13
+      IndNum SireNum DamNum
+       &lt;int&gt;   &lt;int&gt;  &lt;int&gt;
+   1:      1       0      0
+   2:      2       0      0
+   3:      3       0      0
+   4:      4       0      0
+   5:      5       0      0
+  ---                      
+4395:   4395    1114    420
+4396:   4396    1108    427
+4397:   4397    1079    424
+4398:   4398    1042    959
+4399:   4399     948   1022</code></pre>
+</div>
+</div>
+</section>
+<section id="question-1-what-does-the-a-matrix-look-like" class="level2">
+<h2 class="anchored" data-anchor-id="question-1-what-does-the-a-matrix-look-like">Question 1: What does the A matrix look like?</h2>
+<p><code>pedmat()</code> computes the additive (numerator) relationship matrix with the Meuwissen &amp; Luo (1992) algorithm, implemented in Rcpp:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">pedmat</span>(tp, <span class="at">method =</span> <span class="st">"A"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The result is a <code>pedmat</code> object — an ordinary matrix underneath, with metadata attached. <code>summary_pedmat()</code> reports the essentials:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary_pedmat</span>(A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary of Pedigree Matrix (A)
+========================================
+Input Size:      4399  individuals
+Calculated Size: 4399  individuals
+
+Matrix Properties:
+- Mean off-diagonal relationship:  0.041193 
+- Density (non-zero): 91.26%
+========================================</code></pre>
+</div>
+</div>
+<p>For this pedigree of 4399 individuals the matrix is 91% non-zero: after a few generations of a closed population, almost every pair of individuals shares some ancestry. The diagonal holds 1 + <em>F</em> (one plus the inbreeding coefficient); the off-diagonal holds twice the kinship between each pair.</p>
+<p>Printing a 4,399 × 4,399 matrix is pointless, but zooming into one full-sib family — two parents and eight of their offspring — shows exactly how the recursion works:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>one_fam <span class="ot">&lt;-</span> tp[tp<span class="sc">$</span>Family <span class="sc">==</span> tp<span class="sc">$</span>Family[tp<span class="sc">$</span>FamilySize <span class="sc">&gt;=</span> <span class="dv">8</span> <span class="sc">&amp;</span> tp<span class="sc">$</span>Gen <span class="sc">&gt;=</span> <span class="dv">3</span>][<span class="dv">1</span>]]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ids <span class="ot">&lt;-</span> <span class="fu">c</span>(one_fam<span class="sc">$</span>Sire[<span class="dv">1</span>], one_fam<span class="sc">$</span>Dam[<span class="dv">1</span>], one_fam<span class="sc">$</span>Ind[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>])</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">as.matrix</span>(A[ids, ids]), <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          K010659YZ K010129K K110005M K110036Q K110038Q K110080H K110087H
+K010659YZ       1.0      0.0      0.5      0.5      0.5      0.5      0.5
+K010129K        0.0      1.0      0.5      0.5      0.5      0.5      0.5
+K110005M        0.5      0.5      1.0      0.5      0.5      0.5      0.5
+K110036Q        0.5      0.5      0.5      1.0      0.5      0.5      0.5
+K110038Q        0.5      0.5      0.5      0.5      1.0      0.5      0.5
+K110080H        0.5      0.5      0.5      0.5      0.5      1.0      0.5
+K110087H        0.5      0.5      0.5      0.5      0.5      0.5      1.0
+K110163Q        0.5      0.5      0.5      0.5      0.5      0.5      0.5
+K110191M        0.5      0.5      0.5      0.5      0.5      0.5      0.5
+K110292H        0.5      0.5      0.5      0.5      0.5      0.5      0.5
+          K110163Q K110191M K110292H
+K010659YZ      0.5      0.5      0.5
+K010129K       0.5      0.5      0.5
+K110005M       0.5      0.5      0.5
+K110036Q       0.5      0.5      0.5
+K110038Q       0.5      0.5      0.5
+K110080H       0.5      0.5      0.5
+K110087H       0.5      0.5      0.5
+K110163Q       1.0      0.5      0.5
+K110191M       0.5      1.0      0.5
+K110292H       0.5      0.5      1.0</code></pre>
+</div>
+</div>
+<p>The two parents are unrelated (0); each parent shares 0.5 with every offspring; the eight full-sibs share 0.5 among themselves; and the diagonal is 1 + <em>F</em> = 1 here. Every entry of the full matrix is built from these same few rules.</p>
+<p>Numbers become clearer as a picture. <code>vismat()</code> draws the heatmap (here for a hundred individuals from the six largest full-sib families of the last three generations, hierarchically clustered):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>recent <span class="ot">&lt;-</span> tp[Gen <span class="sc">&gt;=</span> <span class="fu">max</span>(Gen) <span class="sc">-</span> <span class="dv">2</span>]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>fam <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">table</span>(recent<span class="sc">$</span>Family), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>top_ids <span class="ot">&lt;-</span> recent<span class="sc">$</span>Ind[recent<span class="sc">$</span>Family <span class="sc">%in%</span> <span class="fu">names</span>(fam)[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>]]</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">7</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">vismat</span>(A, <span class="at">ids =</span> <span class="fu">sample</span>(top_ids, <span class="dv">100</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-a-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-a-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-a-heatmap-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-a-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Additive relationship matrix for 100 individuals from the six largest full-sib families in the last three generations of deep_ped, hierarchically clustered. The dark red blocks along the diagonal are full-sib families; the pale background is the low-level relatedness that accumulates in a closed population.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The distribution of <em>all</em> pairwise coefficients is just as informative — it is the relatedness background against which any mating decision stands out:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vismat</span>(A, <span class="at">type =</span> <span class="st">"histogram"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-a-hist" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-a-hist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-a-hist-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-a-hist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Distribution of pairwise additive relationship coefficients (lower triangle of A) in deep_ped. The right tail — parent-offspring (0.5), full-sib (≈0.5) and half-sib (≈0.25) pairs — sits far above the background mean of 0.04.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="question-2-who-is-inbred" class="level2">
+<h2 class="anchored" data-anchor-id="question-2-who-is-inbred">Question 2: Who is inbred?</h2>
+<p>If all you need is the diagonal, you should never pay for the full matrix. <code>method = "f"</code> returns just the inbreeding coefficients, as a named vector:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">pedmat</span>(tp, <span class="at">method =</span> <span class="st">"f"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">sort</span>(f, <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> K110034Q  K110052L  K110060H  K110069Z  K110097Q  K110118M 
+0.2645848 0.2645848 0.2645848 0.2645848 0.2645848 0.2645848 </code></pre>
+</div>
+</div>
+<p>These are the same coefficients that the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization tutorial</a> drew directly onto the pedigree graph with <code>visped(showf = TRUE)</code>, and that <code>pedfclass()</code> bins into severity classes for monitoring.</p>
+</section>
+<section id="question-3-what-about-dominance-and-epistasis" class="level2">
+<h2 class="anchored" data-anchor-id="question-3-what-about-dominance-and-epistasis">Question 3: What about dominance and epistasis?</h2>
+<p>Additive relationships capture only part of the genetic covariance. <code>pedmat()</code> also computes the dominance matrix <strong>D</strong> and the additive-by-additive epistatic matrix <strong>AA</strong> = <strong>A</strong> ⊙ <strong>A</strong>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">pedmat</span>(tp, <span class="at">method =</span> <span class="st">"D"</span>, <span class="at">threads =</span> <span class="dv">0</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary_pedmat</span>(D)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary of Pedigree Matrix (D)
+========================================
+Input Size:      4399  individuals
+Calculated Size: 4399  individuals
+
+Matrix Properties:
+- Mean off-diagonal relationship:  0.002134 
+- Density (non-zero): 52.63%
+========================================</code></pre>
+</div>
+</div>
+<p><strong>D</strong> is numerically far sparser than <strong>A</strong> — dominance relationships are non-negligible only between full-sibs and similarly close pairs. In this pedigree, almost half of all off-diagonal pairs are exactly zero, and only 0.4% reach the full-sib level of 0.25:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>Dm <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(D)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">zero =</span> <span class="fu">round</span>(<span class="fu">mean</span>(Dm[<span class="fu">upper.tri</span>(Dm)] <span class="sc">==</span> <span class="dv">0</span>), <span class="dv">3</span>),</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fullsib_level =</span> <span class="fu">round</span>(<span class="fu">mean</span>(Dm[<span class="fu">upper.tri</span>(Dm)] <span class="sc">&gt;</span> <span class="fl">0.2</span>), <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         zero fullsib_level 
+       0.4740        0.0043 </code></pre>
+</div>
+</div>
+<p>That sparsity is exactly the structure you want when separating additive from dominance variance. Multi-threading (<code>threads</code>) is available for <strong>D</strong> and, on large pedigrees, for <strong>A</strong>⁻¹.</p>
+<p>A word of caution on the inverses of these matrices: <strong>D</strong>⁻¹ and <strong>AA</strong>⁻¹ require a general O(n³) inversion. That is fine up to a couple of thousand individuals (about 0.15 s at n = 2,000 on a laptop), but impractical beyond — see Question 5 for the escape hatch.</p>
+</section>
+<section id="question-4-what-if-i-need-the-inverse" class="level2">
+<h2 class="anchored" data-anchor-id="question-4-what-if-i-need-the-inverse">Question 4: What if I need the inverse?</h2>
+<p>Here is a small miracle of pedigree computation. The mixed-model equations of BLUP need <strong>A</strong>⁻¹, not <strong>A</strong> — and <strong>A</strong>⁻¹ is <em>easier</em> to compute. Henderson’s (1976) rules build it directly from the pedigree in O(n) time, and it is sparse even when <strong>A</strong> is dense:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>Ainv <span class="ot">&lt;-</span> <span class="fu">pedmat</span>(tp, <span class="at">method =</span> <span class="st">"Ainv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fraction of non-zero elements in A vs its inverse</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>dense_A  <span class="ot">&lt;-</span> Matrix<span class="sc">::</span><span class="fu">nnzero</span>(A)    <span class="sc">/</span> <span class="fu">prod</span>(<span class="fu">dim</span>(A))</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>dense_Ai <span class="ot">&lt;-</span> Matrix<span class="sc">::</span><span class="fu">nnzero</span>(Ainv) <span class="sc">/</span> <span class="fu">prod</span>(<span class="fu">dim</span>(Ainv))</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">A =</span> <span class="fu">round</span>(dense_A, <span class="dv">4</span>), <span class="at">Ainv =</span> <span class="fu">round</span>(dense_Ai, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     A   Ainv 
+0.9126 0.0012 </code></pre>
+</div>
+</div>
+<p>The same family as above makes the structure of Henderson’s rules visible — this time printing the block is the whole point, because almost everything is zero:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">as.matrix</span>(Ainv[ids, ids]), <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          K010659YZ K010129K K110005M K110036Q K110038Q K110080H K110087H
+K010659YZ      13.5     11.5       -1       -1       -1       -1       -1
+K010129K       11.5     12.5       -1       -1       -1       -1       -1
+K110005M       -1.0     -1.0        2        0        0        0        0
+K110036Q       -1.0     -1.0        0        2        0        0        0
+K110038Q       -1.0     -1.0        0        0        2        0        0
+K110080H       -1.0     -1.0        0        0        0        2        0
+K110087H       -1.0     -1.0        0        0        0        0        2
+K110163Q       -1.0     -1.0        0        0        0        0        0
+K110191M       -1.0     -1.0        0        0        0        0        0
+K110292H       -1.0     -1.0        0        0        0        0        0
+          K110163Q K110191M K110292H
+K010659YZ       -1       -1       -1
+K010129K        -1       -1       -1
+K110005M         0        0        0
+K110036Q         0        0        0
+K110038Q         0        0        0
+K110080H         0        0        0
+K110087H         0        0        0
+K110163Q         2        0        0
+K110191M         0        2        0
+K110292H         0        0        2</code></pre>
+</div>
+</div>
+<p>Each offspring carries a 2 on its own diagonal and a −1 against each parent; the parents’ diagonals (13.5 and 12.5) accumulate a ½ from every offspring plus terms from their own parents and other mates elsewhere in the pedigree; the 11.5 between the parents is ½ from each of their 23 shared offspring. Every other entry of the 4,399 × 4,399 matrix is exactly zero.</p>
+<p>Where <strong>A</strong> was 91% filled, <strong>A</strong>⁻¹ is 99.9% empty — each individual contributes only a handful of terms involving itself, its mates, and its parents. This asymmetry is why routine genetic evaluation of millions of animals is possible at all.</p>
+</section>
+<section id="question-5-what-if-full-sib-families-explode-the-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="question-5-what-if-full-sib-families-explode-the-matrix">Question 5: What if full-sib families explode the matrix?</h2>
+<p>Animal and plant breeding pedigrees — fish, poultry, trees — often contain full-sib families of hundreds or thousands of individuals. Full-siblings share identical relationships with every other individual in the pedigree, so storing each of them separately is pure waste. <code>compact = TRUE</code> keeps one representative per full-sib family:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(big_family_size_ped)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>tpb <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(big_family_size_ped)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Individuals:"</span>, <span class="fu">nrow</span>(tpb), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Individuals: 178431 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>Ac <span class="ot">&lt;-</span> <span class="fu">pedmat</span>(tpb, <span class="at">compact =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary_pedmat</span>(Ac)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary of Pedigree Matrix (A)
+========================================
+Input Size:      178431  individuals
+Calculated Size: 2626  individuals
+
+Compaction Results:
+- Compression: 1.5%
+- Families:     705  families merged
+
+Top 5 families by size:
+   FamilyLabel FamilySize
+        &lt;char&gt;      &lt;int&gt;
+1:   6040x6Z30        456
+2:   60Z6x6089        456
+3:   6007x6074        454
+4:   6039x6ZY9        453
+5:   6040x6Z3Z        452
+
+Matrix Properties:
+- Mean off-diagonal relationship:  0.010152 
+- Density (non-zero): 27.55%
+========================================</code></pre>
+</div>
+</div>
+<p>The matrix shrinks from 178431 individuals to a few thousand unique relationship patterns. You can still query any pair of original individuals — merged siblings are looked up automatically:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>ids <span class="ot">&lt;-</span> tpb<span class="sc">$</span>Ind[tpb<span class="sc">$</span>Gen <span class="sc">==</span> <span class="fu">max</span>(tpb<span class="sc">$</span>Gen)][<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">outer</span>(ids, ids, <span class="fu">Vectorize</span>(<span class="cf">function</span>(i, j) <span class="fu">query_relationship</span>(Ac, i, j)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]      [,2]      [,3]      [,4]
+[1,] 1.0036621 0.5041504 0.5041504 0.5041504
+[2,] 0.5041504 1.0036621 0.5041504 0.5041504
+[3,] 0.5041504 0.5041504 1.0036621 0.5041504
+[4,] 0.5041504 0.5041504 0.5041504 1.0036621</code></pre>
+</div>
+</div>
+<p>These four individuals from the last generation turn out to be full-sibs (off-diagonal ≈ 0.50) with a trace of inbreeding (diagonal ≈ 1.004) — looked up directly from the compact representation.</p>
+<p>and visualize the compact matrix without expanding it — <code>by</code> aggregates group-level means directly from the compressed form:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vismat</span>(Ac, <span class="at">by =</span> <span class="st">"Gen"</span>, <span class="at">reorder =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-compact-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-compact-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-compact-heatmap-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-compact-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Generation-level mean additive relationships in big_family_size_ped, computed directly from the compact matrix (178,431 individuals represented by 2,626 unique patterns). The diagonal is within-generation coancestry: generation 3 stands out as a bottleneck — only 1,652 individuals from 70 families, unusually related to each other — after which the population rebounds in size while mean relatedness keeps climbing (0.02 at generation 4 to 0.06 at generation 9).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="question-6-what-if-the-pedigree-has-a-million-records" class="level2">
+<h2 class="anchored" data-anchor-id="question-6-what-if-the-pedigree-has-a-million-records">Question 6: What if the pedigree has a million records?</h2>
+<p>Sometimes you don’t need the matrix at all — you need its <em>product</em> with a vector. The canonical example is diversity management: if <code>c</code> is a vector of contributions of selected candidates to the next generation, then <code>c'Ac</code> is the average relationship of that portfolio, i.e.&nbsp;the rate at which it burns diversity. Colleau (2002) showed how to compute <strong>A</strong>x and <strong>A</strong>⁻¹x by pedigree traversal in O(n) time, never touching the n × n object. <code>pedprod()</code> implements exactly that.</p>
+<p>To see what this buys, here is a real-scale test: a simulated pedigree of 1,000,150 individuals — 150 founders, 50 overlapping generations, six founder source populations — the same data used in the <a href="https://luansheng.github.io/lsblog/posts/million_ped-20260324/">Chinese post on million-record pedigrees</a>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>ped_big <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">"../million_ped-20260324/pedigree_mixed_founder_to_G50.csv"</span>, <span class="at">na.strings =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"NA"</span>, <span class="st">"0"</span>))</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>tpm <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(ped_big)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Individuals:"</span>, <span class="fu">nrow</span>(tpm), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Individuals: 1000150 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">nrow</span>(tpm))</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>t_A  <span class="ot">&lt;-</span> <span class="fu">system.time</span>(y_A    <span class="ot">&lt;-</span> <span class="fu">pedprod</span>(tpm, x, <span class="at">method =</span> <span class="st">"A"</span>))[[<span class="st">"elapsed"</span>]]</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>t_Ai <span class="ot">&lt;-</span> <span class="fu">system.time</span>(y_Ainv <span class="ot">&lt;-</span> <span class="fu">pedprod</span>(tpm, x, <span class="at">method =</span> <span class="st">"Ainv"</span>))[[<span class="st">"elapsed"</span>]]</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"A x: %.2f s | Ainv x: %.2f s</span><span class="sc">\n</span><span class="st">"</span>, t_A, t_Ai))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>A x: 0.21 s | Ainv x: 0.23 s</code></pre>
+</div>
+</div>
+<p>Both products finish in a fraction of a second — on a pedigree whose dense <strong>A</strong> matrix would occupy about 8 TB of RAM.</p>
+<p>Because named inputs are aligned by ID (omitted individuals are zero), contribution schemes map straight onto the diversity workflow of the <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">previous article</a>. Here are two candidate-use schemes for the most recent generation — equal contributions from 100 candidates versus concentration on 10 — evaluated in a single call:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>cand <span class="ot">&lt;-</span> tpm<span class="sc">$</span>Ind[tpm<span class="sc">$</span>Gen <span class="sc">==</span> <span class="fu">max</span>(tpm<span class="sc">$</span>Gen)]</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>cand100 <span class="ot">&lt;-</span> <span class="fu">sample</span>(cand, <span class="dv">100</span>)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>schemes <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Equal100 =</span> <span class="fu">setNames</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">100</span>, <span class="dv">100</span>), cand100),</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Top10    =</span> <span class="fu">setNames</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">10</span>, <span class="dv">10</span>), <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">90</span>)), cand100)</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>Ac <span class="ot">&lt;-</span> <span class="fu">pedprod</span>(tpm, schemes)</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Average relationship of each scheme: c' A c</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(schemes <span class="sc">*</span> Ac[<span class="fu">rownames</span>(schemes), ])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Equal100     Top10 
+0.4743936 0.5352261 </code></pre>
+</div>
+</div>
+<p>Concentrating contributions on fewer candidates yields the higher average relationship — more diversity lost per generation — quantified here without ever materializing a relationship coefficient.</p>
+<p>Finally, the scaling picture. Explicit matrices grow quadratically in both time and memory; the matrix-free product does not:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1000</span>, <span class="dv">5000</span>, <span class="dv">10000</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>tim <span class="ot">&lt;-</span> mem <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(ns))</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(ns)) {</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  ts <span class="ot">&lt;-</span> <span class="fu">tidyped</span>(tpm[<span class="dv">1</span><span class="sc">:</span>ns[i]])</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  tim[i] <span class="ot">&lt;-</span> <span class="fu">system.time</span>(Ai <span class="ot">&lt;-</span> <span class="fu">pedmat</span>(ts))[[<span class="st">"elapsed"</span>]]</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  mem[i] <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">object.size</span>(<span class="fu">as.matrix</span>(Ai))) <span class="sc">/</span> <span class="fl">1e6</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rm</span>(Ai); <span class="fu">gc</span>()</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>t_prod <span class="ot">&lt;-</span> <span class="fu">system.time</span>(<span class="fu">pedprod</span>(tpm, <span class="fu">rnorm</span>(<span class="fu">nrow</span>(tpm))))[[<span class="st">"elapsed"</span>]]</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="fu">c</span>(ns, <span class="fu">nrow</span>(tpm)),</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">seconds =</span> <span class="fu">c</span>(tim, t_prod),</span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">MB =</span> <span class="fu">c</span>(mem, <span class="cn">NA</span>),</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">what =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"pedmat (explicit A)"</span>, <span class="dv">3</span>), <span class="st">"pedprod (matrix-free Ax)"</span>)</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>df_long <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(df, <span class="at">metric =</span> <span class="st">"Elapsed time (s)"</span>, <span class="at">value =</span> df<span class="sc">$</span>seconds),</span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(df[<span class="sc">!</span><span class="fu">is.na</span>(df<span class="sc">$</span>MB), ], <span class="at">metric =</span> <span class="st">"Dense memory (MB)"</span>, <span class="at">value =</span> mem)</span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_long, <span class="fu">aes</span>(n, value, <span class="at">color =</span> what)) <span class="sc">+</span></span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> df_long[df_long<span class="sc">$</span>what <span class="sc">==</span> <span class="st">"pedmat (explicit A)"</span>, ],</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>            <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">"grey60"</span>) <span class="sc">+</span></span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>metric, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_log10</span>(<span class="at">labels =</span> scales<span class="sc">::</span>comma) <span class="sc">+</span></span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span></span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"pedmat (explicit A)"</span> <span class="ot">=</span> <span class="st">"#c0392b"</span>,</span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"pedprod (matrix-free Ax)"</span> <span class="ot">=</span> <span class="st">"#27ae60"</span>)) <span class="sc">+</span></span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Pedigree size (individuals, log scale)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">color =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-scaling" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-scaling-1.png" class="img-fluid figure-img" width="3000">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Cost of the explicit additive relationship matrix versus the matrix-free product, on prefixes of the million-record pedigree. Left: memory occupied by the dense matrix, growing quadratically to 800 MB at n = 10,000 — at one million individuals it would take about 8 TB. Right: elapsed time of pedmat(A) (red) and of pedprod(Ax) on the full 1,000,150-individual pedigree (green), which finishes in about 0.2 s.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="where-to-go-from-here" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-go-from-here">Where to go from here</h2>
+<p>This article covered the computational core: relationship matrices (<code>pedmat()</code> for <strong>A</strong>, <strong>D</strong>, <strong>AA</strong>, their inverses, and inbreeding coefficients), full-sib compaction (<code>compact = TRUE</code>, <code>query_relationship()</code>, <code>expand_pedmat()</code>), matrix visualization (<code>vismat()</code>), and matrix-free products (<code>pedprod()</code>). Together with the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization</a> and <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">diversity-analysis</a> tutorials, this completes the visPedigree workflow: tidy once with <code>tidyped()</code>, then plot, analyze, or compute — at any pedigree size.</p>
+<p>For published research using visPedigree, see the <a href="https://luansheng.github.io/visPedigree/articles/applications.html">Applications page</a>.</p>
+<p>If visPedigree contributes to your published work, please cite it:</p>
+<blockquote class="blockquote">
+<p>Luan S, Kong J, Xia Z, Kang Z, Qiang G, Luo K, Sui J. 2026. visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees. <em>Bioinformatics Advances</em>. DOI: <a href="https://doi.org/10.1093/bioadv/vbag210">10.1093/bioadv/vbag210</a>.</p>
+</blockquote>
+<p>(<code>citation("visPedigree")</code> always returns the citation for your installed version.)</p>
+<p>Install from CRAN:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"visPedigree"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Full documentation at <a href="https://luansheng.github.io/visPedigree/">luansheng.github.io/visPedigree</a>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/luansheng\.github\.io\/lsblog");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

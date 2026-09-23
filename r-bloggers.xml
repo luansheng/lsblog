@@ -6,7 +6,1140 @@
     <atom:link href="https://luansheng.github.io/lsblog/r-bloggers.xml" rel="self" type="application/rss+xml"/>
     <description>R-related posts from metabreeding</description>
     <generator>quarto-1.10.18</generator>
-    <lastBuildDate>Sun, 23 Aug 2026 16:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Tue, 22 Sep 2026 16:00:00 GMT</lastBuildDate>
+    <item>
+      <title>Relationship matrices without the matrix: fast pedigree computation in R with visPedigree</title>
+      <dc:creator>Sheng Luan</dc:creator>
+      <link>https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/</link>
+      <description><![CDATA[ 
+
+
+
+
+
+<p>Every genetic evaluation runs on one object: the additive relationship matrix <strong>A</strong>. BLUP breeding values, variance-component estimation, mate allocation, diversity management — all of them reduce, sooner or later, to multiplying or inverting a matrix built from the pedigree. The problem is that <strong>A</strong> is an n × n object, and n is the number of individuals you have ever recorded. A pedigree of ten thousand individuals needs 800 MB for a single dense matrix; a pedigree of one million would need about 8 TB. Long before your pedigree is “large” by breeding standards, the matrix itself becomes the bottleneck.</p>
+<p>In the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">first tutorial</a> of this series I showed how <a href="https://github.com/luansheng/visPedigree">visPedigree</a> turns raw pedigree tables into publication-ready graphs; the <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">second</a> covered the diversity-analysis pipeline. This closing article is about the computational core underneath both: how the package builds relationship matrices fast when you need them — and how it avoids building them at all when you don’t.</p>
+<ol type="1">
+<li><strong>What does the A matrix look like?</strong> — building and visualizing it.</li>
+<li><strong>Who is inbred?</strong> — inbreeding coefficients without the matrix.</li>
+<li><strong>What about dominance and epistasis?</strong> — the D and AA matrices.</li>
+<li><strong>What if I need the inverse?</strong> — A⁻¹ in O(n) time.</li>
+<li><strong>What if full-sib families explode the matrix?</strong> — compact mode.</li>
+<li><strong>What if the pedigree has a million records?</strong> — matrix-free products.</li>
+</ol>
+<section id="one-tidy-step-every-computation-after" class="level2">
+<h2 class="anchored" data-anchor-id="one-tidy-step-every-computation-after">One tidy step, every computation after</h2>
+<p>As in the previous articles, everything starts from <code>tidyped()</code>. It checks, orders, and indexes the pedigree once; every matrix routine then works on the tidied object:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(visPedigree)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(data.table)</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(deep_ped)</span>
+<span id="cb1-5">tp <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(deep_ped)</span>
+<span id="cb1-6">tp</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Tidy Pedigree Object
+           Ind      Sire       Dam    Sex              Family FamilySize   Gen
+        &lt;char&gt;    &lt;char&gt;    &lt;char&gt; &lt;char&gt;              &lt;char&gt;      &lt;int&gt; &lt;int&gt;
+   1: K00044N4      &lt;NA&gt;      &lt;NA&gt;   male                &lt;NA&gt;          1     1
+   2: K000F533      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+   3: K000F535      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+   4: K000F544      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+   5: K000F591      &lt;NA&gt;      &lt;NA&gt; female                &lt;NA&gt;          1     1
+  ---                                                                         
+4395: K110997Z  K010903A  K010729D   male   K010903AxK010729D         29    13
+4396: K110998Q K010878YZ K010936YZ female K010878YZxK010936YZ         29    13
+4397: K110998Z  K010709D  K010809D   male   K010709DxK010809D         17    13
+4398: K110999Q  K010527D K010110YZ   male  K010527DxK010110YZ         28    13
+4399: K110999Z  K010077A  K010445D   &lt;NA&gt;   K010077AxK010445D         29    13
+      IndNum SireNum DamNum
+       &lt;int&gt;   &lt;int&gt;  &lt;int&gt;
+   1:      1       0      0
+   2:      2       0      0
+   3:      3       0      0
+   4:      4       0      0
+   5:      5       0      0
+  ---                      
+4395:   4395    1114    420
+4396:   4396    1108    427
+4397:   4397    1079    424
+4398:   4398    1042    959
+4399:   4399     948   1022</code></pre>
+</div>
+</div>
+</section>
+<section id="question-1-what-does-the-a-matrix-look-like" class="level2">
+<h2 class="anchored" data-anchor-id="question-1-what-does-the-a-matrix-look-like">Question 1: What does the A matrix look like?</h2>
+<p><code>pedmat()</code> computes the additive (numerator) relationship matrix with the Meuwissen &amp; Luo (1992) algorithm, implemented in Rcpp:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">A <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedmat</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A"</span>)</span></code></pre></div></div>
+</div>
+<p>The result is a <code>pedmat</code> object — an ordinary matrix underneath, with metadata attached. <code>summary_pedmat()</code> reports the essentials:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary_pedmat</span>(A)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary of Pedigree Matrix (A)
+========================================
+Input Size:      4399  individuals
+Calculated Size: 4399  individuals
+
+Matrix Properties:
+- Mean off-diagonal relationship:  0.041193 
+- Density (non-zero): 91.26%
+========================================</code></pre>
+</div>
+</div>
+<p>For this pedigree of 4399 individuals the matrix is 91% non-zero: after a few generations of a closed population, almost every pair of individuals shares some ancestry. The diagonal holds 1 + <em>F</em> (one plus the inbreeding coefficient); the off-diagonal holds twice the kinship between each pair.</p>
+<p>Printing a 4,399 × 4,399 matrix is pointless, but zooming into one full-sib family — two parents and eight of their offspring — shows exactly how the recursion works:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">one_fam <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp[tp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Family <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> tp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Family[tp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>FamilySize <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> tp<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>][<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]</span>
+<span id="cb6-2">ids <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(one_fam<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Sire[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>], one_fam<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Dam[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>], one_fam<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>])</span>
+<span id="cb6-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(A[ids, ids]), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          K010659YZ K010129K K110005M K110036Q K110038Q K110080H K110087H
+K010659YZ       1.0      0.0      0.5      0.5      0.5      0.5      0.5
+K010129K        0.0      1.0      0.5      0.5      0.5      0.5      0.5
+K110005M        0.5      0.5      1.0      0.5      0.5      0.5      0.5
+K110036Q        0.5      0.5      0.5      1.0      0.5      0.5      0.5
+K110038Q        0.5      0.5      0.5      0.5      1.0      0.5      0.5
+K110080H        0.5      0.5      0.5      0.5      0.5      1.0      0.5
+K110087H        0.5      0.5      0.5      0.5      0.5      0.5      1.0
+K110163Q        0.5      0.5      0.5      0.5      0.5      0.5      0.5
+K110191M        0.5      0.5      0.5      0.5      0.5      0.5      0.5
+K110292H        0.5      0.5      0.5      0.5      0.5      0.5      0.5
+          K110163Q K110191M K110292H
+K010659YZ      0.5      0.5      0.5
+K010129K       0.5      0.5      0.5
+K110005M       0.5      0.5      0.5
+K110036Q       0.5      0.5      0.5
+K110038Q       0.5      0.5      0.5
+K110080H       0.5      0.5      0.5
+K110087H       0.5      0.5      0.5
+K110163Q       1.0      0.5      0.5
+K110191M       0.5      1.0      0.5
+K110292H       0.5      0.5      1.0</code></pre>
+</div>
+</div>
+<p>The two parents are unrelated (0); each parent shares 0.5 with every offspring; the eight full-sibs share 0.5 among themselves; and the diagonal is 1 + <em>F</em> = 1 here. Every entry of the full matrix is built from these same few rules.</p>
+<p>Numbers become clearer as a picture. <code>vismat()</code> draws the heatmap (here for a hundred individuals from the six largest full-sib families of the last three generations, hierarchically clustered):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">recent <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tp[Gen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(Gen) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]</span>
+<span id="cb8-2">fam <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sort</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">table</span>(recent<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Family), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">decreasing =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb8-3">top_ids <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> recent<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind[recent<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Family <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%in%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(fam)[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">6</span>]]</span>
+<span id="cb8-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>)</span>
+<span id="cb8-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">vismat</span>(A, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ids =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(top_ids, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>))</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-a-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-a-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/index_files/figure-html/fig-a-heatmap-1.png" class="img-fluid figure-img" width="2400">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-a-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Additive relationship matrix for 100 individuals from the six largest full-sib families in the last three generations of deep_ped, hierarchically clustered. The dark red blocks along the diagonal are full-sib families; the pale background is the low-level relatedness that accumulates in a closed population.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The distribution of <em>all</em> pairwise coefficients is just as informative — it is the relatedness background against which any mating decision stands out:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">vismat</span>(A, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"histogram"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-a-hist" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-a-hist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/index_files/figure-html/fig-a-hist-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-a-hist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Distribution of pairwise additive relationship coefficients (lower triangle of A) in deep_ped. The right tail — parent-offspring (0.5), full-sib (≈0.5) and half-sib (≈0.25) pairs — sits far above the background mean of 0.04.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="question-2-who-is-inbred" class="level2">
+<h2 class="anchored" data-anchor-id="question-2-who-is-inbred">Question 2: Who is inbred?</h2>
+<p>If all you need is the diagonal, you should never pay for the full matrix. <code>method = "f"</code> returns just the inbreeding coefficients, as a named vector:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">f <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedmat</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"f"</span>)</span>
+<span id="cb10-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sort</span>(f, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">decreasing =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> K110034Q  K110052L  K110060H  K110069Z  K110097Q  K110118M 
+0.2645848 0.2645848 0.2645848 0.2645848 0.2645848 0.2645848 </code></pre>
+</div>
+</div>
+<p>These are the same coefficients that the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization tutorial</a> drew directly onto the pedigree graph with <code>visped(showf = TRUE)</code>, and that <code>pedfclass()</code> bins into severity classes for monitoring.</p>
+</section>
+<section id="question-3-what-about-dominance-and-epistasis" class="level2">
+<h2 class="anchored" data-anchor-id="question-3-what-about-dominance-and-epistasis">Question 3: What about dominance and epistasis?</h2>
+<p>Additive relationships capture only part of the genetic covariance. <code>pedmat()</code> also computes the dominance matrix <strong>D</strong> and the additive-by-additive epistatic matrix <strong>AA</strong> = <strong>A</strong> ⊙ <strong>A</strong>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1">D <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedmat</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"D"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">threads =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb12-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary_pedmat</span>(D)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary of Pedigree Matrix (D)
+========================================
+Input Size:      4399  individuals
+Calculated Size: 4399  individuals
+
+Matrix Properties:
+- Mean off-diagonal relationship:  0.002134 
+- Density (non-zero): 52.63%
+========================================</code></pre>
+</div>
+</div>
+<p><strong>D</strong> is numerically far sparser than <strong>A</strong> — dominance relationships are non-negligible only between full-sibs and similarly close pairs. In this pedigree, almost half of all off-diagonal pairs are exactly zero, and only 0.4% reach the full-sib level of 0.25:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">Dm <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(D)</span>
+<span id="cb14-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">zero =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(Dm[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">upper.tri</span>(Dm)] <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>),</span>
+<span id="cb14-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fullsib_level =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(Dm[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">upper.tri</span>(Dm)] <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         zero fullsib_level 
+       0.4740        0.0043 </code></pre>
+</div>
+</div>
+<p>That sparsity is exactly the structure you want when separating additive from dominance variance. Multi-threading (<code>threads</code>) is available for <strong>D</strong> and, on large pedigrees, for <strong>A</strong>⁻¹.</p>
+<p>A word of caution on the inverses of these matrices: <strong>D</strong>⁻¹ and <strong>AA</strong>⁻¹ require a general O(n³) inversion. That is fine up to a couple of thousand individuals (about 0.15 s at n = 2,000 on a laptop), but impractical beyond — see Question 5 for the escape hatch.</p>
+</section>
+<section id="question-4-what-if-i-need-the-inverse" class="level2">
+<h2 class="anchored" data-anchor-id="question-4-what-if-i-need-the-inverse">Question 4: What if I need the inverse?</h2>
+<p>Here is a small miracle of pedigree computation. The mixed-model equations of BLUP need <strong>A</strong>⁻¹, not <strong>A</strong> — and <strong>A</strong>⁻¹ is <em>easier</em> to compute. Henderson’s (1976) rules build it directly from the pedigree in O(n) time, and it is sparse even when <strong>A</strong> is dense:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1">Ainv <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedmat</span>(tp, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Ainv"</span>)</span></code></pre></div></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fraction of non-zero elements in A vs its inverse</span></span>
+<span id="cb17-2">dense_A  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> Matrix<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nnzero</span>(A)    <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">prod</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dim</span>(A))</span>
+<span id="cb17-3">dense_Ai <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> Matrix<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nnzero</span>(Ainv) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">prod</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dim</span>(Ainv))</span>
+<span id="cb17-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">A =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(dense_A, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Ainv =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(dense_Ai, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     A   Ainv 
+0.9126 0.0012 </code></pre>
+</div>
+</div>
+<p>The same family as above makes the structure of Henderson’s rules visible — this time printing the block is the whole point, because almost everything is zero:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(Ainv[ids, ids]), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          K010659YZ K010129K K110005M K110036Q K110038Q K110080H K110087H
+K010659YZ      13.5     11.5       -1       -1       -1       -1       -1
+K010129K       11.5     12.5       -1       -1       -1       -1       -1
+K110005M       -1.0     -1.0        2        0        0        0        0
+K110036Q       -1.0     -1.0        0        2        0        0        0
+K110038Q       -1.0     -1.0        0        0        2        0        0
+K110080H       -1.0     -1.0        0        0        0        2        0
+K110087H       -1.0     -1.0        0        0        0        0        2
+K110163Q       -1.0     -1.0        0        0        0        0        0
+K110191M       -1.0     -1.0        0        0        0        0        0
+K110292H       -1.0     -1.0        0        0        0        0        0
+          K110163Q K110191M K110292H
+K010659YZ       -1       -1       -1
+K010129K        -1       -1       -1
+K110005M         0        0        0
+K110036Q         0        0        0
+K110038Q         0        0        0
+K110080H         0        0        0
+K110087H         0        0        0
+K110163Q         2        0        0
+K110191M         0        2        0
+K110292H         0        0        2</code></pre>
+</div>
+</div>
+<p>Each offspring carries a 2 on its own diagonal and a −1 against each parent; the parents’ diagonals (13.5 and 12.5) accumulate a ½ from every offspring plus terms from their own parents and other mates elsewhere in the pedigree; the 11.5 between the parents is ½ from each of their 23 shared offspring. Every other entry of the 4,399 × 4,399 matrix is exactly zero.</p>
+<p>Where <strong>A</strong> was 91% filled, <strong>A</strong>⁻¹ is 99.9% empty — each individual contributes only a handful of terms involving itself, its mates, and its parents. This asymmetry is why routine genetic evaluation of millions of animals is possible at all.</p>
+</section>
+<section id="question-5-what-if-full-sib-families-explode-the-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="question-5-what-if-full-sib-families-explode-the-matrix">Question 5: What if full-sib families explode the matrix?</h2>
+<p>Animal and plant breeding pedigrees — fish, poultry, trees — often contain full-sib families of hundreds or thousands of individuals. Full-siblings share identical relationships with every other individual in the pedigree, so storing each of them separately is pure waste. <code>compact = TRUE</code> keeps one representative per full-sib family:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(big_family_size_ped)</span>
+<span id="cb21-2">tpb <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(big_family_size_ped)</span>
+<span id="cb21-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Individuals:"</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tpb), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Individuals: 178431 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1">Ac <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedmat</span>(tpb, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">compact =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb23-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary_pedmat</span>(Ac)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Summary of Pedigree Matrix (A)
+========================================
+Input Size:      178431  individuals
+Calculated Size: 2626  individuals
+
+Compaction Results:
+- Compression: 1.5%
+- Families:     705  families merged
+
+Top 5 families by size:
+   FamilyLabel FamilySize
+        &lt;char&gt;      &lt;int&gt;
+1:   6040x6Z30        456
+2:   60Z6x6089        456
+3:   6007x6074        454
+4:   6039x6ZY9        453
+5:   6040x6Z3Z        452
+
+Matrix Properties:
+- Mean off-diagonal relationship:  0.010152 
+- Density (non-zero): 27.55%
+========================================</code></pre>
+</div>
+</div>
+<p>The matrix shrinks from 178431 individuals to a few thousand unique relationship patterns. You can still query any pair of original individuals — merged siblings are looked up automatically:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1">ids <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tpb<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind[tpb<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(tpb<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen)][<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>]</span>
+<span id="cb25-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">outer</span>(ids, ids, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Vectorize</span>(<span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(i, j) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">query_relationship</span>(Ac, i, j)))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]      [,2]      [,3]      [,4]
+[1,] 1.0036621 0.5041504 0.5041504 0.5041504
+[2,] 0.5041504 1.0036621 0.5041504 0.5041504
+[3,] 0.5041504 0.5041504 1.0036621 0.5041504
+[4,] 0.5041504 0.5041504 0.5041504 1.0036621</code></pre>
+</div>
+</div>
+<p>These four individuals from the last generation turn out to be full-sibs (off-diagonal ≈ 0.50) with a trace of inbreeding (diagonal ≈ 1.004) — looked up directly from the compact representation.</p>
+<p>and visualize the compact matrix without expanding it — <code>by</code> aggregates group-level means directly from the compressed form:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">vismat</span>(Ac, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Gen"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">reorder =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-compact-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-compact-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/index_files/figure-html/fig-compact-heatmap-1.png" class="img-fluid figure-img" width="2100">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-compact-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Generation-level mean additive relationships in big_family_size_ped, computed directly from the compact matrix (178,431 individuals represented by 2,626 unique patterns). The diagonal is within-generation coancestry: generation 3 stands out as a bottleneck — only 1,652 individuals from 70 families, unusually related to each other — after which the population rebounds in size while mean relatedness keeps climbing (0.02 at generation 4 to 0.06 at generation 9).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="question-6-what-if-the-pedigree-has-a-million-records" class="level2">
+<h2 class="anchored" data-anchor-id="question-6-what-if-the-pedigree-has-a-million-records">Question 6: What if the pedigree has a million records?</h2>
+<p>Sometimes you don’t need the matrix at all — you need its <em>product</em> with a vector. The canonical example is diversity management: if <code>c</code> is a vector of contributions of selected candidates to the next generation, then <code>c'Ac</code> is the average relationship of that portfolio, i.e.&nbsp;the rate at which it burns diversity. Colleau (2002) showed how to compute <strong>A</strong>x and <strong>A</strong>⁻¹x by pedigree traversal in O(n) time, never touching the n × n object. <code>pedprod()</code> implements exactly that.</p>
+<p>To see what this buys, here is a real-scale test: a simulated pedigree of 1,000,150 individuals — 150 founders, 50 overlapping generations, six founder source populations — the same data used in the <a href="https://luansheng.github.io/lsblog/posts/million_ped-20260324/">Chinese post on million-record pedigrees</a>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1">ped_big <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fread</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"../million_ped-20260324/pedigree_mixed_founder_to_G50.csv"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">na.strings =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"NA"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"0"</span>))</span>
+<span id="cb28-2">tpm <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(ped_big)</span>
+<span id="cb28-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Individuals:"</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tpm), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Individuals: 1000150 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb30-2">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tpm))</span>
+<span id="cb30-3">t_A  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(y_A    <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedprod</span>(tpm, x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A"</span>))[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>]]</span>
+<span id="cb30-4">t_Ai <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(y_Ainv <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedprod</span>(tpm, x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Ainv"</span>))[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>]]</span>
+<span id="cb30-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sprintf</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A x: %.2f s | Ainv x: %.2f s</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">\n</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>, t_A, t_Ai))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>A x: 0.21 s | Ainv x: 0.23 s</code></pre>
+</div>
+</div>
+<p>Both products finish in a fraction of a second — on a pedigree whose dense <strong>A</strong> matrix would occupy about 8 TB of RAM.</p>
+<p>Because named inputs are aligned by ID (omitted individuals are zero), contribution schemes map straight onto the diversity workflow of the <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">previous article</a>. Here are two candidate-use schemes for the most recent generation — equal contributions from 100 candidates versus concentration on 10 — evaluated in a single call:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1">cand <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> tpm<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Ind[tpm<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(tpm<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Gen)]</span>
+<span id="cb32-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb32-3">cand100 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(cand, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>)</span>
+<span id="cb32-4">schemes <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cbind</span>(</span>
+<span id="cb32-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Equal100 =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">setNames</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>), cand100),</span>
+<span id="cb32-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Top10    =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">setNames</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">90</span>)), cand100)</span>
+<span id="cb32-7">)</span>
+<span id="cb32-8">Ac <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedprod</span>(tpm, schemes)</span>
+<span id="cb32-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Average relationship of each scheme: c' A c</span></span>
+<span id="cb32-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">colSums</span>(schemes <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> Ac[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rownames</span>(schemes), ])</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Equal100     Top10 
+0.4743936 0.5352261 </code></pre>
+</div>
+</div>
+<p>Concentrating contributions on fewer candidates yields the higher average relationship — more diversity lost per generation — quantified here without ever materializing a relationship coefficient.</p>
+<p>Finally, the scaling picture. Explicit matrices grow quadratically in both time and memory; the matrix-free product does not:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2)</span>
+<span id="cb34-2"></span>
+<span id="cb34-3">ns <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5000</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10000</span>)</span>
+<span id="cb34-4">tim <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> mem <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">numeric</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(ns))</span>
+<span id="cb34-5"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (i <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq_along</span>(ns)) {</span>
+<span id="cb34-6">  ts <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tidyped</span>(tpm[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>ns[i]])</span>
+<span id="cb34-7">  tim[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(Ai <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedmat</span>(ts))[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>]]</span>
+<span id="cb34-8">  mem[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">object.size</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(Ai))) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1e6</span></span>
+<span id="cb34-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rm</span>(Ai); <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gc</span>()</span>
+<span id="cb34-10">}</span>
+<span id="cb34-11">t_prod <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system.time</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pedprod</span>(tpm, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tpm))))[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"elapsed"</span>]]</span>
+<span id="cb34-12"></span>
+<span id="cb34-13">df <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb34-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(ns, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(tpm)),</span>
+<span id="cb34-15">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seconds =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(tim, t_prod),</span>
+<span id="cb34-16">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">MB =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(mem, <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>),</span>
+<span id="cb34-17">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">what =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pedmat (explicit A)"</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pedprod (matrix-free Ax)"</span>)</span>
+<span id="cb34-18">)</span>
+<span id="cb34-19">df_long <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rbind</span>(</span>
+<span id="cb34-20">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(df, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">metric =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Elapsed time (s)"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>seconds),</span>
+<span id="cb34-21">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(df[<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.na</span>(df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>MB), ], <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">metric =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dense memory (MB)"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">value =</span> mem)</span>
+<span id="cb34-22">)</span>
+<span id="cb34-23"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ggplot</span>(df_long, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aes</span>(n, value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> what)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-24">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-25">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> df_long[df_long<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>what <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pedmat (explicit A)"</span>, ],</span>
+<span id="cb34-26">            <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linetype =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grey60"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-27">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">facet_wrap</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>metric, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scales =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"free_y"</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-28">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_x_log10</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> scales<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span>comma) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-29">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_y_log10</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-30">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">scale_color_manual</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">values =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pedmat (explicit A)"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#c0392b"</span>,</span>
+<span id="cb34-31">                                <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pedprod (matrix-free Ax)"</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#27ae60"</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-32">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">labs</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Pedigree size (individuals, log scale)"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">y =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">color =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-33">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_minimal</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">base_size =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb34-34">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend.position =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"top"</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div id="fig-scaling" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/index_files/figure-html/fig-scaling-1.png" class="img-fluid figure-img" width="3000">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Cost of the explicit additive relationship matrix versus the matrix-free product, on prefixes of the million-record pedigree. Left: memory occupied by the dense matrix, growing quadratically to 800 MB at n = 10,000 — at one million individuals it would take about 8 TB. Right: elapsed time of pedmat(A) (red) and of pedprod(Ax) on the full 1,000,150-individual pedigree (green), which finishes in about 0.2 s.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="where-to-go-from-here" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-go-from-here">Where to go from here</h2>
+<p>This article covered the computational core: relationship matrices (<code>pedmat()</code> for <strong>A</strong>, <strong>D</strong>, <strong>AA</strong>, their inverses, and inbreeding coefficients), full-sib compaction (<code>compact = TRUE</code>, <code>query_relationship()</code>, <code>expand_pedmat()</code>), matrix visualization (<code>vismat()</code>), and matrix-free products (<code>pedprod()</code>). Together with the <a href="https://luansheng.github.io/lsblog/posts/vispedigree-viz-20260725/">visualization</a> and <a href="https://luansheng.github.io/lsblog/posts/pedigree-diversity-20260806/">diversity-analysis</a> tutorials, this completes the visPedigree workflow: tidy once with <code>tidyped()</code>, then plot, analyze, or compute — at any pedigree size.</p>
+<p>For published research using visPedigree, see the <a href="https://luansheng.github.io/visPedigree/articles/applications.html">Applications page</a>.</p>
+<p>If visPedigree contributes to your published work, please cite it:</p>
+<blockquote class="blockquote">
+<p>Luan S, Kong J, Xia Z, Kang Z, Qiang G, Luo K, Sui J. 2026. visPedigree: a comprehensive R package for tidying, analyzing, and visualizing breeding pedigrees. <em>Bioinformatics Advances</em>. DOI: <a href="https://doi.org/10.1093/bioadv/vbag210">10.1093/bioadv/vbag210</a>.</p>
+</blockquote>
+<p>(<code>citation("visPedigree")</code> always returns the citation for your installed version.)</p>
+<p>Install from CRAN:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"visPedigree"</span>)</span></code></pre></div></div>
+<p>Full documentation at <a href="https://luansheng.github.io/visPedigree/">luansheng.github.io/visPedigree</a>.</p>
+
+
+</section>
+
+ ]]></description>
+      <category>R</category>
+      <category>Genetics</category>
+      <category>Pedigree</category>
+      <category>Breeding</category>
+      <category>r-bloggers</category>
+      <guid>https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/</guid>
+      <pubDate>Tue, 22 Sep 2026 16:00:00 GMT</pubDate>
+      <media:content url="https://luansheng.github.io/lsblog/posts/pedigree-matrices-20260923/cover.png" medium="image" type="image/png" height="126" width="144"/>
+    </item>
     <item>
       <title>Plot a pedigree in R: seven packages, each built for a different job</title>
       <dc:creator>Sheng Luan</dc:creator>
